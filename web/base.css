@@ -553,3 +553,9 @@ mark{background:color-mix(in srgb,var(--lime) 45%,transparent);color:inherit;bor
   .searchbox kbd{display:none}
   .brand-name span{display:none}
 }
+@media(max-width:480px){
+  .topbar-inner{padding:0 14px;gap:10px}
+  .brand-name{display:none}
+  .searchbox{display:none}
+  .nav-tab{padding:7px 11px;font-size:12px}
+}
