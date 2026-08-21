@@ -535,6 +535,16 @@ function renderLesson(id) {
   document.querySelector('.side-lesson.active')?.scrollIntoView({ block: 'nearest' });
 }
 
+async function completeLesson(nowDone) {
+  nowDone ? progress.add(currentId) : progress.delete(currentId);
+  renderLesson(currentId); renderOverall();
+  try {
+    await api(`/api/progress/${encodeURIComponent(currentId)}`, {
+      method: 'PUT', body: JSON.stringify({ completed: nowDone })
+    });
+  } catch { /* optimistic; corrected on next load */ }
+}
+
 function attachVideoTracking() {
   const v = document.querySelector('#videoBox video');
   if (!v) return;
@@ -851,19 +861,21 @@ async function onAppClick(e) {
   }
 
   if (t.closest('#markBtn')) {
-    const l = LESSON_BY_ID[currentId];
     const nowDone = !progress.has(currentId);
     if (nowDone && videos[currentId]?.url && watchedPct < 0.8) {
       const pct = Math.round(watchedPct * 100);
-      if (!confirm(`You've watched about ${pct}% of the video for this lesson. Mark it complete anyway?`)) return;
-    }
-    nowDone ? progress.add(currentId) : progress.delete(currentId);
-    renderLesson(currentId); renderOverall();
-    try {
-      await api(`/api/progress/${encodeURIComponent(currentId)}`, {
-        method: 'PUT', body: JSON.stringify({ completed: nowDone })
+      openModal(`<h3>Mark this lesson as read?</h3>
+        <p class="modal-sub">You've watched about ${pct}% of its video so far.</p>
+        <div class="modal-actions">
+          <button class="btn-approve" id="confirmMark">Mark complete anyway</button>
+          <button class="vid-cancel" data-modal-close>Keep watching</button></div>`);
+      el('confirmMark').addEventListener('click', () => {
+        document.querySelector('.modal-scrim')?.remove();
+        completeLesson(true);
       });
-    } catch { /* optimistic; corrected on next load */ }
+      return;
+    }
+    completeLesson(nowDone);
     return;
   }
 
