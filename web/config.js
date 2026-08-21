@@ -1,4 +1,4 @@
 window.TALAN_CONFIG = {
-  apiBase: "https://talan-academy-production.up.railway.app",
+  apiBase: "https://talan-academy-api.vercel.app",
   emailDomain: "talan.com"
 };
