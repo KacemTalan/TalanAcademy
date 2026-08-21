@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import crypto from 'node:crypto';
+import PDFDocument from 'pdfkit';
 
 import { q, audit } from './db.js';
 import { createSignedUploadUrl, createSignedPlaybackUrl, removeVideo } from './storage.js';
@@ -178,10 +179,11 @@ app.post('/api/me/password', requireAuth, writeLimiter, async (req, res) => {
 /* ---------------- Learner state ---------------- */
 
 app.get('/api/state', requireAuth, async (req, res) => {
-  const [prog, notes, vids] = await Promise.all([
+  const [prog, notes, vids, quiz] = await Promise.all([
     q('SELECT lesson_id, completed_at FROM progress WHERE user_id = $1', [req.user.id]),
     q('SELECT lesson_id, body FROM notes WHERE user_id = $1', [req.user.id]),
-    q('SELECT lesson_id, url, storage_path, label FROM videos')
+    q('SELECT lesson_id, url, storage_path, label FROM videos'),
+    q('SELECT lesson_id, score, total, passed FROM quiz_results WHERE user_id = $1', [req.user.id])
   ]);
 
   const videos = await Promise.all(vids.rows.map(async (r) => {
@@ -200,8 +202,81 @@ app.get('/api/state', requireAuth, async (req, res) => {
   res.json({
     progress: prog.rows.map(r => r.lesson_id),
     notes: Object.fromEntries(notes.rows.map(r => [r.lesson_id, r.body])),
-    videos: Object.fromEntries(videos)
+    videos: Object.fromEntries(videos),
+    quizResults: Object.fromEntries(quiz.rows.map(r => [r.lesson_id, { score: r.score, total: r.total, passed: r.passed }]))
   });
+});
+
+app.put('/api/quiz/:lessonId', requireAuth, writeLimiter, async (req, res) => {
+  const lessonId = String(req.params.lessonId).slice(0, 64);
+  const score = parseInt(req.body?.score, 10);
+  const total = parseInt(req.body?.total, 10);
+  const passed = !!req.body?.passed;
+
+  if (!Number.isInteger(score) || !Number.isInteger(total) || total < 1 || total > 20 || score < 0 || score > total) {
+    return res.status(400).json({ error: 'Invalid quiz result.' });
+  }
+
+  await q(
+    `INSERT INTO quiz_results (user_id, lesson_id, score, total, passed, completed_at)
+     VALUES ($1, $2, $3, $4, $5, now())
+     ON CONFLICT (user_id, lesson_id) DO UPDATE
+     SET score = EXCLUDED.score, total = EXCLUDED.total, passed = EXCLUDED.passed, completed_at = now()`,
+    [req.user.id, lessonId, score, total, passed]
+  );
+  res.json({ ok: true });
+});
+
+app.post('/api/certificate', requireAuth, writeLimiter, async (req, res) => {
+  const seriesTitle = String(req.body?.seriesTitle || '').trim().slice(0, 200);
+  const lessonIds = Array.isArray(req.body?.lessonIds) ? req.body.lessonIds.map(String).slice(0, 200) : [];
+  if (!seriesTitle || !lessonIds.length) {
+    return res.status(400).json({ error: 'Missing series title or lessons.' });
+  }
+
+  const { rows } = await q(
+    'SELECT lesson_id, completed_at FROM progress WHERE user_id = $1 AND lesson_id = ANY($2)',
+    [req.user.id, lessonIds]
+  );
+  const completedIds = new Set(rows.map(r => r.lesson_id));
+  const allDone = lessonIds.every(id => completedIds.has(id));
+  if (!allDone) {
+    return res.status(400).json({ error: 'Not all lessons in this curriculum are complete yet.' });
+  }
+  const finishedAt = rows.reduce((max, r) => r.completed_at > max ? r.completed_at : max, rows[0].completed_at);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${seriesTitle.replace(/[^a-z0-9]+/gi, '-')}-certificate.pdf"`);
+
+  const doc = new PDFDocument({ layout: 'landscape', size: 'A4', margin: 0 });
+  doc.pipe(res);
+
+  const W = doc.page.width, H = doc.page.height;
+  doc.rect(0, 0, W, H).fill('#FBFAF7');
+  doc.rect(24, 24, W - 48, H - 48).lineWidth(1.5).stroke('#D8D3C4');
+  doc.rect(34, 34, W - 68, H - 68).lineWidth(0.75).stroke('#D8D3C4');
+
+  doc.fillColor('#2E6F5E').fontSize(14).font('Helvetica-Bold')
+    .text('TALAN ACADEMY', 0, 78, { align: 'center' });
+  doc.fillColor('#8A8272').fontSize(10).font('Helvetica')
+    .text('CERTIFICATE OF COMPLETION', 0, 100, { align: 'center', characterSpacing: 2 });
+
+  doc.fillColor('#1B1B18').fontSize(30).font('Helvetica-Bold')
+    .text(req.user.name, 0, 160, { align: 'center' });
+
+  doc.fillColor('#5B5648').fontSize(13).font('Helvetica')
+    .text('has successfully completed', 0, 205, { align: 'center' });
+
+  doc.fillColor('#2E6F5E').fontSize(22).font('Helvetica-Bold')
+    .text(seriesTitle, 0, 230, { align: 'center' });
+
+  doc.fillColor('#8A8272').fontSize(10).font('Helvetica')
+    .text(`${lessonIds.length} lessons · issued ${new Date(finishedAt).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+      0, 275, { align: 'center' });
+
+  doc.end();
+
+  await audit(req.user.id, 'certificate_issued', seriesTitle);
 });
 
 app.put('/api/progress/:lessonId', requireAuth, writeLimiter, async (req, res) => {

@@ -2713,3 +2713,562 @@ git cherry-pick a1b2c3d^..f4e5d6c
 ]
 
 };
+
+/* ============================================================
+   TALAN ACADEMY — LESSON QUIZZES
+   Three questions per lesson, 2/3 required to pass.
+   Shape: lessonId -> { pass, questions: [ { q, options, correct } ] }
+   ============================================================ */
+
+const QUIZZES = {
+
+  "bca-01": {
+    pass: 2,
+    questions: [
+      { q: "A quote is converted into a sales order in Business Central. What happens to the pricing?", options: ["It carries over automatically, keeping the numbers the customer agreed to", "It must be retyped into the order", "It resets to the standard list price", "It is recalculated using the vendor's cost"], correct: 0 },
+      { q: "Why do customer-specific prices and discounts get configured once rather than applied manually per order?", options: ["Because Business Central does not allow manual pricing", "So nobody has to remember which client gets which discount, and it applies consistently", "Because discounts are only available to VIP customers", "Because pricing rules expire after one order"], correct: 1 },
+      { q: "Where does a service request sit relative to the customer's sales history?", options: ["In a separate system dedicated to support tickets", "It is not tracked in Business Central", "On the same customer record, alongside quotes, orders and interaction history", "Only the technician has access to it"], correct: 2 }
+    ]
+  },
+
+  "bca-02": {
+    pass: 2,
+    questions: [
+      { q: "Why is the general ledger considered trustworthy in Business Central?", options: ["Because it is updated manually once a month", "Because every transaction elsewhere in the system eventually posts to it", "Because only the finance director can edit it", "Because it uses a separate database from the rest of the system"], correct: 1 },
+      { q: "In bank reconciliation, what does a human actually review?", options: ["Every single transaction on the statement", "Nothing — reconciliation is fully automatic", "Only the exceptions that did not match automatically", "Only transactions over a fixed currency threshold"], correct: 2 },
+      { q: "Why does a shorter month-end close matter more than the hours it saves?", options: ["It reduces the finance team's headcount needs", "It automatically improves the accuracy of forecasts", "It is required by law in most countries", "It means leadership decisions are based on more current data rather than a stale picture"], correct: 3 }
+    ]
+  },
+
+  "bca-03": {
+    pass: 2,
+    questions: [
+      { q: "What does a bill of materials (BOM) actually define?", options: ["The schedule for a specific production run", "The quality checks required before shipment", "What a finished item is made of — the recipe planning relies on", "The capacity available on the shop floor"], correct: 2 },
+      { q: "Why is capacity planning checked before a schedule is committed?", options: ["To reduce the number of production orders needed", "To automatically lower the bill of materials cost", "Because it is a legal requirement for manufacturers", "So promises to customers reflect what the floor can actually deliver"], correct: 3 },
+      { q: "What is the practical benefit of tracking job costing while work happens rather than after?", options: ["Cost overruns become a signal during the job instead of a discovery after it", "It removes the need for a bill of materials", "It eliminates the need for quality checks", "It automatically adjusts customer pricing"], correct: 0 }
+    ]
+  },
+
+  "bca-04": {
+    pass: 2,
+    questions: [
+      { q: "Why does demand forecasting generally beat a fixed reorder point?", options: ["It is simpler to configure", "It guarantees zero stockouts at all times", "It removes the need for vendor management", "It adapts to seasonality and trend rather than assuming steady demand"], correct: 3 },
+      { q: "What does real-time inventory management ensure?", options: ["That the number on screen matches the number actually on the shelf", "That warehouse staff no longer need bin locations", "That purchase orders no longer need approval", "That vendor lead times are fixed automatically"], correct: 0 },
+      { q: "Why is inventory described as 'capital sitting still'?", options: ["Because it cannot be insured", "Because holding too much ties up cash, while holding too little costs sales — both stem from not knowing what's moving", "Because inventory value never changes over time", "Because it is excluded from financial reporting"], correct: 1 }
+    ]
+  },
+
+  "bca-05": {
+    pass: 2,
+    questions: [
+      { q: "Why is 'budget vs. actual' tracking more useful than a final profitability report?", options: ["It shows what is happening while there is still time to change the outcome", "It requires less data entry", "It replaces the need for project invoicing", "It is only available at project close"], correct: 0 },
+      { q: "How does project invoicing avoid a gap between work done and work billed?", options: ["Clients are billed a flat fee regardless of hours", "Invoices are generated directly from tracked time, expenses and milestones with no re-entry", "Invoicing happens automatically at project kickoff", "Time tracking is optional for billing purposes"], correct: 1 },
+      { q: "What problem does resource allocation based on real availability prevent?", options: ["Clients being billed incorrectly", "Milestones being defined incorrectly", "The same specialist being promised to three projects at once", "Budgets being set too low"], correct: 2 }
+    ]
+  },
+
+  "bca-06": {
+    pass: 2,
+    questions: [
+      { q: "Why does 'one source of truth' matter more than report quality?", options: ["Because pretty reports are harder to build", "Because a well-built report on a disputed number still ends a meeting arguing about whose figure is right", "Because Power BI cannot connect to more than one data source", "Because dashboards are only useful for executives"], correct: 1 },
+      { q: "What does drill-down analysis let a user do?", options: ["Export data to a spreadsheet automatically", "Change the fiscal year from the report screen", "Move from a high-level figure straight to the individual transaction behind it", "Bypass user permission sets"], correct: 2 },
+      { q: "Why is 'real-time data' a meaningful claim for reporting?", options: ["Because reports only update once a week otherwise", "Because it guarantees 100% forecast accuracy", "Because it removes the need for role-based dashboards", "Because there's no overnight sync — what happened this morning is in this morning's number"], correct: 3 }
+    ]
+  },
+
+  "pc-00": {
+    pass: 2,
+    questions: [
+      { q: "In the Power Platform model, what role does Business Central play?", options: ["An optional analytics add-on", "A reporting layer on top of Power BI", "The system of record that holds the actual transactions", "A replacement for Power Automate"], correct: 2 },
+      { q: "Why would a client want Power BI if Business Central already has built-in reports?", options: ["Built-in reports are unreliable", "Built-in reports cannot be printed", "Power BI is required to view any BC data", "Power BI is for exploration — combining BC data with other sources without needing a new report built first"], correct: 3 },
+      { q: "What does it mean that the Power Platform connection to Business Central is 'native, not a project'?", options: ["These tools are built to read BC data directly, so integration is configuration rather than custom development", "It requires a custom development effort for each client", "It only works with a paid add-on license", "It replaces the need for an ERP entirely"], correct: 0 }
+    ]
+  },
+
+  "pc-01": {
+    pass: 2,
+    questions: [
+      { q: "What is the operational risk of building reports from manual exports?", options: ["Exports take too long to generate", "Exports cannot be opened in Excel", "Manual exports cannot include financial data", "Every export is an unrecorded snapshot, so two people can reach different conclusions from different extracts"], correct: 3 },
+      { q: "How does Power BI reduce disagreement between finance, sales and operations?", options: ["By having them all look at the same underlying live data", "By giving each department a separate database", "By restricting access to one department at a time", "By removing drill-down capability"], correct: 0 },
+      { q: "What does drill-down in Power BI let someone do 'in the meeting rather than after it'?", options: ["Change the underlying BC configuration", "Trace a surprising KPI back to the transactions behind it", "Export the dashboard to PDF", "Approve a pending workflow"], correct: 1 }
+    ]
+  },
+
+  "pc-02": {
+    pass: 2,
+    questions: [
+      { q: "Why is a Power App often preferable to giving a field worker full Business Central access?", options: ["Full access is a bigger security surface and training burden than a focused app exposing just the needed actions", "Power Apps are cheaper to license per user", "Full BC access does not work on mobile devices", "Power Apps do not require any Business Central license"], correct: 0 },
+      { q: "When a warehouse operator confirms a shipment through a Power App, what happens to the underlying data?", options: ["It updates a separate app-only database that syncs overnight", "It updates the same Business Central record that a finance user sees on desktop", "Nothing changes until a manager approves it", "The change is stored locally on the device only"], correct: 1 },
+      { q: "What does 'no code' mean in the context of Power Apps for a functional consultant?", options: ["The apps have no underlying logic at all", "Only Microsoft employees can build Power Apps", "Apps are built visually, letting a consultant deliver a working tool without a development cycle", "The apps cannot be customized after creation"], correct: 2 }
+    ]
+  },
+
+  "pc-03": {
+    pass: 2,
+    questions: [
+      { q: "What triggers a Power Automate flow connected to Business Central?", options: ["A scheduled nightly batch job only", "The moment a record changes in Business Central — no polling or scheduled batch needed", "A manual click from an administrator", "An email sent to a shared inbox"], correct: 1 },
+      { q: "What is automation's real return, according to the lesson?", options: ["The minutes saved on any single task", "Reducing the number of employees needed", "Eliminating an entire class of 'someone forgot' failures", "Replacing the need for approval thresholds"], correct: 2 },
+      { q: "How does an automated approval workflow differ from an email asking for approval?", options: ["It's slower but more thorough", "It only works for purchase orders, not sales documents", "It requires more manual steps", "It's enforced and recorded — the document cannot proceed without approval, and the audit trail is automatic"], correct: 3 }
+    ]
+  },
+
+  "pc-04": {
+    pass: 2,
+    questions: [
+      { q: "How should you frame Copilot to a client worried about it posting transactions incorrectly?", options: ["Assure them Copilot never makes mistakes", "Tell them autonomous agents cannot be disabled", "Most Copilot features produce drafts a person approves; autonomous agents are scoped and reviewable", "Explain that Copilot bypasses all validation rules"], correct: 2 },
+      { q: "What does the 'Explaining' capability of Copilot go beyond simple reporting to do?", options: ["It only displays numbers without context", "It disables user access to explore further", "It automatically corrects incorrect ledger entries", "It summarises records, explains variances, and surfaces anomalies with reasoning attached"], correct: 3 },
+      { q: "According to the lesson, what does Copilot mainly remove from existing processes?", options: ["The search-and-retype layer around the process, not the process itself", "The need for a chart of accounts", "The requirement for user permissions", "The need for a fiscal year setting"], correct: 0 }
+    ]
+  },
+
+  "bcs-01": {
+    pass: 2,
+    questions: [
+      { q: "Why is Company & General Setup described as 'the least interesting lesson and the most expensive to get wrong'?", options: ["It takes the longest to configure", "It requires the most user permissions", "It cannot be changed once entered", "Almost every later configuration mistake traces back to an assumption made here"], correct: 3 },
+      { q: "What is the concern if a client wants to change their fiscal year start six months after go-live?", options: ["Existing posted transactions are already assigned to periods under the old structure, breaking comparative reporting", "It requires a new Business Central license", "It automatically deletes all posted invoices", "It has no real effect on reporting"], correct: 0 },
+      { q: "What does localisation govern beyond number formatting and language?", options: ["User permission sets", "Statutory reporting behaviour", "Approval workflow thresholds", "Number series ranges"], correct: 1 }
+    ]
+  },
+
+  "bcs-02": {
+    pass: 2,
+    questions: [
+      { q: "What problem do posting groups solve?", options: ["They automatically route transactions to the correct G/L accounts without users choosing manually", "They speed up report generation", "They prevent users from creating new customers", "They replace the need for a chart of accounts"], correct: 0 },
+      { q: "Why not simply train users to pick the right G/L account?", options: ["Users are not allowed to see the chart of accounts", "It scales badly and fails quietly — a misposted invoice a week is invisible until reconciliation", "Training is more expensive than software", "It violates Business Central's licensing terms"], correct: 1 },
+      { q: "What defines an account's behaviour in reporting?", options: ["Its number series", "Its dimension values", "Its category — assets, liabilities, equity, income, expenses", "Its approval workflow"], correct: 2 }
+    ]
+  },
+
+  "bcs-03": {
+    pass: 2,
+    questions: [
+      { q: "Why do auditors care about number series behaving as sequential and gap-free?", options: ["It makes reports load faster", "Unexplained gaps in a numbering scheme invite questions during an audit", "It is only a cosmetic preference", "It reduces storage costs"], correct: 1 },
+      { q: "Why give each document type — sales invoices, credit memos, vendor documents — its own number series?", options: ["Business Central requires it technically", "It reduces the number of digits needed", "Shared numbering makes documents harder to identify and gaps impossible to distinguish from normal interleaving", "It allows numbers to be reused across document types"], correct: 2 },
+      { q: "What four things define a number series?", options: ["Name, owner, department, and status", "A user, a permission set, and a role center", "A currency, a language, and two dates", "A code, a starting number, an ending number, and a format"], correct: 3 }
+    ]
+  },
+
+  "bcs-04": {
+    pass: 2,
+    questions: [
+      { q: "A client wants a separate G/L account for each of their five regions. What should you advise instead?", options: ["Create the five accounts as requested", "Disable regional reporting entirely", "Use a REGION dimension instead, which gives the same reporting split without multiplying the chart of accounts", "Use five separate companies"], correct: 2 },
+      { q: "What is the naive fix for tracking spend by department that dimensions are meant to avoid?", options: ["Creating a separate account for every department/account combination", "Assigning a unique currency per department", "Requiring manual journal entries for every department", "Removing departmental reporting altogether"], correct: 3 },
+      { q: "Can a single transaction carry more than one dimension at a time?", options: ["Yes — a document can carry several dimensions at once, enabling multi-angle reporting from one posting", "No, only one dimension per document is allowed", "Only if approval workflows are disabled", "Only for sales documents, not purchases"], correct: 0 }
+    ]
+  },
+
+  "bcs-05": {
+    pass: 2,
+    questions: [
+      { q: "What are the three parts almost every approval workflow is built from?", options: ["A user, a permission, and a role", "A page, a table, and a codeunit", "A dimension, a posting group, and a number series", "A trigger, a condition, and a response"], correct: 3 },
+      { q: "What happens if an approval threshold is set too low?", options: ["Approvers get flooded with routine requests and start rubber-stamping, turning control into theatre", "Approvals become faster and more accurate", "The workflow stops functioning entirely", "It automatically raises itself over time"], correct: 0 },
+      { q: "What is the main design decision that determines whether a workflow adds real control or just a bottleneck?", options: ["The number of approval chains", "The threshold at which approval is required", "The user's Role Center", "The permission set assigned"], correct: 1 }
+    ]
+  },
+
+  "bcs-06": {
+    pass: 2,
+    questions: [
+      { q: "How do multiple permission sets assigned to one user combine?", options: ["They combine additively — the main source of accidental over-permissioning", "Only the most restrictive set applies", "Only the most recently assigned set applies", "They must be identical to combine at all"], correct: 0 },
+      { q: "Why is permission design described as partly a usability concern, not just a security one?", options: ["Because permissions never affect what a user can see", "Because menus and pages a user can't act on still occupy their attention, so removing them eases the learning curve", "Because permission sets are the only way to change a Role Center", "Because usability has no relationship to access control"], correct: 1 },
+      { q: "What determines a user's home screen and shapes their whole experience of the system?", options: ["Their assigned number series", "Their fiscal year setting", "Their Role Center", "Their dimension values"], correct: 2 }
+    ]
+  },
+
+  "bcs-07": {
+    pass: 2,
+    questions: [
+      { q: "Why does RapidStart come last in the BC Setup sequence?", options: ["It is the easiest lesson and works well as a warm-down", "Migration validates against everything configured in the previous six lessons", "Data migration has no dependency on prior configuration", "It must be done before posting groups are set up"], correct: 1 },
+      { q: "Why does RapidStart validate incoming data against configuration rather than just loading it?", options: ["Validation is optional and rarely used", "It speeds up the import process", "Loading unvalidated data creates records that exist but can't be transacted against, like customers with no posting group", "It replaces the need for number series"], correct: 2 },
+      { q: "What is a configuration package built against?", options: ["A random sample of test data", "The user's permission set", "The client's previous ERP system directly", "A template for each table to be migrated, such as customers, vendors, or items"], correct: 3 }
+    ]
+  },
+
+  "wbc-01": {
+    pass: 2,
+    questions: [
+      { q: "Why are the costs of staying with the current system described as 'hidden, not absent'?", options: ["They don't actually exist", "They are only visible to auditors", "They don't appear as a line item — lost hours, stale decisions, missed opportunities — which is why they persist", "They only apply to large companies"], correct: 2 },
+      { q: "What is the risk of leading a pitch with a dramatic industry statistic instead of the client's own numbers?", options: ["Statistics are always inaccurate", "Clients cannot understand percentages", "It takes too long to present", "It invites scepticism about the source and shifts focus away from the client's own situation"], correct: 3 },
+      { q: "How should you respond to 'we manage fine today'?", options: ["Point out that managing fine at current scale isn't evidence of managing fine at planned scale", "Agree and move to a different topic", "Insist the client is wrong", "Offer a discount immediately"], correct: 0 }
+    ]
+  },
+
+  "wbc-02": {
+    pass: 2,
+    questions: [
+      { q: "Why does the scalability argument land hardest with businesses that have already outgrown one system?", options: ["They have unlimited budgets", "They have no current spreadsheets", "They dislike Microsoft products less", "If they've done a painful migration before, they already know the cost being described"], correct: 3 },
+      { q: "What does 'scaling' mean in the Business Central context described here?", options: ["Adding users, companies and countries without replacing the platform", "Buying a bigger server", "Migrating to a new ERP every few years", "Reducing headcount as the company grows"], correct: 0 },
+      { q: "Why is this argument weaker with a stable, non-growing business?", options: ["Because stable businesses never have IT problems", "Because the premise is future scale, so visibility or consolidation arguments fit a present-tense problem better", "Because stable businesses cannot afford Business Central", "Because growth arguments only work for manufacturers"], correct: 1 }
+    ]
+  },
+
+  "wbc-03": {
+    pass: 2,
+    questions: [
+      { q: "How do you test whether a client's existing 'integration' between systems is real?", options: ["Ask about latency and failure — is it real-time or batch, and how quickly does anyone notice a sync failure", "Ask how much it costs per month", "Ask how many systems are involved", "Ask which vendor built it"], correct: 0 },
+      { q: "Why is the consolidation argument described as the one 'least likely to need explaining'?", options: ["Because it is the most technical argument", "Because most clients recognise the fragmented-numbers problem immediately from their own board meetings", "Because it only applies to finance teams", "Because it requires no examples to support it"], correct: 1 },
+      { q: "What is the fragmentation symptom this lesson describes?", options: ["Too many users having admin access", "Reports taking too long to generate", "Finance, sales and inventory in separate tools producing three versions of the same number, none agreeing", "Approval workflows being too strict"], correct: 2 }
+    ]
+  },
+
+  "wbc-04": {
+    pass: 2,
+    questions: [
+      { q: "Which buyer persona does the 'Backed by Microsoft' argument suit best?", options: ["The end user who logs in daily", "The risk-averse buyer, often a CFO or board sponsor, who cares about not having chosen wrong", "The warehouse operator", "The AL developer building extensions"], correct: 1 },
+      { q: "What is described as the clearest current evidence of Microsoft's continued investment in the platform?", options: ["A lower subscription price", "A redesigned company logo", "AI capability arriving as part of the platform rather than a separate purchase", "Reduced customer support hours"], correct: 2 },
+      { q: "What is this argument fundamentally about, according to the lesson?", options: ["Feature comparison against competitors", "The speed of data migration", "The cost of implementation services", "De-risking a decision the buyer will be held responsible for years later"], correct: 3 }
+    ]
+  },
+
+  "wbc-05": {
+    pass: 2,
+    questions: [
+      { q: "Why is 'the implementation question' the weakest argument to open with but the strongest to close on?", options: ["It's technical and confusing early on", "It's the least persuasive argument overall", "Opening with it presumes a decision the client hasn't made yet; closing addresses the decision they're actually about to make", "It only applies to large enterprise clients"], correct: 2 },
+      { q: "Why is this lesson described as the point where Talan, not the product, becomes the differentiator?", options: ["Because Business Central features are identical everywhere", "Because it is unrelated to the sales conversation", "Because it discusses pricing exclusively", "Because it's the only argument a competitor selling the same product cannot make identically"], correct: 3 },
+      { q: "What does a good implementation partner deliver, per this lesson?", options: ["An implementation starting from the client's actual processes, trained staff at go-live, and ongoing support", "A template-based rollout applied to every client identically", "A discount on the software license", "A fixed six-month timeline regardless of scope"], correct: 0 }
+    ]
+  },
+
+  "ind-01": {
+    pass: 2,
+    questions: [
+      { q: "Why should a manufacturing demo lead with production orders rather than financials?", options: ["Because manufacturers don't use financial modules", "Because financials are not included in BC for manufacturers", "Because production orders are easier to demo", "Because the evaluator is usually an operations lead who is testing production capability, not financial capability"], correct: 3 },
+      { q: "What pain point does this lesson describe around bills of materials?", options: ["BOMs that do not match what is actually on hand", "BOMs are too expensive to maintain", "BOMs cannot include sub-assemblies", "BOMs require a separate license"], correct: 0 },
+      { q: "What is the proof point this lesson recommends showing manufacturers?", options: ["A generic sales dashboard", "Real-time visibility from raw materials to finished goods, with Power BI for analysis on top", "A discount comparison chart", "An HR onboarding workflow"], correct: 1 }
+    ]
+  },
+
+  "ind-02": {
+    pass: 2,
+    questions: [
+      { q: "What single metric usually resonates most with a distributor, according to this lesson?", options: ["Inventory accuracy — the upstream cause of both stockouts and overstock", "Number of employees", "Office square footage", "Number of sales reps"], correct: 0 },
+      { q: "What is the pain vocabulary described for distribution?", options: ["Too many customer service agents", "Inventory counts already wrong by the time anyone checks, and orders bouncing between disconnected systems", "Excessive automation reducing jobs", "Overly complex financial reporting"], correct: 1 },
+      { q: "What two 'currencies' should the value of Business Central be framed in for distributors?", options: ["Time and headcount", "Marketing spend and ad clicks", "Lost sales (stockouts) and trapped cash (overstock)", "Server cost and licensing fees"], correct: 2 }
+    ]
+  },
+
+  "ind-03": {
+    pass: 2,
+    questions: [
+      { q: "Why is Professional Services particularly receptive to the Project Management module?", options: ["Because they have the largest IT budgets", "Because in services, the project is the product — project costing is the core operational and financial record", "Because they don't use inventory management", "Because their employees work remotely"], correct: 1 },
+      { q: "What is described as the largest and quietest source of margin loss in services businesses?", options: ["Office overhead", "Vendor pricing disputes", "Unbilled work", "Currency exchange fluctuations"], correct: 2 },
+      { q: "What pain point does this lesson describe about time tracking?", options: ["Time is tracked accurately but too slowly", "Time tracking requires a separate ERP license", "Time tracking is not needed in services", "Time is tracked in one tool and billed from another, with budgets discovered blown after the invoice went out"], correct: 3 }
+    ]
+  },
+
+  "ind-04": {
+    pass: 2,
+    questions: [
+      { q: "Why does channel inconsistency cost more in retail than in other verticals, per this lesson?", options: ["Retail has more employees per store", "Retail margins are inherently lower", "The error is discovered by the customer, in the moment, costing both the sale and the trust", "Retail requires more warehouse space"], correct: 2 },
+      { q: "What pain point does this lesson describe about in-store and online inventory?", options: ["They are always perfectly synchronized", "In-store inventory is tracked manually only", "Online inventory is never tracked", "They do not match, and promotions are applied inconsistently across channels"], correct: 3 },
+      { q: "Which Power Platform tool does this lesson mention for in-store and mobile interfaces?", options: ["Power Apps", "Power Automate", "Power BI", "Copilot Studio"], correct: 0 }
+    ]
+  },
+
+  "al-01": {
+    pass: 2,
+    questions: [
+      { q: "Why does an extension never modify the base application in Business Central?", options: ["Because AL does not support editing existing code", "Because base objects are encrypted", "Because Microsoft charges extra for base modifications", "This constraint is what keeps upgrades safe"], correct: 3 },
+      { q: "What is the practical difference between app.json and launch.json?", options: ["app.json describes and ships with the extension; launch.json is local config describing where to deploy", "They are two names for the same file", "launch.json ships with the extension; app.json is local-only", "app.json is only used for testing"], correct: 0 },
+      { q: "What three pieces of tooling does the lesson say are needed to start an AL project?", options: ["Visual Studio, .NET SDK, and a production tenant", "VS Code, the AL Language extension, and a sandbox environment", "Azure DevOps, Docker, and a license key", "Excel, Power BI, and a database admin account"], correct: 1 }
+    ]
+  },
+
+  "al-02": {
+    pass: 2,
+    questions: [
+      { q: "Why should a total-calculation routine live in a codeunit rather than directly on a page?", options: ["So it can be reused from other pages, a job queue, or a report, and can be unit-tested independently", "Codeunits run faster than pages", "Pages cannot contain any logic at all", "Codeunits do not require compilation"], correct: 0 },
+      { q: "What is the relationship between a page and its source table?", options: ["A page owns the data and the table only displays it", "A page presents the table's data; it does not own it", "Pages and tables are unrelated objects", "A page must have multiple source tables"], correct: 1 },
+      { q: "Which AL object type is responsible for producing output like PDFs or Excel files?", options: ["Tables", "Pages", "Reports", "Codeunits"], correct: 2 }
+    ]
+  },
+
+  "al-03": {
+    pass: 2,
+    questions: [
+      { q: "Why is Code[20] often preferred over Text[20] for identifiers?", options: ["Code fields support more characters", "Code auto-uppercases and trims, so 'ABC' and 'abc' don't become two different records", "Text fields cannot be indexed", "Code fields are faster to render on pages"], correct: 1 },
+      { q: "What is safe to change about a table field, and what is not?", options: ["Renumbering is safe; renaming is not", "Both renaming and renumbering are always safe", "Renaming is safe; renumbering is not, since the ID is permanent", "Neither renaming nor renumbering is ever safe"], correct: 2 },
+      { q: "Why does table design carry more risk than page design?", options: ["Tables cannot be modified after creation under any circumstance", "Table design does not affect performance", "Pages have no risk associated with changes", "Changing a type or key on a table holding production data is a migration, unlike adding a field to a page"], correct: 3 }
+    ]
+  },
+
+  "al-04": {
+    pass: 2,
+    questions: [
+      { q: "Why should an action's logic live in a codeunit rather than directly in its OnAction trigger?", options: ["Actions cannot contain any code", "OnAction triggers execute too slowly", "So it can be reused from other pages, called from a job queue, and tested — the trigger should call, not implement", "Codeunits are required for all page objects"], correct: 2 },
+      { q: "What is the difference between a list page and a card page?", options: ["List pages are for editing one record deeply; card pages are for scanning many", "Card pages cannot contain actions", "There is no functional difference between them", "List pages are built for scanning and comparing many records; card pages are built for reading and editing one record thoroughly"], correct: 3 },
+      { q: "What is a FactBox used for?", options: ["Showing related information alongside the main form without cluttering it", "Replacing the main repeater on a list page", "Storing table keys", "Defining page permissions"], correct: 0 }
+    ]
+  },
+
+  "al-05": {
+    pass: 2,
+    questions: [
+      { q: "Two extensions subscribe to the same base event. What happens?", options: ["Only the first-installed extension's subscriber runs", "The base event is disabled", "Business Central throws a compile error", "Both run independently, since neither modified the base code, so neither conflicts with the other"], correct: 3 },
+      { q: "Why are event subscribers described as what makes 'extend, never modify' practical?", options: ["They let code react to base application events without modifying the code that raised them", "They allow direct edits to base code with automatic version tracking", "They eliminate the need for codeunits entirely", "They only work with API pages"], correct: 0 },
+      { q: "In the page-and-codeunit relationship, what is each responsible for?", options: ["The page computes; the codeunit collects input and displays results", "The page collects input and displays results; the codeunit does the work", "Both are responsible for identical tasks", "Codeunits handle display; pages handle computation"], correct: 1 }
+    ]
+  },
+
+  "al-06": {
+    pass: 2,
+    questions: [
+      { q: "A user wants the same report in summary and detailed versions. What is the efficient approach, assuming no extra fields are needed?", options: ["Use one dataset with two layouts", "Build two entirely separate reports", "Duplicate the dataset but share the layout", "Use a query object instead of a report"], correct: 0 },
+      { q: "What is the benefit of separating a report's dataset from its layout?", options: ["It makes reports run faster in all cases", "A formatting change never risks the data logic, and a data change doesn't require redesigning the document", "It removes the need for a request page", "It allows reports to skip the compiler validation step"], correct: 1 },
+      { q: "What is the purpose of the request page in a report?", options: ["To define which fields appear in the dataset permanently", "To render the final PDF output", "To let the user choose filters before running, preventing reports from running with unwanted scope", "To store report permissions"], correct: 2 }
+    ]
+  },
+
+  "al-07": {
+    pass: 2,
+    questions: [
+      { q: "Why does the version number in app.json matter beyond record-keeping?", options: ["It only affects the displayed extension name", "Upgrade codeunits are triggered by version transitions — an unchanged version means upgrade logic won't run", "It determines the extension's object ID range", "It has no functional effect on deployment"], correct: 1 },
+      { q: "Why is publishing to sandbox before production described as non-optional discipline?", options: ["Sandbox environments are required by Microsoft licensing", "Sandbox publishing is faster than production publishing", "It's where you find problems unit tests do not catch, before they reach production", "Production environments do not support AL extensions"], correct: 2 },
+      { q: "What compiles all of a developer's AL objects into a single deployable unit?", options: ["A launch.json file", "A permission set", "An XMLport", "A .app file, produced only after the compiler validates the code"], correct: 3 }
+    ]
+  },
+
+  "al-m1": {
+    pass: 2,
+    questions: [
+      { q: "Why is a missing Reset() call on a record variable dangerous rather than merely untidy?", options: ["It causes a compile error", "It slows down FindSet() significantly", "Filters persist on the variable, so the next operation can silently inherit them and process the wrong subset", "It deletes previously applied filters automatically"], correct: 2 },
+      { q: "What is the practical difference between Rec.Quantity := 5 and Rec.Validate(Quantity, 5)?", options: ["They are functionally identical", "Validate() is slower but otherwise identical", "Direct assignment is only allowed on primary key fields", "Validate() runs the field's dependent business logic; direct assignment skips validation entirely"], correct: 3 },
+      { q: "When should you use FindSet() instead of FindFirst()?", options: ["When you intend to loop through a set of records — it's optimised for that", "When you only need the first matching record", "When filtering is not required", "FindSet() and FindFirst() behave identically"], correct: 0 }
+    ]
+  },
+
+  "al-m2": {
+    pass: 2,
+    questions: [
+      { q: "Why should you check the return value of Evaluate()?", options: ["Evaluate() always throws an error on invalid input, so checking is redundant", "Evaluate() has no return value", "The return value indicates which data type was parsed", "It returns false on failure rather than raising an error, so ignoring it can silently produce a zero or blank value"], correct: 3 },
+      { q: "Why is CalcDate('+1M', Today()) preferable to manual date arithmetic?", options: ["It expresses intent clearly and handles month-length edge cases correctly", "It runs faster than manual arithmetic", "It is the only way to add days to a date in AL", "Manual arithmetic is not supported in AL"], correct: 0 },
+      { q: "What is the benefit of normalising text case before comparison?", options: ["It makes strings shorter", "It prevents a whole class of matching bugs caused by inconsistent formatting", "It is required for all Code fields", "It automatically translates text to another language"], correct: 1 }
+    ]
+  },
+
+  "al-m3": {
+    pass: 2,
+    questions: [
+      { q: "When should validation logic use Error() rather than Message()?", options: ["Always, when the condition should prevent the operation — Message() lets the process continue with invalid state committed", "Only when performance is a concern", "Never — Message() is always preferred for validation", "Only inside test codeunits"], correct: 0 },
+      { q: "Why is Error() described as 'transactional'?", options: ["It logs errors to a separate transactional table", "It doesn't just display text — it aborts the transaction entirely", "It only works within a database transaction block", "It requires a Confirm() call first"], correct: 1 },
+      { q: "What is a legitimate use case for Sleep() according to the lesson?", options: ["Standard business logic validation", "Formatting decimal values", "Testing and pacing external calls — it has almost no place in normal business logic since it blocks execution", "Confirming user actions"], correct: 2 }
+    ]
+  },
+
+  "al-b01": {
+    pass: 2,
+    questions: [
+      { q: "Why is a Role Center considered a usability feature rather than a cosmetic one?", options: ["It only changes the color scheme of the interface", "It determines what a user sees first every day, reducing what they must navigate past", "It has no measurable effect on adoption", "It replaces the need for permission sets"], correct: 1 },
+      { q: "What does switching a user's assigned profile do?", options: ["Nothing visible changes for the user", "It changes the user's permission set automatically", "It re-tunes tiles, actions and navigation for that role — a sales user and warehouse user share almost no screen", "It only affects report layouts"], correct: 2 },
+      { q: "Which area of a Role Center page holds quick actions?", options: ["area(RoleCenter)", "area(FactBoxes)", "area(Embedded)", "area(Processing)"], correct: 3 }
+    ]
+  },
+
+  "al-b02": {
+    pass: 2,
+    questions: [
+      { q: "Why is defining permission sets in AL preferable to configuring them in the UI?", options: ["AL-defined permission sets run faster", "UI-configured permissions cannot be assigned to users", "They become part of the deployable artefact — versioned, reviewable, and identical across every environment", "AL permission sets do not require the RIMD model"], correct: 2 },
+      { q: "What does RIMD stand for in the permission model?", options: ["Read, Import, Modify, Delete", "Read, Index, Merge, Delete", "Register, Insert, Manage, Deploy", "Read, Insert, Modify, Delete"], correct: 3 },
+      { q: "What does IncludedPermissionSets allow a new permission set to do?", options: ["Build on an existing permission set, keeping sets maintainable as the base application changes", "Automatically grant admin rights", "Bypass RIMD restrictions", "Skip the Assignable property"], correct: 0 }
+    ]
+  },
+
+  "al-b03": {
+    pass: 2,
+    questions: [
+      { q: "What breaks if you renumber an existing enum value?", options: ["Nothing — enum numbers are cosmetic", "Only new records are affected", "The enum becomes non-extensible", "Stored data — records hold the number, so renumbering silently reassigns existing records to a different meaning"], correct: 3 },
+      { q: "What problem do enums solve compared to a free-text status field?", options: ["They prevent typos and variants like 'Completed', 'completed', and 'compleeted' becoming distinct values", "They make status fields searchable", "They remove the need for a caption", "They automatically translate values"], correct: 0 },
+      { q: "What does setting Extensible = true on an enum allow?", options: ["Any user to add new values at runtime", "Another extension to add new values without modifying the original enum", "The enum to be renumbered safely", "The enum to skip compilation checks"], correct: 1 }
+    ]
+  },
+
+  "al-b04": {
+    pass: 2,
+    questions: [
+      { q: "How does an interface differ from an event subscriber as an extension mechanism?", options: ["An event lets others react after something happens; an interface lets others substitute how something is done", "They are functionally identical", "Interfaces can only be used with tables", "Event subscribers can only be used with pages"], correct: 0 },
+      { q: "What problem do interfaces solve compared to a growing chain of if/else branches?", options: ["They make code run faster", "Each new variant (shipping method, payment type) can implement the interface independently, without adding another branch to shared logic", "They eliminate the need for codeunits", "They automatically generate documentation"], correct: 1 },
+      { q: "What does an interface declare?", options: ["Full implementation logic for every method", "A default set of field values", "Procedure signatures with no implementation — any implementing codeunit must provide those procedures", "A specific table's structure"], correct: 2 }
+    ]
+  },
+
+  "al-b05": {
+    pass: 2,
+    questions: [
+      { q: "Why does a test with no assertion count as a liability rather than simply useless?", options: ["It fails to compile", "It passes unconditionally, reporting confidence it hasn't earned, and will keep passing after the code breaks", "It slows down the build pipeline significantly", "It cannot be run automatically"], correct: 1 },
+      { q: "What is the 'arrange, act, assert' pattern?", options: ["A deployment pipeline sequence", "A three-step approval workflow", "Set up the data, run the operation, then check the outcome — the shape of a well-written test", "A method for structuring page layouts"], correct: 2 },
+      { q: "What is the long-term value of automated tests, beyond catching today's bug?", options: ["They replace the need for code review", "They automatically fix any code that breaks", "They eliminate the need for a sandbox environment", "Being able to change code later and know within seconds whether anything broke"], correct: 3 }
+    ]
+  },
+
+  "al-b06": {
+    pass: 2,
+    questions: [
+      { q: "Why expose an API page rather than granting direct database access?", options: ["Direct database access is not technically possible", "API pages are always faster than direct access", "The API is a versioned contract with controlled fields and enforced business logic, unlike raw database access", "API pages do not require authentication"], correct: 2 },
+      { q: "What determines the URL that external systems use to call an API page?", options: ["The table's primary key", "The extension's version number", "The page's caption", "Properties like APIPublisher, APIGroup, EntityName and EntitySetName"], correct: 3 },
+      { q: "Which standard verb is used to update an existing record via an API page?", options: ["PATCH", "POST", "GET", "DELETE"], correct: 0 }
+    ]
+  },
+
+  "al-b07": {
+    pass: 2,
+    questions: [
+      { q: "Why mark a field Obsolete rather than deleting it outright?", options: ["Obsolete fields are automatically hidden from all pages", "Obsolete fields no longer take up database space", "Deleting fields is technically impossible in AL", "Dependent extensions compile against it, so Obsolete gives them a deprecation warning instead of a sudden failure"], correct: 3 },
+      { q: "What runs automatically, once, at install time to carry live data forward?", options: ["An upgrade codeunit with OnUpgradePerCompany or OnUpgradePerRecord triggers", "A test codeunit", "A report request page", "A permission set"], correct: 0 },
+      { q: "Which kind of table change is considered safe for existing extensions?", options: ["Removing a field", "Adding a field", "Retyping a field", "Renumbering a field"], correct: 1 }
+    ]
+  },
+
+  "al-b08": {
+    pass: 2,
+    questions: [
+      { q: "When should you prefer a query object over nested FindSet loops?", options: ["Whenever you are joining tables to produce aggregates — the database performs aggregation once instead of AL iterating every row", "Only when working with a single table", "Queries should never be used instead of FindSet loops", "Only for report objects, never for pages"], correct: 0 },
+      { q: "How does a query object handle joining multiple tables?", options: ["It requires manual AL loop code for each join", "Nested dataitems define the relationship, and the platform handles the join", "Joins are not supported in query objects", "It calls a separate codeunit for each table"], correct: 1 },
+      { q: "Which column methods does a query use to compute totals?", options: ["Validate, Insert, Modify", "FindSet, FindFirst, Next", "Sum, Count, Average, Min, Max", "SetRange, SetFilter, Reset"], correct: 2 }
+    ]
+  },
+
+  "al-b09": {
+    pass: 2,
+    questions: [
+      { q: "Why is an XMLport preferable to a one-off import script?", options: ["XMLports run faster than any script", "It's a versioned object in the extension, re-runnable, and validates through the same field logic as any other write", "One-off scripts cannot read external files", "XMLports do not require field mapping"], correct: 1 },
+      { q: "Can the same XMLport object handle both import and export?", options: ["No, separate objects are always required", "Only if two XMLports are linked together", "Yes — direction is a runtime choice, not a separate object", "Only for table data, not text files"], correct: 2 },
+      { q: "What defines how external file structure maps onto Business Central fields in an XMLport?", options: ["The launch.json file", "Permission sets", "The app.json dependencies array", "textelement and tableelement definitions"], correct: 3 }
+    ]
+  },
+
+  "al-b10": {
+    pass: 2,
+    questions: [
+      { q: "Why does declaring a minimum version matter more than simply declaring a dependency?", options: ["Minimum versions are only used for display purposes", "It reduces the extension's file size", "The dependency will usually already be present; the version guarantees the specific objects and events you compiled against actually exist", "It removes the need for an app.json"], correct: 2 },
+      { q: "In the extension layer stack, which direction do dependencies flow?", options: ["Upward — extensions depend on layers above them", "There is no fixed direction", "Dependencies can flow in either direction freely", "Downward — each layer depends on the one beneath it, never upward"], correct: 3 },
+      { q: "What happens if an installed dependency is older than the declared minimum version?", options: ["Installation fails, rather than producing runtime errors later", "The extension installs but with reduced functionality", "The dependency is automatically upgraded", "Nothing — version numbers are advisory only"], correct: 0 }
+    ]
+  },
+
+  "al-b11": {
+    pass: 2,
+    questions: [
+      { q: "What is the advantage of using breakpoints and the debugger over inserting Message() calls to trace behaviour?", options: ["Message() calls are faster to write and just as effective", "Message() calls cannot display variable values", "Debuggers are required by Business Central for all deployments", "No code change or risk of shipping the trace, full state visibility, and the ability to change what you inspect without restarting"], correct: 3 },
+      { q: "What does Step Into do during a debugging session?", options: ["Enters a called procedure so you can inspect it", "Runs the next line without entering any called procedure", "Skips the next line entirely", "Returns execution to the calling procedure"], correct: 0 },
+      { q: "What is the purpose of the watch panel?", options: ["To list all breakpoints in the project", "To show variable values updating as execution proceeds, revealing where a value first becomes wrong", "To display the app.json dependencies", "To show compile errors only"], correct: 1 }
+    ]
+  },
+
+  "al-b12": {
+    pass: 2,
+    questions: [
+      { q: "Why is 'fix and move on' considered insufficient for a performance issue?", options: ["The fix is a hypothesis — re-measuring is what verifies it actually improved things, and sometimes reveals the bottleneck was elsewhere", "Fixes are always temporary in Business Central", "Performance issues cannot be fixed without a support ticket", "Telemetry data is deleted after each fix"], correct: 0 },
+      { q: "What does Business Central emit that can be collected and queried for monitoring?", options: ["Only error logs", "Telemetry signals — errors, slow operations, feature usage", "Source code diffs", "User permission changes only"], correct: 1 },
+      { q: "Why is telemetry particularly valuable for finding performance problems?", options: ["It automatically fixes the problems it finds", "It replaces the need for a sandbox environment", "Production performance issues are rarely reproducible on demand, so telemetry finds them without waiting for a user report", "It only works for report objects"], correct: 2 }
+    ]
+  },
+
+  "al-b13": {
+    pass: 2,
+    questions: [
+      { q: "What is the maintenance consideration that comes with using a ControlAddIn?", options: ["ControlAddIns cannot be updated once deployed", "You now own web code inside the extension — browser compatibility, library updates, and security become your responsibility", "ControlAddIns bypass Business Central's security model entirely", "They require a separate hosting server outside Business Central"], correct: 1 },
+      { q: "How does AL communicate with JavaScript in a ControlAddIn, and vice versa?", options: ["Only AL can call JavaScript; JavaScript cannot call back", "Communication happens only through shared database tables", "AL calls into JavaScript through defined procedures; JavaScript raises events back into AL through EventTrigger procedures", "ControlAddIns do not support two-way communication"], correct: 2 },
+      { q: "When would a developer reach for a ControlAddIn?", options: ["For any standard list or card page", "To define a new table's fields", "To replace a codeunit's business logic", "When standard page controls run out — for things like signature capture or interactive maps"], correct: 3 }
+    ]
+  },
+
+  "al-b14": {
+    pass: 2,
+    questions: [
+      { q: "What happens to fields you add via tableextension when Microsoft updates the base table?", options: ["Your fields are lost and must be re-added", "The base update fails until you remove your fields", "Nothing — they live in your extension, keyed to the base record, so the base update applies cleanly", "Your fields are merged into the base table automatically"], correct: 2 },
+      { q: "Why can't you edit Microsoft's base tables and pages directly?", options: ["It's a licensing restriction, not a technical one", "Base objects can be edited, but only by certified partners", "Editing base objects requires a special developer key", "Base objects are not editable, which is what makes Microsoft's updates safe to apply"], correct: 3 },
+      { q: "What does pageextension use to position added fields and actions precisely?", options: ["addafter, addbefore, addfirst or addlast", "SetRange and SetFilter", "Validate and TestField", "IncludedPermissionSets"], correct: 0 }
+    ]
+  },
+
+  "al-b15": {
+    pass: 2,
+    questions: [
+      { q: "A FlowField shows zero even though related records exist. What is the likely cause?", options: ["The CalcFormula is written incorrectly by default", "The table has too many records", "The field's MinValue is set too high", "CalcFields() was not called — FlowFields aren't calculated on a plain Get or FindSet"], correct: 3 },
+      { q: "What problem do FlowFields eliminate compared to a manually stored total?", options: ["The risk of the stored value drifting out of sync when an update path is missed", "The need for any keys on the table", "The need for a primary key", "The need for validation on the source field"], correct: 0 },
+      { q: "What does a FlowFilter do?", options: ["Permanently changes the FlowField's CalcFormula", "Narrows the FlowField calculation at runtime, like a date range, without changing the formula itself", "Converts a FlowField into a stored field", "Deletes records outside a specified range"], correct: 1 }
+    ]
+  },
+
+  "al-b16": {
+    pass: 2,
+    questions: [
+      { q: "What operational practice should always accompany a job queue entry?", options: ["A monitoring or alerting path for the Error status, since a failed job otherwise fails silently", "Running it manually once a week as a backup", "Disabling it after the first successful run", "Assigning it the highest possible permission set"], correct: 0 },
+      { q: "What statuses can a job queue entry report?", options: ["Only Success or Failure", "Ready, In Process, Success or Error, with the error message retained", "Pending, Approved, Rejected", "Draft, Published, Archived"], correct: 1 },
+      { q: "Why is background scheduling described as where automation 'stops depending on a person remembering'?", options: ["Because job queues never fail", "Because it replaces the need for permission sets", "Because a recurring codeunit runs automatically on its defined schedule rather than needing someone to trigger it manually", "Because it eliminates the need for telemetry"], correct: 2 }
+    ]
+  },
+
+  "al-w1": {
+    pass: 2,
+    questions: [
+      { q: "Why is a narrowly scoped branch easier to revert than a broad one?", options: ["Narrow branches cannot contain bugs", "Reverting it removes exactly one change, while a branch with three unrelated fixes can't be partially undone easily", "Narrow branches don't require code review", "Git only allows reverting single-purpose branches"], correct: 1 },
+      { q: "What does reading the ticket's title, description and acceptance criteria properly achieve?", options: ["It replaces the need for a pull request", "It automatically creates the branch name", "It defines what 'done' means, which is faster than discovering the requirement during code review", "It is only useful for large tickets"], correct: 2 },
+      { q: "What does linking a branch to its work item in Azure DevOps provide?", options: ["Automatic code review approval", "Automatic deployment to production", "A guarantee the branch has no conflicts", "Traceability from requirement to commit without maintaining it manually"], correct: 3 }
+    ]
+  },
+
+  "al-w2": {
+    pass: 2,
+    questions: [
+      { q: "Why does infrequent syncing with main create disproportionate work when conflicts arise?", options: ["Git punishes long-lived branches with slower performance", "Old branches automatically lose their commit history", "Conflicts compound — resolving three weeks of divergence requires understanding changes you weren't involved in, unlike one day's worth", "Syncing frequency has no effect on conflict difficulty"], correct: 2 },
+      { q: "Why does straying outside an assigned object ID range cause problems?", options: ["It slows down compilation", "It only affects table objects, not pages", "It is blocked automatically by VS Code", "It produces collisions that are painful to resolve once objects exist in multiple environments"], correct: 3 },
+      { q: "What makes 'Add loyalty points calculation to Customer table' a better commit message than 'fixes'?", options: ["It explains the change without requiring the reader to open the diff", "It is shorter to type", "It automatically links to the work item", "Commit message length is enforced by Git"], correct: 0 }
+    ]
+  },
+
+  "al-w3": {
+    pass: 2,
+    questions: [
+      { q: "Why does the tone of code review comments materially affect code quality?", options: ["Tone has no real effect on the outcome", "Reviewers are required to be polite by policy", "Polite comments are processed faster by the CI pipeline", "Defensive authors defend rather than reconsider; curious framing produces changed code while adversarial framing produces justified code"], correct: 3 },
+      { q: "Why should automated checks run before a human reviewer looks at a pull request?", options: ["Reviewer time is expensive, so let the pipeline catch what it can first", "Automated checks replace the need for human review entirely", "Automated checks are required by Business Central licensing", "Human review is only needed if automated checks fail"], correct: 0 },
+      { q: "What is described as the true value of code review, beyond catching defects?", options: ["Reducing the number of commits per branch", "Spreading understanding of the codebase across the team", "Enforcing a consistent branch naming convention", "Eliminating the need for a QA environment"], correct: 1 }
+    ]
+  },
+
+  "git-01": {
+    pass: 2,
+    questions: [
+      { q: "What is the difference between a file being modified and being staged?", options: ["Modified means changed in the working directory; staged means marked for inclusion in the next commit", "They mean the same thing in Git", "Staged means already committed to history", "Modified files are automatically pushed to the remote"], correct: 0 },
+      { q: "What makes Git 'distributed', as described in the lesson?", options: ["Every commit is stored only on the remote server", "Your full history lives on your machine; the remote is a convention, not a requirement", "Multiple remotes are required for every repository", "Distributed means the same as staged"], correct: 1 },
+      { q: "Which command moves a change from the staging area into the permanent repository history?", options: ["git add", "git push", "git commit", "git pull"], correct: 2 }
+    ]
+  },
+
+  "git-02": {
+    pass: 2,
+    questions: [
+      { q: "Why is creating a branch inexpensive in Git?", options: ["Because branches are stored in a compressed format", "Because a branch is a pointer to a commit, not a copy of the files, so creating one is effectively instant", "Because Git limits the number of branches allowed", "Because branches share the same working directory automatically"], correct: 1 },
+      { q: "What happens when the same lines are changed on both branches being merged?", options: ["Git automatically picks the more recent change", "The merge silently fails with no explanation", "Git asks you to decide — this is a conflict, not an error", "Both changes are discarded automatically"], correct: 2 },
+      { q: "What does branching enable that would otherwise require coordination overhead?", options: ["Automatic code review", "Direct editing of the remote repository", "Elimination of the need for commits", "Parallel work by several people without stepping on each other"], correct: 3 }
+    ]
+  },
+
+  "git-03": {
+    pass: 2,
+    questions: [
+      { q: "What does git blame primarily help a developer find, despite its name?", options: ["Who to hold responsible for a bug", "The total number of changes to a file", "The commit — and therefore the message and linked work item — that explains why a line exists", "The current branch's merge status"], correct: 2 },
+      { q: "What does git diff show?", options: ["The list of all commits in chronological order", "The remote repository's URL", "Which files are currently staged", "What actually changed, line by line, between any two points in history"], correct: 3 },
+      { q: "Why does commit message quality matter for git log?", options: ["Log is the interface to commit history, so message quality determines how useful that history is", "Log entries are automatically translated for readability", "git log ignores commit messages entirely", "Poor messages cause git log to fail"], correct: 0 }
+    ]
+  },
+
+  "git-04": {
+    pass: 2,
+    questions: [
+      { q: "How does the lesson describe a merge conflict?", options: ["A failure that indicates broken code", "A sign that Git itself is malfunctioning", "An error that requires deleting one of the branches", "A question Git is asking, because it found the same lines changed on both branches and cannot know which is correct"], correct: 3 },
+      { q: "What do the <<<<<<<, ======= and >>>>>>> markers do in a conflicted file?", options: ["They delimit the two conflicting versions; resolution means editing to the final state and removing the markers", "They mark lines to be permanently deleted", "They indicate a syntax error in the code", "They are inserted automatically by a merge tool and never need removal"], correct: 0 },
+      { q: "Why do long-lived branches tend to produce worse conflicts?", options: ["Git slows down the longer a branch exists", "More divergence means more overlapping changes, requiring understanding of changes made by others over a longer period", "Long-lived branches are automatically deleted by Git", "Conflict size is unrelated to how long a branch has existed"], correct: 1 }
+    ]
+  },
+
+  "git-05": {
+    pass: 2,
+    questions: [
+      { q: "Why is rebasing a shared branch discouraged?", options: ["It rewrites commit history, so anyone who already pulled the old commits ends up with a divergent copy that's unpleasant to reconcile", "Rebase is slower than merge for large repositories", "Rebase cannot be undone under any circumstances", "Shared branches do not support rebase technically"], correct: 0 },
+      { q: "What does git stash do?", options: ["Permanently deletes uncommitted changes", "Temporarily shelves uncommitted changes so you can switch context, then restores them later", "Creates a new branch from the current changes", "Pushes uncommitted changes to the remote"], correct: 1 },
+      { q: "What does it usually mean if cherry-pick becomes a routine part of a team's workflow?", options: ["The team is using Git exactly as intended", "It means the team should rebase more often instead", "It's a warning sign that branches are scoped wrongly, since cherry-pick is best suited for occasional hotfixes", "It indicates the remote repository is misconfigured"], correct: 2 }
+    ]
+  }
+
+};

@@ -10,6 +10,8 @@ SERIES.forEach(s => s.lessons.forEach(l => {
   const extra = (typeof CODE_LIBRARY !== 'undefined' && CODE_LIBRARY[l.id]) || null;
   if (extra) l.samples = extra;
   else if (l.code) l.samples = [{ label: 'Example', lang: 'AL', src: l.code }];
+  const quiz = (typeof QUIZZES !== 'undefined' && QUIZZES[l.id]) || null;
+  if (quiz) l.quiz = quiz;
 }));
 
 const FLAT = [];
@@ -30,6 +32,9 @@ let me = null;
 let progress = new Set();
 let notes = {};
 let videos = {};
+let quizResults = {};
+let quizSelections = {};   // lessonId -> array of chosen option indices, in-progress attempt
+let watchedPct = 0;        // fraction of the current lesson's video watched this session
 let currentId = null;
 let filterTrack = 'all';
 let view = 'academy';   // 'academy' | 'admin'
@@ -82,6 +87,31 @@ const seriesProgress = s => {
   const done = s.lessons.filter(l => progress.has(l.id)).length;
   return { done, total: s.lessons.length, pct: s.lessons.length ? done / s.lessons.length : 0 };
 };
+
+/* ---------------- certificate ---------------- */
+async function downloadCertificate(code) {
+  const s = SERIES.find(x => x.code === code);
+  if (!s) return;
+  try {
+    const res = await fetch(API + '/api/certificate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ seriesTitle: s.title, lessonIds: s.lessons.map(l => l.id) })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Could not generate the certificate.');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${s.title.replace(/[^a-z0-9]+/gi, '-')}-certificate.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
 /* ---------------- video ---------------- */
 function toEmbed(url) {
@@ -242,7 +272,7 @@ function renderAuth(mode = 'login', message = '', tone = '') {
 
 function signOut(message) {
   token = null; me = null;
-  progress = new Set(); notes = {}; videos = {};
+  progress = new Set(); notes = {}; videos = {}; quizResults = {}; quizSelections = {};
   localStorage.removeItem('talan_token');
   renderAuth('login', message || '', message ? 'bad' : '');
 }
@@ -413,10 +443,12 @@ function renderHome() {
     <div class="home-tracks">
       ${SERIES.map(s => {
         const a = ACCENTS[s.accent], pr = seriesProgress(s);
+        const complete = pr.total > 0 && pr.done === pr.total;
         return `<button class="tcard" data-series-open="${s.code}">
           <span class="tcard-bar" style="background:${a.c}"></span>
           <span class="tcard-body"><h3>${esc(s.title)}</h3><p>${esc(s.desc)}</p>
-            <span class="aud">${TRACK_LABEL[s.track]} · ${esc(s.audience)}</span></span>
+            <span class="aud">${TRACK_LABEL[s.track]} · ${esc(s.audience)}</span>
+            ${complete ? `<span class="cert-badge" data-certificate="${s.code}">🎓 Download certificate</span>` : ''}</span>
           <span class="tcard-meta"><b>${pr.done}/${pr.total}</b><span>read</span></span></button>`;
       }).join('')}
     </div>
@@ -433,7 +465,9 @@ function renderLesson(id) {
 
   const prev = FLAT[idx - 1]?.series === s ? FLAT[idx - 1] : null;
   const next = FLAT[idx + 1]?.series === s ? FLAT[idx + 1] : null;
-  const done = progress.has(id);
+
+  watchedPct = 0;
+  if (l.quiz && !quizSelections[id]) quizSelections[id] = new Array(l.quiz.questions.length).fill(-1);
 
   el('viewRoot').innerHTML = `
   <div class="pane lesson">
@@ -473,6 +507,9 @@ function renderLesson(id) {
       <button class="reveal" data-reveal>Show the answer</button>
       <div class="check-a">${esc(l.check.a)}</div></div>
 
+    ${l.quiz ? `<div class="sec-label">Quiz</div>
+    <div id="quizBox">${quizHtml(l)}</div>` : ''}
+
     <div class="sec-label">Your notes</div>
     <div class="notes">
       <textarea id="noteArea" placeholder="Anything you want to remember — a client example, a gotcha, a question to raise.">${esc(notes[id] || '')}</textarea>
@@ -480,8 +517,7 @@ function renderLesson(id) {
     </div>
 
     <div class="lesson-foot">
-      <button class="markbtn ${done ? 'done' : ''}" id="markBtn">
-        <span class="box">${done ? '✓' : ''}</span>${done ? 'Completed' : 'Mark as read'}</button>
+      ${markBtnHtml(l)}
       <div class="nav-pair">
         <button class="navbtn" data-go="${prev ? prev.id : ''}" ${prev ? '' : 'disabled'}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
@@ -494,8 +530,50 @@ function renderLesson(id) {
   </div>`;
 
   renderSidebar();
+  attachVideoTracking();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   document.querySelector('.side-lesson.active')?.scrollIntoView({ block: 'nearest' });
+}
+
+function attachVideoTracking() {
+  const v = document.querySelector('#videoBox video');
+  if (!v) return;
+  v.addEventListener('timeupdate', () => {
+    if (v.duration) watchedPct = Math.max(watchedPct, v.currentTime / v.duration);
+  });
+}
+
+/* ---------------- quiz ---------------- */
+function markBtnHtml(l) {
+  const done = progress.has(l.id);
+  const locked = !!l.quiz && !done && !quizResults[l.id]?.passed;
+  return `<button class="markbtn ${done ? 'done' : ''}" id="markBtn" ${locked ? 'disabled' : ''}>
+    <span class="box">${done ? '✓' : ''}</span>${done ? 'Completed' : (locked ? 'Pass the quiz to continue' : 'Mark as read')}</button>`;
+}
+
+function quizHtml(l) {
+  const result = quizResults[l.id];
+  if (result) {
+    return `<div class="quiz">
+      <div class="quiz-result ${result.passed ? 'pass' : 'fail'}">
+        <span><b>${result.score}/${result.total}</b> correct — ${result.passed ? 'quiz passed' : 'not passed yet'}</span>
+        <button class="quiz-retry" data-quiz-retry="${l.id}">${result.passed ? 'Retake' : 'Try again'}</button>
+      </div>
+    </div>`;
+  }
+
+  const sel = quizSelections[l.id] || new Array(l.quiz.questions.length).fill(-1);
+  return `<div class="quiz">
+    <p class="quiz-sub">${l.quiz.questions.length} questions · need ${l.quiz.pass} correct to pass</p>
+    ${l.quiz.questions.map((qq, qi) => `
+      <div class="quiz-q">
+        <p class="quiz-qtext">${qi + 1}. ${esc(qq.q)}</p>
+        <div class="quiz-opts">${qq.options.map((opt, oi) => `
+          <button class="quiz-opt ${sel[qi] === oi ? 'sel' : ''}" data-quiz-pick="${qi}:${oi}">${esc(opt)}</button>`).join('')}
+        </div>
+      </div>`).join('')}
+    <button class="quiz-submit" data-quiz-submit="${l.id}" ${sel.includes(-1) ? 'disabled' : ''}>Submit answers</button>
+  </div>`;
 }
 
 /* ---------------- search ---------------- */
@@ -695,6 +773,13 @@ async function onAppClick(e) {
   const toggle = t.closest('[data-toggle]');
   if (toggle) return toggle.closest('.side-sec').classList.toggle('open');
 
+  const cert = t.closest('[data-certificate]');
+  if (cert) {
+    e.stopPropagation();
+    downloadCertificate(cert.dataset.certificate);
+    return;
+  }
+
   const openSeries = t.closest('[data-series-open]');
   if (openSeries) {
     const s = SERIES.find(x => x.code === openSeries.dataset.seriesOpen);
@@ -727,8 +812,51 @@ async function onAppClick(e) {
   const go = t.closest('[data-go]');
   if (go?.dataset.go) return renderLesson(go.dataset.go);
 
+  /* ---- quiz ---- */
+  const pick = t.closest('[data-quiz-pick]');
+  if (pick) {
+    const [qi, oi] = pick.dataset.quizPick.split(':').map(Number);
+    quizSelections[currentId][qi] = oi;
+    el('quizBox').innerHTML = quizHtml(LESSON_BY_ID[currentId]);
+    return;
+  }
+
+  const submit = t.closest('[data-quiz-submit]');
+  if (submit) {
+    const lessonId = submit.dataset.quizSubmit;
+    const l = LESSON_BY_ID[lessonId];
+    const sel = quizSelections[lessonId];
+    const score = l.quiz.questions.reduce((n, qq, i) => n + (sel[i] === qq.correct ? 1 : 0), 0);
+    const total = l.quiz.questions.length;
+    const passed = score >= l.quiz.pass;
+    quizResults[lessonId] = { score, total, passed };
+    el('quizBox').innerHTML = quizHtml(l);
+    if (lessonId === currentId) el('markBtn').outerHTML = markBtnHtml(l);
+    try {
+      await api(`/api/quiz/${encodeURIComponent(lessonId)}`, {
+        method: 'PUT', body: JSON.stringify({ score, total, passed })
+      });
+    } catch { /* optimistic; corrected on next load */ }
+    return;
+  }
+
+  const retry = t.closest('[data-quiz-retry]');
+  if (retry) {
+    const lessonId = retry.dataset.quizRetry;
+    delete quizResults[lessonId];
+    quizSelections[lessonId] = new Array(LESSON_BY_ID[lessonId].quiz.questions.length).fill(-1);
+    el('quizBox').innerHTML = quizHtml(LESSON_BY_ID[lessonId]);
+    if (lessonId === currentId) el('markBtn').outerHTML = markBtnHtml(LESSON_BY_ID[lessonId]);
+    return;
+  }
+
   if (t.closest('#markBtn')) {
+    const l = LESSON_BY_ID[currentId];
     const nowDone = !progress.has(currentId);
+    if (nowDone && videos[currentId]?.url && watchedPct < 0.8) {
+      const pct = Math.round(watchedPct * 100);
+      if (!confirm(`You've watched about ${pct}% of the video for this lesson. Mark it complete anyway?`)) return;
+    }
     nowDone ? progress.add(currentId) : progress.delete(currentId);
     renderLesson(currentId); renderOverall();
     try {
@@ -866,6 +994,7 @@ async function boot() {
     progress = new Set(state.progress);
     notes = state.notes;
     videos = state.videos;
+    quizResults = state.quizResults || {};
   } catch (err) {
     return; // signOut already handled inside api()
   }

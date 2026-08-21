@@ -66,6 +66,16 @@ CREATE TABLE IF NOT EXISTS videos (
 ALTER TABLE videos ALTER COLUMN url DROP NOT NULL;
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS storage_path TEXT;
 
+CREATE TABLE IF NOT EXISTS quiz_results (
+  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  lesson_id    TEXT NOT NULL,
+  score        INTEGER NOT NULL,
+  total        INTEGER NOT NULL,
+  passed       BOOLEAN NOT NULL,
+  completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, lesson_id)
+);
+
 CREATE TABLE IF NOT EXISTS audit_log (
   id         SERIAL PRIMARY KEY,
   actor_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -75,6 +85,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_progress_user ON progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_user ON quiz_results(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_status  ON users(status);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at DESC);
 `;
