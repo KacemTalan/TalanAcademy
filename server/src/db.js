@@ -55,12 +55,16 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 
 CREATE TABLE IF NOT EXISTS videos (
-  lesson_id  TEXT PRIMARY KEY,
-  url        TEXT NOT NULL,
-  label      TEXT NOT NULL DEFAULT '',
-  updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  lesson_id    TEXT PRIMARY KEY,
+  url          TEXT,
+  storage_path TEXT,
+  label        TEXT NOT NULL DEFAULT '',
+  updated_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE videos ALTER COLUMN url DROP NOT NULL;
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS storage_path TEXT;
 
 CREATE TABLE IF NOT EXISTS audit_log (
   id         SERIAL PRIMARY KEY,

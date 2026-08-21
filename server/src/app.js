@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import crypto from 'node:crypto';
 
 import { q, audit } from './db.js';
+import { createSignedUploadUrl, createSignedPlaybackUrl, removeVideo } from './storage.js';
 import {
   ALLOWED_DOMAIN, normaliseEmail, isAllowedEmail, passwordProblem,
   hashPassword, verifyPassword, signToken, publicUser,
@@ -180,13 +181,26 @@ app.get('/api/state', requireAuth, async (req, res) => {
   const [prog, notes, vids] = await Promise.all([
     q('SELECT lesson_id, completed_at FROM progress WHERE user_id = $1', [req.user.id]),
     q('SELECT lesson_id, body FROM notes WHERE user_id = $1', [req.user.id]),
-    q('SELECT lesson_id, url, label FROM videos')
+    q('SELECT lesson_id, url, storage_path, label FROM videos')
   ]);
+
+  const videos = await Promise.all(vids.rows.map(async (r) => {
+    if (r.storage_path) {
+      try {
+        const url = await createSignedPlaybackUrl(r.storage_path);
+        return [r.lesson_id, { url, label: r.label }];
+      } catch (err) {
+        console.error('signed url failed for', r.lesson_id, err.message);
+        return [r.lesson_id, { url: null, label: r.label }];
+      }
+    }
+    return [r.lesson_id, { url: r.url, label: r.label }];
+  }));
 
   res.json({
     progress: prog.rows.map(r => r.lesson_id),
     notes: Object.fromEntries(notes.rows.map(r => [r.lesson_id, r.body])),
-    videos: Object.fromEntries(vids.rows.map(r => [r.lesson_id, { url: r.url, label: r.label }]))
+    videos: Object.fromEntries(videos)
   });
 });
 
@@ -237,10 +251,16 @@ app.put('/api/videos/:lessonId', requireAuth, requireAdmin, writeLimiter, async 
     });
   }
 
-  await q(`INSERT INTO videos (lesson_id, url, label, updated_by, updated_at)
-           VALUES ($1, $2, $3, $4, now())
+  // Switching to an external link drops any previously uploaded file for this lesson.
+  const { rows: prevRows } = await q('SELECT storage_path FROM videos WHERE lesson_id = $1', [lessonId]);
+  if (prevRows[0]?.storage_path) {
+    await removeVideo(prevRows[0].storage_path).catch(err => console.error('cleanup failed', err.message));
+  }
+
+  await q(`INSERT INTO videos (lesson_id, url, storage_path, label, updated_by, updated_at)
+           VALUES ($1, $2, NULL, $3, $4, now())
            ON CONFLICT (lesson_id) DO UPDATE
-           SET url = EXCLUDED.url, label = EXCLUDED.label,
+           SET url = EXCLUDED.url, storage_path = NULL, label = EXCLUDED.label,
                updated_by = EXCLUDED.updated_by, updated_at = now()`,
     [lessonId, url, label, req.user.id]);
 
@@ -248,9 +268,51 @@ app.put('/api/videos/:lessonId', requireAuth, requireAdmin, writeLimiter, async 
   res.json({ ok: true });
 });
 
+// Step 1 of a file upload: the browser gets a short-lived URL to upload straight to
+// storage, bypassing this server (and its request-size limits) entirely.
+app.post('/api/videos/:lessonId/upload-url', requireAuth, requireAdmin, writeLimiter, async (req, res) => {
+  const lessonId = String(req.params.lessonId).slice(0, 64);
+  try {
+    const { signedUrl, path, token } = await createSignedUploadUrl(`${lessonId}/${Date.now()}.mp4`);
+    res.json({ signedUrl, path, token });
+  } catch (err) {
+    console.error('upload-url', err);
+    res.status(500).json({ error: 'Could not prepare an upload slot.' });
+  }
+});
+
+// Step 2: called after the browser has finished uploading directly to storage,
+// to record the result against the lesson.
+app.post('/api/videos/:lessonId/confirm', requireAuth, requireAdmin, writeLimiter, async (req, res) => {
+  const lessonId = String(req.params.lessonId).slice(0, 64);
+  const path = String(req.body?.path || '').trim();
+  const label = String(req.body?.label || '').trim().slice(0, 200);
+  if (!path.startsWith(`${lessonId}/`)) {
+    return res.status(400).json({ error: 'Upload path does not match this lesson.' });
+  }
+
+  const { rows: prevRows } = await q('SELECT storage_path FROM videos WHERE lesson_id = $1', [lessonId]);
+  if (prevRows[0]?.storage_path && prevRows[0].storage_path !== path) {
+    await removeVideo(prevRows[0].storage_path).catch(err => console.error('cleanup failed', err.message));
+  }
+
+  await q(`INSERT INTO videos (lesson_id, url, storage_path, label, updated_by, updated_at)
+           VALUES ($1, NULL, $2, $3, $4, now())
+           ON CONFLICT (lesson_id) DO UPDATE
+           SET url = NULL, storage_path = EXCLUDED.storage_path, label = EXCLUDED.label,
+               updated_by = EXCLUDED.updated_by, updated_at = now()`,
+    [lessonId, path, label, req.user.id]);
+
+  await audit(req.user.id, 'video_set', `${lessonId} -> uploaded file`);
+  res.json({ ok: true });
+});
+
 app.delete('/api/videos/:lessonId', requireAuth, requireAdmin, writeLimiter, async (req, res) => {
   const lessonId = String(req.params.lessonId).slice(0, 64);
-  await q('DELETE FROM videos WHERE lesson_id = $1', [lessonId]);
+  const { rows } = await q('DELETE FROM videos WHERE lesson_id = $1 RETURNING storage_path', [lessonId]);
+  if (rows[0]?.storage_path) {
+    await removeVideo(rows[0].storage_path).catch(err => console.error('cleanup failed', err.message));
+  }
   await audit(req.user.id, 'video_remove', lessonId);
   res.json({ ok: true });
 });
