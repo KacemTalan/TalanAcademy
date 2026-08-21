@@ -177,6 +177,15 @@ app.post('/api/me/password', requireAuth, writeLimiter, async (req, res) => {
 
 /* ---------------- Learner state ---------------- */
 
+app.get('/api/_debug-storage', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const url = await createSignedPlaybackUrl('bca-01/source.mp4');
+    res.json({ ok: true, url });
+  } catch (err) {
+    res.json({ ok: false, message: err.message, stack: err.stack, name: err.name });
+  }
+});
+
 app.get('/api/state', requireAuth, async (req, res) => {
   const [prog, notes, vids] = await Promise.all([
     q('SELECT lesson_id, completed_at FROM progress WHERE user_id = $1', [req.user.id]),
