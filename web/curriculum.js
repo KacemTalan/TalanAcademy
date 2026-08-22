@@ -381,6 +381,261 @@ const CURRICULUM_A = [
       check: { q: "Why does channel inconsistency cost more in retail than in other verticals?", a: "Because the error is discovered by the customer, in the moment, and it directly costs the sale as well as the trust." }
     }
   ]
+},
+
+/* ---------------- FLOW: FUNCTIONAL FLOWS & CONSULTANT TOOLKIT ---------------- */
+{
+  code: "FLOW", track: "business", accent: "teal",
+  title: "Functional Flows & Consultant Toolkit",
+  tagline: "The process cheat sheets a consultant reaches for mid-call.",
+  audience: "Functional consultants, business analysts, and implementation teams working day to day in Business Central",
+  desc: "Process-by-process cheat sheets for O2C, P2P, Inventory, Finance and Jobs, plus the setup, troubleshooting and navigation reference a BC consultant reaches for daily.",
+  groups: [
+    { key: "flows", label: "Process Flows" },
+    { key: "setup", label: "Setup & Data Model" },
+    { key: "ops", label: "Daily Operations" },
+    { key: "consultant", label: "Consultant Toolkit" }
+  ],
+  lessons: [
+    {
+      id: "flow-01-o2c", group: "flows", n: "01", title: "Order to Cash, step by step",
+      dur: "12 min read",
+      summary: "The customer lifecycle from first quote to cash in hand, and the one release step that quietly links inventory and finance together.",
+      concepts: [
+        { h: "The six-step flow", p: "Order to Cash runs Sales Quote → Sales Order → Pick/Ship → Post Shipment → Sales Invoice → Payment. Three roles carry it: the Sales Agent creates the quote and order, Warehouse Operations handles the pick and ship, and the Accountant sees the invoice through to payment. Nothing here is optional if you're selling anything through BC — even a same-day cash sale still walks through an order and an invoice, just compressed." },
+        { h: "Key documents, and why there are so many", p: "BC produces a distinct document at nearly every step: Sales Quote, Sales Order, Posted Shipment, Posted Invoice, Customer Ledger Entry, G/L Entry. This isn't bureaucracy — quotes and orders are editable working documents, while posted shipments and posted invoices are the permanent, unchangeable record. Once a document is posted, correcting it means issuing a new document (a credit memo, a corrective shipment), not editing the old one." },
+        { h: "Release before warehouse processing", p: "The consultant tip from this flow: release the Sales Order before it goes to the warehouse. Releasing is what lets BC auto-create the shipment and link the resulting inventory movement back to finance. Skip the release step and warehouse staff either can't act on the order or end up working from a document that isn't yet tracked for G/L purposes." },
+        { h: "Every step posts to the G/L automatically", p: "This is the structural fact behind O2C: you don't post a document and separately post to finance — posting the shipment and posting the invoice *are* the G/L entries, generated through the posting groups configured on the customer and the items involved. If a G/L account is missing from that setup, the symptom shows up here, at invoice posting, not in Finance module setup." }
+      ],
+      why: "The most common O2C support ticket — 'the warehouse can't see the order' — traces straight back to a skipped release step, not a warehouse permissions problem. Knowing the flow well enough to ask 'was it released?' first saves a full troubleshooting cycle.",
+      check: { q: "A Sales Order was created and saved, but the warehouse says it never showed up in their pick queue. What's the first thing to check?", a: "Whether the order was released. BC only auto-creates the shipment and exposes it to warehouse processing after the Sales Order is released — an unreleased order is still a working document, invisible to the pick/ship flow." }
+    },
+    {
+      id: "flow-02-p2p", group: "flows", n: "02", title: "Procure to Pay, step by step",
+      dur: "10 min read",
+      summary: "Requisition to payment, with the 3-way match that stands between a vendor invoice and the money leaving the account.",
+      concepts: [
+        { h: "The six-step flow", p: "Procure to Pay runs Purchase Requisition → Purchase Order → Receive Goods → Vendor Invoice → Post & Match → Payment. Three roles carry it: the Purchasing Agent sources and orders, Warehouse receives the goods in, and Finance settles the invoice against Accounts Payable. It's the mirror image of Order to Cash, run from the buying side instead of the selling side." },
+        { h: "Key documents", p: "BC produces a Purchase Quote, a Purchase Order, a Posted Receipt, a Purchase Invoice, a Vendor Ledger Entry, and a G/L Entry along the way. As with sales documents, the quote and order are editable working documents; the posted receipt and posted invoice are the permanent record once posting happens." },
+        { h: "3-way matching is enforced, not optional", p: "BC checks the Purchase Order, the Posted Receipt, and the Vendor Invoice against each other before the invoice can post cleanly — quantities and amounts across all three have to agree. This is what catches a vendor billing for more than was ordered or more than was actually received, before the money ever moves." },
+        { h: "Discrepancies trigger approval, not a silent block", p: "When the three documents don't line up, BC doesn't just refuse to post — it routes the mismatch into an approval workflow so a human decides whether to accept the discrepancy (a price change, a partial shipment) or reject the invoice back to the vendor. Payment release waits on that approval." }
+      ],
+      why: "A consultant who understands 3-way matching can immediately tell a client whether a stuck vendor invoice is a data-entry mismatch (wrong quantity typed somewhere) or a genuine approval bottleneck (someone hasn't signed off) — two very different fixes that look identical from the invoice screen alone.",
+      check: { q: "A vendor invoice for 100 units arrives, but the posted receipt only shows 80 units received. What happens when someone tries to post the invoice, and why?", a: "The invoice doesn't post cleanly because the 3-way match between PO, receipt, and invoice fails — the received quantity (80) doesn't agree with the invoiced quantity (100). The mismatch routes into an approval workflow instead of silently posting or silently blocking, so someone can decide whether the discrepancy is legitimate before payment is released." }
+    },
+    {
+      id: "flow-03-inventory", group: "flows", n: "03", title: "Inventory management flow",
+      dur: "10 min read",
+      summary: "Item setup through valuation, and why costing method is a decision you only get to make once per item.",
+      concepts: [
+        { h: "The six-step flow", p: "Inventory management runs Item Setup → Stock Receipt → Bin/Location → Transfer Order → Adjustment → Valuation. Three roles carry it: the Warehouse Manager runs day-to-day movement, the Supply Planner drives replenishment decisions, and the Accountant owns the resulting valuation. BC tracks inventory in real time across as many locations as the business needs." },
+        { h: "Key documents", p: "The flow moves through the Item Card (master data), Item Journal (movements), Transfer Order (between locations), Physical Inventory (counts), Item Ledger Entry (posted quantity movements), and Value Entry (posted cost movements). Every receipt, shipment, or transfer posts a Value Entry linked to the G/L through inventory posting groups — the same posting-groups mechanism that drives every other module." },
+        { h: "Costing method: a one-time decision", p: "FIFO, Average, Standard, or Specific costing has to be set per item before that item's first transaction — and it cannot be changed once entries exist. This isn't a BC limitation to work around; it's a deliberate guardrail, because changing the costing method partway through an item's history would make its valuation internally inconsistent." },
+        { h: "Choosing well the first time", p: "Standard costing tends to suit manufacturing, where a predictable, pre-set cost is more useful for planning than a moving actual cost. Average costing tends to suit retail, where costs genuinely fluctuate and an averaged figure is a fairer representation. Getting this decision made — deliberately, per item category — during setup is far cheaper than discovering the wrong choice after go-live." }
+      ],
+      why: "Because costing method locks in after the first transaction, a wrong choice discovered post-go-live isn't a configuration fix — it's a data problem that usually means creating a replacement item and migrating forward, which is exactly the kind of expensive correction a five-minute setup conversation would have avoided.",
+      check: { q: "A client wants to switch a live item from Average costing to Standard costing because they've realized Standard suits their manufacturing process better. What do you tell them?", a: "It can't be done on the existing item once it has posted transactions — costing method is fixed at first transaction. The realistic path is creating a new item with Standard costing and transitioning forward, not changing the setting on the item that's already in use." }
+    },
+    {
+      id: "flow-04-finance-gl", group: "flows", n: "04", title: "Finance & General Ledger flow",
+      dur: "10 min read",
+      summary: "Journal to financial report, and how every other module quietly feeds this one through posting groups.",
+      concepts: [
+        { h: "The six-step flow", p: "Finance & G/L runs Journal Entry → Approval → Posting → Reconcile → Period Close → Financial Report. Three roles carry it: the Accountant enters and reviews journals, the Controller oversees close and reconciliation, and the CFO consumes the resulting financial reports. Unlike O2C or P2P, this flow doesn't start with a customer or vendor transaction — it's where every other module's transactions ultimately land." },
+        { h: "Key documents", p: "The flow moves through the General Journal (entry), Posted G/L Entry (the permanent record), Bank Rec. Worksheet (reconciliation), and out to Trial Balance, Income Statement, and Balance Sheet as the reporting output. The reports aren't separate data — they're views over the same posted G/L entries every other module contributed to." },
+        { h: "Every module feeds the G/L through posting groups", p: "A sales invoice, a purchase invoice, an inventory adjustment — none of them post directly to a specific G/L account chosen by the user. Each one posts through the posting-group setup (customer posting group, vendor posting group, inventory posting group, general posting setup) configured for that transaction type, which is what determines the actual account. This is the same mechanism from O2C, P2P, and Inventory, converging here." },
+        { h: "Two habits worth keeping", p: "Use Recurring Journals for anything that repeats on a schedule — monthly accruals, standard depreciation entries — instead of re-entering them by hand every period. And lock posted periods immediately after close: leaving a closed period open for posting is what allows a later retroactive entry to quietly distort a report someone already signed off on." }
+      ],
+      why: "A CFO who asks why the Trial Balance doesn't match expectations is really asking a question about postings that happened in Sales, Purchasing, and Inventory weeks earlier — understanding that every module's posting groups feed here is what lets a consultant trace the discrepancy back to its actual source instead of staring at the G/L in isolation.",
+      check: { q: "A Balance Sheet figure looks wrong for a particular G/L account, but nobody has touched the General Journal directly. Where else should you look?", a: "The posting groups on whatever module actually generated the entries — customer, vendor, or inventory posting groups feeding that account through Sales, Purchasing, or Inventory transactions. The G/L Entry itself is downstream of those posting groups, not the place the error originated." }
+    },
+    {
+      id: "flow-05-month-end-close", group: "flows", n: "05", title: "Month-end & year-end close, step by step",
+      dur: "12 min read",
+      summary: "The eight-step accountant close checklist, including the one step that only runs once a year.",
+      concepts: [
+        { h: "Steps 1–4: clear the operational backlog", p: "Post all open journals and documents first — no unposted Sales Orders, Purchase Invoices, or Journal Batches should remain open going into a close. Then run bank reconciliation, matching every bank statement line to its BC ledger entry and resolving differences. Post recurring journals (accruals, prepayments, depreciation) into the correct period. Then run the inventory cost adjustment — Adjust Cost - Item Entries, followed by Post Inventory Cost to G/L — so inventory valuation is current before anything downstream reads it." },
+        { h: "Steps 5–7: reconcile, report, and lock", p: "Review and post VAT: run the VAT Statement, verify it against the tax authority return, and mark VAT entries as closed. Print the financial reports — Trial Balance, Income Statement, Balance Sheet — for management review. Then lock the accounting period by updating Allow Posting From in the Accounting Periods setup, which is what actually prevents anyone from posting into a period that's supposed to be closed." },
+        { h: "Step 8: the once-a-year step", p: "Close Income Statement runs only at year-end. It posts the full year's profit-and-loss to Retained Earnings and opens the new fiscal year. This is structurally different from the other seven steps — running it mid-year would zero out the income statement before the year's activity is complete, which is exactly why it's an annual step and not a monthly one." },
+        { h: "Order matters", p: "The sequence isn't arbitrary — inventory cost adjustment has to run before the financial reports are printed, or the reports reflect stale valuation; VAT has to be reviewed before period lock, or a correction after lock means reopening a period that was supposed to be closed. Following the checklist in order avoids having to unwind and redo a step." }
+      ],
+      why: "A consultant who can recite this checklist from memory is the difference between a close that takes an afternoon and one that drags into next week because a step got skipped and had to be discovered — and fixed — after the period was already locked.",
+      check: { q: "Why does 'Close Income Statement' only run once a year, while the other seven steps repeat every month?", a: "It posts the entire year's profit-and-loss to Retained Earnings and opens a new fiscal year — an action that only makes sense once the year's activity is complete. Running it every month would prematurely zero out the income statement mid-year, which is the opposite of what a monthly close needs." }
+    },
+    {
+      id: "flow-06-jobs", group: "flows", n: "06", title: "Project management (Jobs) flow",
+      dur: "11 min read",
+      summary: "Create Job through to invoice, and the three WIP methods that decide when revenue actually gets recognized.",
+      concepts: [
+        { h: "The six-step flow", p: "The Jobs module runs Create Job → Budget Lines → Plan Resources → Time Sheets → Post Usage → Job Invoice. Three roles carry it: the Project Manager owns the job and its budget, the Consultant logs time against it, and Finance turns posted usage into a client invoice. This module exists for service and consulting firms specifically — anyone billing based on actual time and material consumption rather than a fixed shipped-goods sale." },
+        { h: "Key documents", p: "The flow moves through the Job Card (the project itself), Job Planning Lines (budget and plan), Job Journal (time and material entries before posting), Time Sheet (the consultant's input), Posted Job Ledger (the permanent usage record), and out to a Sales Invoice for billing. Billing is generated from actuals posted through the Job Ledger, not from the original budget." },
+        { h: "Three WIP methods, three different answers to 'when is revenue earned'", p: "Work in Progress accounting controls when revenue gets recognized on a job that's still in progress. Fixed Contract recognizes revenue on a schedule tied to the contract terms, independent of percentage completed. Cost of Sales matches revenue recognition to costs as they're incurred. Percentage of Completion recognizes revenue proportionally as the job progresses toward completion. Each produces a materially different financial picture for the exact same underlying project." },
+        { h: "The choice has to fit the business model", p: "A firm billing fixed-fee contracts with clear milestones is a poor fit for Percentage of Completion, which assumes progress can be measured continuously. A firm running long, gradually-progressing engagements is a poor fit for Fixed Contract, which doesn't reflect how the work is actually being done. Picking the WIP method is a finance decision made once per job type, not something to leave at the BC default without checking." }
+      ],
+      why: "The wrong WIP method doesn't produce an error — it produces a financial statement that's technically valid but doesn't reflect economic reality, which only gets discovered when an auditor or a controller asks why revenue recognition doesn't match how the business actually works.",
+      check: { q: "A consulting firm wants revenue recognized gradually as work is delivered over a multi-month engagement, rather than all at contract signing or all at final delivery. Which WIP method fits, and why not Fixed Contract?", a: "Percentage of Completion — it recognizes revenue proportionally as the job progresses. Fixed Contract ties recognition to the contract schedule rather than actual progress, which wouldn't reflect the gradual-delivery pattern this firm needs." }
+    },
+    {
+      id: "flow-07-setup-essentials", group: "setup", n: "07", title: "Setup essentials: posting groups, number series, dimensions",
+      dur: "12 min read",
+      summary: "The three setup categories that have to be right before the first transaction, because fixing them after the fact means editing history.",
+      concepts: [
+        { h: "Posting groups translate business meaning into G/L accounts", p: "General Posting Setup maps a Business Posting Group plus a Product Posting Group to specific G/L accounts. Customer Posting Groups and Vendor Posting Groups do the same for receivables and payables, and Inventory Posting Groups do it for stock value. None of these are optional — every sales line, purchase line, and inventory movement needs a complete combination of these groups before it can post." },
+        { h: "Number series drive document numbering", p: "Every document type — sales, purchase, inventory — needs its own number series so BC can assign the next document number automatically. Series can be manual or auto-increment, and the choice is tied directly to posting: a document type without a configured series simply cannot be created, let alone posted." },
+        { h: "Dimensions add the analysis axis", p: "Cost Center, Department, and Project are the typical dimensions, applied as default-dimension rules on customers, vendors, and items, and marked mandatory or optional per combination. Dimensions get attached at the point of transaction entry — every journal line, sales line, and purchase line carries them forward." },
+        { h: "Complete setup before the first transaction, always", p: "This is the one-line rule from the source material, and it is not an exaggeration: errors in posting groups cause financial imbalances that are hard to reverse once real transactions have posted against them. Setup mistakes discovered after go-live usually mean correcting entries rather than correcting configuration." }
+      ],
+      why: "This lesson exists because the single highest-frequency implementation error traced in the troubleshooting material — 'Gen. Posting Setup does not exist' — is a direct, predictable consequence of treating this setup as something to finish later. Getting it right before transactions start is cheaper than any fix afterward.",
+      check: { q: "A Customer Posting Group is missing its Receivables Account mapping. What actually fails, and when?", a: "Posting a sales invoice for any customer assigned to that posting group fails — not at order entry, but at the moment BC tries to post and needs to write to the Receivables G/L account the mapping should have supplied. The order and invoice can still be created and saved; only posting is blocked." }
+    },
+    {
+      id: "flow-08-db-map", group: "setup", n: "08", title: "The BC data model in one map",
+      dur: "14 min read",
+      summary: "Master, transaction/document, and posted-ledger tables — how they relate and which table number to remember for each.",
+      concepts: [
+        { h: "Six categories of tables", p: "Master Tables (roughly 40) hold Customer, Vendor, Item, G/L Account, Resource, and Employee — the reference data everything else points at. Transaction Tables (roughly 60) hold Sales/Purchase Header & Lines, Journal Lines, and Job Lines — open, editable documents. Posted/Ledger tables (roughly 30) hold G/L Entry, Cust. Ledger Entry, Item Ledger Entry, and Value Entry — the immutable audit trail. Setup Tables (roughly 80) hold configuration like Gen. Posting Setup, Inventory Posting, and Payment Terms. Dimension Tables (roughly 10) hold Dimension, Dimension Value, and Dimension Set Entry. Buffer/Temp tables exist only in memory during processing — never stored permanently." },
+        { h: "Master tables to know by number", p: "Customer is table 18, Vendor is 23, Item is 27, G/L Account is 15, Resource is 156, Fixed Asset is 5600, Bank Account is 270, Dimension is 348, Unit of Measure is 204, Payment Terms is 3. Every master table uses an alphanumeric No. as its primary key, assigned through a No. Series. Master records are never deleted in a healthy implementation — they're blocked instead, so the historical transactions that reference them stay intact." },
+        { h: "Transaction (document) tables: headers and lines are always separate", p: "Sales Header (36) and Sales Line (37), Purchase Header (38) and Purchase Line (39), Gen. Journal Line (81), Item Journal Line (83), Job Journal Line (210) — these are open documents that exist only until posted, at which point they move to the corresponding posted tables. Headers and lines are always separate tables, linked by Document No. — when troubleshooting an incomplete transaction, query both, not just one." },
+        { h: "Posted ledger entries: the permanent audit trail", p: "G/L Entry (17), Customer Ledger Entry (21), Detailed Cust. Ledger Entry (379), Vendor Ledger Entry (25), Item Ledger Entry (32), Value Entry (5802) — these are created when documents post, and in production they are never deleted. Entry No. auto-increments globally per table, and the 'Applied Entries' feature is the standard way to trace how a payment matched against an invoice." }
+      ],
+      why: "A consultant who can name the right table number in a support conversation — 'that's Customer Ledger Entry, table 21' — moves a troubleshooting call forward immediately, instead of everyone waiting while someone looks it up mid-call.",
+      check: { q: "You need to trace a posted G/L Entry back to the original Sales Invoice that created it. Which field connects them, and what built-in BC tool automates that trace?", a: "The Document No. field on the G/L Entry connects it back to the source document, and the Navigate feature (Ctrl+Alt+F9) automates walking from any G/L Entry back to its originating Sales Invoice, payment, or journal." },
+      code: "// BC table numbers worth knowing cold\n// Customer            18   Vendor                23\n// Item                 27   G/L Account            15\n// Resource            156   Fixed Asset          5600\n// Bank Account        270   Dimension              348\n// Unit of Measure     204   Payment Terms            3\n//\n// Sales Header         36   Sales Line              37\n// Purchase Header       38   Purchase Line           39\n// Gen. Journal Line     81   Item Journal Line       83\n// Job Journal Line     210   Transfer Header       5740\n//\n// G/L Entry             17   Customer Ledger Entry   21\n// Vendor Ledger Entry   25   Item Ledger Entry       32\n// Value Entry         5802   Bank Acc. Ledger Entry  271"
+    },
+    {
+      id: "flow-09-critical-setup-tables", group: "setup", n: "09", title: "Critical setup tables reference",
+      dur: "12 min read",
+      summary: "The ten configuration tables that, if incomplete, block or corrupt posting.",
+      concepts: [
+        { h: "The ten tables and what breaks without them", p: "See the code block for the full reference: General Posting Setup (252), Inventory Posting Setup (5813), Customer Posting Group (92), Vendor Posting Group (93), VAT Posting Setup (325), General Ledger Setup (98), Sales & Receivables Setup (311), Purchases & Payables Setup (312), Inventory Setup (313), and No. Series (308) — each one maps a specific business concept to a G/L account or a system-wide behavior, and each has a distinct, predictable failure mode when it's missing a row." },
+        { h: "The two most common failure points", p: "General Posting Setup and VAT Posting Setup cause the most common implementation errors when incomplete, because both are combinatorial — every Business Posting Group × Product Posting Group pair (or every VAT Business × VAT Product Group pair) needs its own row. A setup that's 90% complete looks fine until the one untested combination shows up in a live transaction." },
+        { h: "These are configuration, not master or transaction data", p: "It's worth keeping the three data categories distinct: master data (Customer, Vendor, Item) describes who and what you're transacting with; transaction data (Sales Header, Purchase Line) records what actually happened; setup tables like these ten configure how BC behaves and what it's allowed to post. A missing row in a setup table doesn't corrupt data that already exists — it blocks new posting until the row is added." },
+        { h: "Run 'Test Posting' before go-live", p: "The consultant discipline behind this table: always run Test Posting before go-live, and test the full combination matrix with an actual purchase and sales cycle — not just the common cases. Missing entries in Gen. Posting Setup or VAT Posting Setup are, by a wide margin, the most common implementation errors this reference material calls out." }
+      ],
+      why: "When a client reports a posting error mid-implementation, checking this ten-table list first — rather than assuming it's a data or permissions problem — resolves the majority of 'why won't this post' tickets in minutes instead of hours.",
+      check: { q: "Which two setup tables does this reference call out as causing the most common implementation errors when incomplete, and why do both fail the same way?", a: "General Posting Setup and VAT Posting Setup. Both fail the same way because both require a complete combination matrix (Bus. + Prod. Posting Group for one, VAT Bus. + VAT Prod. Group for the other) — a setup that covers the common cases but misses one combination looks complete until that specific combination is finally used in a live transaction." },
+      code: "// Critical setup tables — table no. | purpose | symptom if missing\n// General Posting Setup       252  Bus.+Prod. -> G/L Accounts     'G/L account missing'\n// Inventory Posting Setup    5813  Location+Inv. Group -> G/L      Inventory posting blocked\n// Customer Posting Group       92  Customer type -> Receivables    Customer invoice won't post\n// Vendor Posting Group         93  Vendor type -> Payables         Vendor invoice won't post\n// VAT Posting Setup           325  VAT Groups -> VAT Account       Tax calculation fails\n// General Ledger Setup         98  Currency, rounding, periods     Fiscal year / rounding errors\n// Sales & Receivables Setup   311  Default accounts, rounding      Sales process deviations\n// Purchases & Payables Setup  312  Default accounts, receipts      Purchase process deviations\n// Inventory Setup             313  Costing, location, auto cost    Inventory valuation mismatch\n// No. Series                  308  Document numbering per type     Cannot create new documents"
+    },
+    {
+      id: "flow-10-master-data-fields", group: "setup", n: "10", title: "Master data field reference: Customer, Vendor, Item",
+      dur: "13 min read",
+      summary: "The fields on each card that actually drive posting behavior, credit checks, and document defaults.",
+      concepts: [
+        { h: "Customer Card (table 18): General and Invoicing", p: "No. is the primary key from No. Series. Name/Name 2 display on documents; Address/Post Code/City set the default ship-to address. Credit Limit (LCY) triggers a credit warning on orders that exceed it, and Blocked (Ship/Invoice/All) stops transactions outright. On the Invoicing side, Customer Posting Group determines the Receivables G/L Account, Gen. Bus. Posting Group determines the Sales Account via Gen. Posting Setup, VAT Bus. Posting Group determines the VAT Account via VAT Posting Setup, and Payment Terms Code controls due-date calculation." },
+        { h: "Customer Card: Shipping fields", p: "Location Code sets the default warehouse for shipments. Shipment Method Code carries Incoterms onto documents. Shipping Agent Code drives carrier integration. Combine Shipments auto-combines multiple orders onto one invoice. Reserve (Never/Optional/Always) controls whether inventory gets reserved automatically for this customer's orders." },
+        { h: "Vendor Card (table 23): the payables mirror of the Customer Card", p: "Vendor Posting Group determines the Payables G/L Account; Gen. Bus. Posting Group determines the Purchase Account via Gen. Posting Setup; VAT Bus. Posting Group determines the input-tax VAT Account. Payment Terms Code controls due date for AP aging, Currency Code matters for foreign-currency vendors, Purchaser Code assigns a buyer, Blocked (Payment/All) stops AP transactions, and Invoice Discount % auto-applies on purchase lines." },
+        { h: "Item Card (table 27): the fields that decide how an item behaves", p: "Item Type (Inventory/Non-Inventory/Service) decides whether the item is tracked in stock at all. Costing Method (FIFO/Average/Standard/Specific) is permanent once transactions exist. Inventory Posting Group determines the Inventory G/L Account; Gen. Prod. Posting Group determines Revenue/COGS via Gen. Posting Setup. Base Unit of Measure is the primary UoM for every transaction on the item. Reorder Point/Qty trigger MRP planning. Blocked stops all transactions for the item outright." }
+      ],
+      why: "Nearly every 'why did this post to the wrong account' or 'why can't this customer place an order' question traces back to one specific field on one of these three cards — knowing the field by name, not just 'somewhere in setup,' is what makes a consultant fast on a support call.",
+      check: { q: "Which single field on the Customer Card determines the G/L Receivables account used when that customer's invoice posts?", a: "Customer Posting Group — it maps to the Receivables G/L Account. Gen. Bus. Posting Group and VAT Bus. Posting Group affect the Sales and VAT accounts respectively, but Receivables specifically comes from Customer Posting Group." }
+    },
+    {
+      id: "flow-11-chart-of-accounts", group: "setup", n: "11", title: "Chart of accounts structure",
+      dur: "8 min read",
+      summary: "The standard number-range convention for Assets, Liabilities, Revenue, COGS, Opex, and statistical accounts.",
+      concepts: [
+        { h: "Balance Sheet ranges: 1000–2999", p: "1000–1999 covers Assets: Bank Accounts, Accounts Receivable, Inventory, Fixed Assets. 2000–2999 covers Liabilities & Equity: Accounts Payable, VAT Payable, Bank Loans, Share Capital. Both ranges feed the Balance Sheet, and both represent point-in-time positions rather than period activity." },
+        { h: "Income Statement ranges: 3000–8999", p: "3000–3999 covers Revenue: Sales Domestic, Sales Export, Service Revenue, Other Income. 4000–5999 covers Cost of Goods Sold: Material Cost, Direct Labor, Manufacturing Overhead, Freight. 6000–8999 covers Operating Expenses: Salaries, Rent, Marketing, Depreciation, Admin Costs. All three ranges feed the Income Statement and represent activity over a period, not a point-in-time balance." },
+        { h: "9000–9999: statistical, not financial", p: "This range is reserved for Non-Financial/Memo accounts — Headcount, Units Sold, Hours Worked — statistical entries only. These accounts don't carry monetary value in the way the ranges below them do; they exist purely to track a number alongside the financial data for reporting and ratio purposes." },
+        { h: "Why the convention matters", p: "Sticking to this number-range convention means any consultant — not just the one who originally set up the chart of accounts — can look at an account number and immediately know which financial statement it feeds and roughly what kind of account it is, without opening the G/L Account card. Breaking the convention on a single client engagement makes every future consultant slower on that specific implementation." }
+      ],
+      why: "An account numbered outside its expected range is usually a sign that someone created it in a hurry without checking the convention — and it's exactly the kind of small inconsistency that turns a routine chart-of-accounts review into a longer cleanup exercise before go-live.",
+      check: { q: "An account numbered 4500 records freight cost. Which financial statement does it flow into, and how do you know from the number alone?", a: "The Income Statement — the number falls in the 4000–5999 Cost of Goods Sold range, and COGS accounts (along with Revenue and Operating Expenses) feed the Income Statement rather than the Balance Sheet." },
+      code: "// Chart of accounts — standard number ranges\n// 1000-1999  Assets                Balance Sheet\n// 2000-2999  Liabilities & Equity  Balance Sheet\n// 3000-3999  Revenue               Income Statement\n// 4000-5999  Cost of Goods Sold    Income Statement\n// 6000-8999  Operating Expenses    Income Statement\n// 9000-9999  Non-Financial / Memo  Statistical only"
+    },
+    {
+      id: "flow-12-role-centers", group: "ops", n: "12", title: "Role Centers by role",
+      dur: "10 min read",
+      summary: "What each of the six common Role Centers surfaces, so you can map a real job title to the right BC role.",
+      concepts: [
+        { h: "Business Manager and Accountant", p: "Business Manager surfaces a financial overview, a KPI dashboard, a cash flow forecast, and top customers/vendors — the executive-level view of the business. Accountant surfaces G/L journals, bank reconciliation, period close, and financial reports — the day-to-day finance operational view, distinct from Business Manager's higher-altitude summary." },
+        { h: "Sales Order Processor and Purchasing Agent", p: "Sales Order Processor surfaces the sales orders list, customer list, shipment queue, and invoice to-do — everything the O2C flow needs from the sales side. Purchasing Agent surfaces purchase orders, vendor list, receipts pending, and invoice matching — the P2P equivalent from the buying side." },
+        { h: "Warehouse Worker and Project Manager", p: "Warehouse Worker surfaces pick/put-away, bin contents, transfer orders, and physical inventory — the operational inventory view built around movement, not valuation. Project Manager surfaces jobs overview, time sheets, WIP analysis, and resource availability — the Jobs-module equivalent of the other operational role centers." },
+        { h: "Matching a job title to a role", p: "BC adapts its interface based on the assigned role, showing only the KPIs, tasks, and shortcuts relevant to that job. The practical use of this list for a consultant: when a client describes a new hire's actual day-to-day work, this table is the fast way to map that description to the right Role Center assignment, rather than defaulting everyone to a generic view." }
+      ],
+      why: "Assigning the wrong Role Center to a new user doesn't cause an error — it just means that user's daily workspace is cluttered with tiles and shortcuts for a job they don't do, which quietly costs them time every single day until someone notices and fixes the assignment.",
+      check: { q: "A client says their new hire's job is 'processes vendor invoices and matches them to purchase orders.' Which Role Center fits?", a: "Purchasing Agent — its surfaced items (purchase orders, vendor list, receipts pending, invoice matching) map directly onto that job description, unlike Warehouse Worker or Accountant, which cover adjacent but different responsibilities." }
+    },
+    {
+      id: "flow-13-navigation-shortcuts", group: "ops", n: "13", title: "Navigation, search & keyboard shortcuts",
+      dur: "11 min read",
+      summary: "Tell Me, Navigate, filter expressions, and the keyboard shortcuts worth memorizing.",
+      concepts: [
+        { h: "Tell Me and Navigate", p: "Tell Me (Alt+Q) is a universal search across every page, report, and action in BC — type any keyword to find a feature instantly instead of hunting through menus; typing 'post' surfaces every posting action, 'customer' surfaces every customer-related page. Navigate (Ctrl+Alt+F9) traces any G/L Entry back to its source document, which is the standard tool for auditing and troubleshooting a financial discrepancy — from any G/L Entry, Navigate finds the original Sales Invoice, payment, or journal that created it." },
+        { h: "Bookmarks and personalization", p: "Frequently used pages can be pinned to the Role Center, and users or teams can add fields to lists, move columns, and save filter views. Right-clicking any column header opens the add/remove-fields menu, and the Personalise banner gives access to the same customization directly." },
+        { h: "Filters and FlowFilters", p: "Lists filter by date ranges, dimensions, locations, and custom expressions, and FlowFilters recalculate their totals dynamically as the filter changes rather than showing a static snapshot. The filter expression syntax itself is worth memorizing — see the reference table below." },
+        { h: "Essential keyboard shortcuts", p: "Alt+Q opens Tell Me. F5 refreshes the page. Ctrl+F7 opens ledger entries. Ctrl+F9 releases a document. F9 posts a document. Ctrl+Shift+F9 deletes a posting (used carefully). Ctrl+Home jumps to the first record. Alt+F4 closes the page. Ctrl+N creates a new record. Ctrl+D deletes a record. These cover the large majority of everyday keyboard-driven navigation." }
+      ],
+      why: "A consultant who navigates BC entirely by mouse clicks through menus is visibly, measurably slower in front of a client than one who uses Tell Me and the shortcut set — and in a live troubleshooting session, that speed difference is what makes the difference between confidence and fumbling.",
+      check: { q: "You need every sales invoice numbered either INV-001 or INV-002. What do you type into the Document No. filter field?", a: "INV-001|INV-002 — the pipe character is BC's OR condition within a filter expression, matching either value." },
+      code: "// Filter expression reference\n// 1000..2000   Range (from..to)     Post Date: 01/01/24..31/12/24\n// >500         Greater than          Amount: >500\n// <>0          Not equal to zero     Remaining Amount: <>0\n// A*           Starts with A         Name: Micro*\n// *GmbH        Ends with GmbH        Name: *GmbH\n// 10|20|30     OR condition          Document No.: INV-001|INV-002\n// &            AND within one field  Description: *Service*&*2024*\n\n// Essential keyboard shortcuts\n// Alt+Q            Tell Me / Search        Ctrl+F7          Ledger entries\n// F5               Refresh page            Ctrl+F9          Release document\n// F9               Post document           Ctrl+Shift+F9    Delete posting\n// Ctrl+Home        First record            Alt+F4           Close page\n// Ctrl+N           New record              Ctrl+D           Delete record"
+    },
+    {
+      id: "flow-14-approvals-power-automate", group: "ops", n: "14", title: "Approvals & Power Automate flows",
+      dur: "11 min read",
+      summary: "The four built-in approval chains and six common Power Automate patterns, none of which need AL.",
+      concepts: [
+        { h: "Four built-in approval chains", p: "Purchase Order Approval triggers when a PO amount exceeds a threshold, and routes Requestor → Line Manager → Finance Director. Sales Invoice Approval triggers before posting a high-value invoice, routing Sales Agent → Sales Manager → CFO. Credit Limit Override triggers when an order exceeds the customer's credit limit, routing Sales Rep → Credit Manager. Journal Batch Approval triggers on a G/L journal before posting, routing Accountant → Controller. All four are configured, not coded — they're part of BC's built-in approval engine." },
+        { h: "Six Power Automate patterns, no code required", p: "Order visibility: a new Sales Order triggers a summary email plus a Teams notification to the Sales Manager. Mobile approvals: a PO requiring approval sends an Adaptive Card in Teams for in-app approve/reject. Reporting pipeline: a posted invoice creates a SharePoint list row and updates a Power BI dataset. Procurement alerts: stock falling below reorder point creates a Planner task and notifies purchasing. CRM sync: an updated customer record syncs to Dynamics 365 Sales or Salesforce. Expense automation: a submitted expense routes to a manager in Teams and posts to the BC Journal on approval. Every one of these uses the BC connector inside the Power Automate portal." },
+        { h: "Why this matters for a consultant's toolkit", p: "The instinct to reach for custom AL the moment a client asks for 'notify someone when X happens' is usually wrong — both the built-in approval engine and Power Automate cover the large majority of real-world approval and notification requirements without a single line of code, and without the ongoing maintenance burden custom AL carries." },
+        { h: "Mobile and Teams are first-class here", p: "Several of these patterns route specifically through Teams — Adaptive Cards for mobile approvals, channel notifications for order visibility — which matters in practice because it means approvers don't need to open BC itself to act on a request. That's often the deciding factor in whether an approval workflow actually gets used or gets ignored." }
+      ],
+      why: "A client who's told 'that needs custom development' for a requirement Power Automate already covers out of the box ends up paying for AL work that adds long-term maintenance cost for no real benefit over the no-code option — checking this list first is a genuine cost-saving step, not just a shortcut.",
+      check: { q: "A finance team wants any sales invoice over a set amount to require CFO sign-off before it posts, with no custom AL. What's the built-in mechanism?", a: "The Sales Invoice Approval chain — it triggers automatically before posting a high-value invoice and routes Sales Agent → Sales Manager → CFO, entirely through BC's built-in approval engine with no AL required." }
+    },
+    {
+      id: "flow-15-reports-powerbi", group: "ops", n: "15", title: "Built-in reports, financial statements & Power BI",
+      dur: "13 min read",
+      summary: "What ships out of the box by module, and how the Power BI connection is wired — though the account-schedule mechanics and Power BI setup steps are named here rather than walked through.",
+      concepts: [
+        { h: "Built-in reports by module", p: "Finance ships Trial Balance, Balance Sheet, Income Statement, Cash Flow Forecast, Aged Accounts Receivable, Aged Accounts Payable, Bank Account Reconciliation, and G/L Detail Trial Balance. Sales ships Sales Statistics, Customer Order Summary, Customer Top 10 List, Item Sales Statistics, Salesperson Statistics, Sales Quote - Expired, and Invoice Discount List. Purchasing ships Vendor Purchase List, Purchase Statistics, Vendor Top 10 List, Outstanding Purchase Orders, Purchase Receivable Analysis, and Expected Cost Posting. Inventory ships Inventory Valuation, Inventory Availability, Phys. Inventory List, Item Turnover, Inventory Cost & Price List, and Item Vendor Catalog." },
+        { h: "Power BI: connection architecture and free apps", p: "The data path runs BC OData API → Power Query → Data Model → DAX Measures → Power BI Report → Embedded in BC. Microsoft ships four free BC Power BI apps: Finance (Revenue vs Budget, Gross Margin %, DSO, Cash Position, AP Aging), Sales (Sales by Region, Top Customers, Win Rate, Pipeline Value, Monthly Trend), Inventory (Stock Turnover, Days of Supply, Slow Movers, Reorder Alerts, Valuation), and Project/Jobs (Budget vs Actual, Billable Hours, WIP Value, Utilization Rate, Profit Margin)." },
+        { h: "Account Schedules: named, not walked through step by step", p: "BC's built-in financial statement builder uses a Row Definition (mapping G/L accounts, ranges, formulas, and totalling rows, reusable across reports), a Column Definition (Actual, Budget, Variance, Prior Year, % Change), Dimension Filtering (slicing any report by Department, Cost Center, or Project without touching the account structure), and Budget Integration (importing from Excel or building in BC, with automatic variance calculation). **[expand later]** — the source material names each of these four pieces and what it does, but doesn't walk through the actual configuration steps to build one." },
+        { h: "Standard financial reports included", p: "Income Statement (P&L), Balance Sheet, Cash Flow Statement, Trial Balance, Budget vs Actual, and Consolidation Report ship as standard financial reports built on the Account Schedules engine described above." }
+      ],
+      why: "Knowing what ships standard by module means a consultant can answer 'does BC already do this' in seconds during a scoping conversation, instead of promising custom report development for something that was a checkbox away the whole time.",
+      check: { q: "Which four free Power BI apps does Microsoft ship for Business Central, and what does each roughly cover?", a: "Finance (revenue, margin, DSO, cash, AP aging), Sales (regional sales, top customers, win rate, pipeline, trend), Inventory (turnover, days of supply, slow movers, reorder alerts, valuation), and Project/Jobs (budget vs actual, billable hours, WIP, utilization, margin)." }
+    },
+    {
+      id: "flow-16-pitfalls-troubleshooting", group: "consultant", n: "16", title: "Common pitfalls & troubleshooting",
+      dur: "13 min read",
+      summary: "Six mistakes that show up on almost every implementation, and the six runtime errors a consultant will be asked to fix the most.",
+      concepts: [
+        { h: "Costing method is a one-way door", p: "Once an item has posted its first transaction, its costing method can't be changed. Standard costing suits manufacturing; Average suits retail. This has to be decided per item category during setup, not discovered after go-live." },
+        { h: "Incomplete Gen. Posting Setup causes random-looking errors", p: "Because posting groups are combinatorial (every Business Posting Group × Product Posting Group pair needs its own row), a setup that's 90% complete produces errors that look random — they only appear when a specific, untested combination is finally used in a live transaction. Use the 'Suggest Accounts' feature and test the full combination matrix with an actual purchase and sales cycle before go-live, not just the common cases." },
+        { h: "No dimension strategy means reporting gaps later", p: "Dimensions have to be designed in the implementation phase, with sign-off, and added before the first transactions post — because dimension values can't be retrofitted onto entries that already exist. A missing dimension strategy shows up months later as manual Excel work to reconstruct analysis that should have come free from BC." },
+        { h: "Six errors you'll be asked about the most", p: "'Gen. Posting Setup does not exist' → add the missing Bus./Prod. Posting Group combination. 'The inventory is not sufficient' → stock is zero/negative at that location; post a positive adjustment or check the location filter. 'Period is not open for posting' → update Allow Posting From/To in General Ledger Setup. 'Outstanding amount exceeds credit limit' → override on the order or raise the Customer Card credit limit. 'Item [X] does not have a unit cost' → Standard costing with a zero standard cost; update it via the Standard Cost Worksheet. 'The amount in the journal is zero' → a Gen. Journal balancing issue; check the Bal. Account Type/No. so debit equals credit." }
+      ],
+      why: "This is the lesson a consultant actually reaches for mid-call, with a client watching an error dialog. Fast, correct answers to 'why is this happening' build the kind of trust that turns a one-off engagement into a retained relationship — which is the whole ROI case for this series existing.",
+      check: { q: "A user gets 'Gen. Posting Setup does not exist' while posting a sales invoice. What's missing, specifically?", a: "The row in the General Posting Setup table for that customer's Business Posting Group combined with that item's Product Posting Group. The fix is adding the missing Bus. + Prod. Posting Group combination with the correct G/L accounts, not a permissions or document fix." }
+    },
+    {
+      id: "flow-17-go-live-readiness", group: "consultant", n: "17", title: "Go-live readiness & data migration",
+      dur: "14 min read",
+      summary: "The four-phase Success by Design methodology and the go-live checklist by category — leaning more toward project-management reference than day-to-day functional use.",
+      concepts: [
+        { h: "Data migration: a six-step process, four tool options", p: "Migration runs Extract from Legacy → Clean & Transform → Map to BC Fields → RapidStart/API Load → Validate & Reconcile → Sign-off. RapidStart Services is BC's native tool, using Excel templates per table, best for master data (Customers, Vendors, Items, G/L Accounts), validated before applying. Configuration Packages bundle multiple related tables for one-step apply/validate, and export/import between environments for template companies. The BC API (REST) handles programmatic loads of large data sets, using PATCH for updates and POST for new records. Third-party ETL tools (Scribe, Stoneridge, Kingswaysoft) suit complex transformations or migrations from Dynamics NAV/GP/AX." },
+        { h: "Success by Design: four phases", p: "Initiate (1-2 weeks) covers project charter, stakeholder mapping, high-level scope, and access/environments. Implement (8-16 weeks) covers fit-gap analysis, configuration, data migration prep, and custom development. Prepare (2-4 weeks) covers user acceptance testing, training, data migration dry-run, and performance testing. Operate (go-live and beyond) covers cutover, hypercare support, post-go-live review, and knowledge transfer. Checkpoints — Initiate Review, Solution Blueprint, Mock Go-Live, Go-Live Readiness — happen at each phase gate." },
+        { h: "The go-live checklist, by category", p: "Data Migration: master data validated, opening balances posted correctly, open AR/AP reconciled, inventory opening entries costed correctly, historical data isolated. System Configuration: number series set, all Gen. Posting Setup combinations covered, VAT Posting Setup validated, bank accounts configured, workflows tested end-to-end. Users & Security: correct roles assigned, permission sets tested with no super-user in production, data sensitivity labels applied, GDPR reviewed, MFA enforced. Testing & Training: UAT sign-off obtained, end-to-end O2C and P2P tested in a production sandbox, month-end dry run completed, all roles trained, support escalation documented." },
+        { h: "Why this lesson leans thinner on hands-on detail", p: "Compared to the process-flow lessons in this series, this material sits closer to project-management reference than day-to-day functional use — it's the checklist a consultant consults during an implementation's structured phases, not something reached for mid-transaction the way a filter expression or a posting-group fix is." }
+      ],
+      why: "A go-live that skips items on this checklist doesn't fail visibly during testing — it fails in front of real users on day one, in production, which is the single most expensive time and place for a gap like an untested Gen. Posting Setup combination to surface.",
+      check: { q: "According to Success by Design, roughly how long does the Implement phase run, and what four activities happen during it?", a: "8–16 weeks, covering fit-gap analysis, configuration, data migration prep, and custom development." }
+    },
+    {
+      id: "flow-18-advanced-modules", group: "consultant", n: "18", title: "Advanced modules quick reference: Manufacturing & Service",
+      dur: "10 min read",
+      summary: "One-slide-each overview of the two Premium-license modules — no setup or configuration detail exists in this source material behind either.",
+      concepts: [
+        { h: "Manufacturing: Premium license required", p: "Manufacturing handles Bills of Materials, production routing, machine and work centers, and MRP planning, driving production orders from demand. Roles: Production Planner, Shop Floor Operator, Inventory, Finance. Flow: Sales Demand → MRP Run → Production Order → Release & Pick → Output Journal → Post & Close. Documents: Production BOM, Routing, Production Order, Production Journal, Capacity Ledger Entry, Item Ledger Entry." },
+        { h: "Manufacturing tips", p: "Standard Costing is the recommended costing method for manufactured items — consistent with the earlier point that Standard suits manufacturing generally. MRP is run through 'Calculate Regenerative Plan' in the Planning Worksheet. Critically, this entire module requires a Premium BC license — it isn't available on Essentials." },
+        { h: "Service Management: field service and contracts", p: "Service Management handles field service, repair-shop workflows, and recurring maintenance contracts, fully integrated with inventory (for spare parts) and finance (for billing). Roles: Service Manager, Service Tech, Dispatcher, Finance. Flow: Service Contract → Service Order → Dispatch Tech → Record Labor/Parts → Close Order → Post Invoice. Documents: Service Contract, Service Order, Service Item, Resource Ledger Entry, Service Invoice, Service Ledger Entry." },
+        { h: "Service Management tips, and the honest gap", p: "Service Items track individual serialized equipment with a full service history, and Contracts auto-create renewal invoices on expiry. **[expand later]** — for both modules, the source material provides exactly one process-flow slide each; there is no setup or configuration walkthrough behind either overview in this deck, so treat this lesson as a map of what exists, not a how-to-configure-it guide." }
+      ],
+      why: "Knowing that Manufacturing is Premium-only, at a glance, prevents a consultant from scoping a BOM-and-routing requirement against a client's existing Essentials license and then discovering the licensing gap mid-project.",
+      check: { q: "A client on an Essentials license wants BOM and routing-based production orders. What's the first thing to check before anything else?", a: "Whether they're prepared to upgrade to a Premium license — the Manufacturing module, including BOM and routing, is Premium-only and simply isn't available on Essentials, regardless of configuration effort." }
+    }
+  ]
 }
 
 ];
@@ -836,7 +1091,501 @@ const CURRICULUM_B = [
       code: "git stash\ngit checkout hotfix\ngit stash pop\n\ngit rebase main         # only on your own branch\ngit cherry-pick a1b2c3d"
     }
   ]
+},
+
+/* ---------------- ALCS: AL LANGUAGE CHEAT SHEET ---------------- */
+{
+  code: "ALCS", track: "developer", accent: "magenta",
+  title: "AL Language Cheat Sheet",
+  tagline: "Look it up in ten seconds, not ten minutes.",
+  audience: "AL developers who already know the objects and want the fact, not the tutorial",
+  desc: "Fast lookup reference for AL syntax, methods and object snippets — for developers who already know the objects and want the fact, not the tutorial.",
+  groups: [
+    { key: "syntax", label: "Syntax" },
+    { key: "methods", label: "Methods" },
+    { key: "objects", label: "Objects" },
+    { key: "tooling", label: "Tooling" }
+  ],
+  lessons: [
+    {
+      id: "alcs-01-syntax-basics", group: "syntax", n: "01", title: "Syntax basics: assignment, punctuation, arrays",
+      dur: "10 min read",
+      summary: "The handful of symbols that make AL read differently from a plain business-logic description: assignment, member access, grouping, indexing, scope, range, and arrays.",
+      concepts: [
+        { h: "Assignment is one symbol, not two", p: "AL writes assignment as `:=`, a colon immediately followed by an equal sign, treated as a single token. `Customer.\"Phone No.\" := '312-555-1212';` reads as 'assign the value on the right to the field on the left.' There is no bare `=` for assignment in AL — a lone `=` only ever appears inside a comparison or a filter expression, so if you see `:=` failing to compile, the first thing to check is a stray space or a missing colon." },
+        { h: "The seven punctuation operators", p: "Beyond assignment, AL leans on a small fixed set of symbols: `.` for member access (`Customer.Name`), `()` for grouping and calls, `[]` for indexing into an array, `::` for scope (`Customer.Status::Open` picks a value off an enum or option), `..` for a range (used inside filters and `CalcDate`-style expressions), and `@` to mark a filter as case-insensitive. Reading unfamiliar AL usually comes down to recognizing which of these seven you're looking at." },
+        { h: "Arrays: bounded but generous", p: "An AL array can have up to 10 dimensions and up to 1,000,000 total elements across a single variable. You declare one by adding the `array` keyword in front of the variable's type, e.g. `MyValues: array[10] of Decimal;`. In practice most AL arrays you'll meet are one-dimensional and small — used for things like a fixed set of period buckets — because a table with a key is almost always the better tool once the data needs to persist or grow." },
+        { h: "Why this matters before the object types", p: "None of the twelve AL object types make sense until these symbols are second nature — a trigger body is just punctuation-heavy assignment and comparison wrapped in an object shell. Treat this lesson as the alphabet, not the grammar." }
+      ],
+      why: "Every AL error message that isn't a missing-object error is usually a punctuation or assignment mistake — a `.` where a `:=` was needed, or vice versa. Knowing the seven symbols cold turns a five-minute compile-error hunt into a two-second glance.",
+      check: { q: "What is wrong with this line, and what does it actually do as written: `Customer.\"Phone No.\" = '312-555-1212';`?", a: "It uses `=` instead of `:=`. Inside a trigger body this is not a valid standalone statement — AL will reject it at compile time, because `=` produces a Boolean comparison result, not an assignment, and a bare comparison isn't a legal statement on its own." },
+      code: "// Assignment: one symbol, ':='\nCustomer.\"Phone No.\" := '312-555-1212';\n\n// Punctuation in context\nCustomer.Name;                          // . member access\n(UnitPrice + Freight) * Quantity;       // () grouping\nDailyRates[3];                          // [] indexing\nif Customer.Status = Customer.Status::Open then; // :: scope\nCustomer.SetFilter(\"Posting Date\", '%1..%2', StartDate, EndDate); // .. range\nCustomer.SetFilter(Name, '@micro*');    // @ case-insensitive\n\n// Array declaration: up to 10 dimensions, 1,000,000 elements total\nvar\n    DailyRates: array[7] of Decimal;"
+    },
+    {
+      id: "alcs-02-variables", group: "syntax", n: "02", title: "Variables: global, local, protected",
+      dur: "8 min read",
+      summary: "What each scope means and when a codeunit needs which one — kept deliberately brief, because the source material only names the three scopes without walking through examples.",
+      concepts: [
+        { h: "Global variables: declared once, visible everywhere in the object", p: "A global variable sits in the `var` section at the top of an object, outside any procedure. Every procedure and trigger in that object can read and write it directly, without it being passed as a parameter. This is the right choice for state that genuinely belongs to the object as a whole — a Record variable a codeunit's procedures all operate on, for example." },
+        { h: "Local variables: scoped to one procedure", p: "A local variable is declared in the `var` section inside a specific procedure. It exists only for the duration of that procedure's execution and is invisible to every other procedure in the object, even ones defined right next to it. Reaching for a local variable by default, and promoting it to global only when more than one procedure genuinely needs it, keeps an object's state easy to reason about." },
+        { h: "Protected variables: shared within the object, hidden from outside callers", p: "A `protected` variable is visible to the object that declares it and to code that extends or implements it, but not to unrelated external callers the way a `public` procedure's parameters would be. It sits between global (visible inside the object) and a private implementation detail exposed through a getter — useful when a base object wants to share state with what builds on it, but not with everyone." },
+        { h: "Why this lesson stays short", p: "The source slide for this topic names the three scopes — global, local, protected — without further elaboration or examples. Rather than inventing detail the deck doesn't provide, this cheat sheet entry stays at the level the source actually supports: know the three names and what each buys you, and consult the AL object reference for the specific object type when you need worked examples." }
+      ],
+      why: "Defaulting everything to global is a common beginner habit that turns into a debugging headache the moment two procedures both quietly depend on the same shared state — scoping a variable correctly the first time avoids that entirely.",
+      check: { q: "A codeunit has two unrelated procedures that each need their own temporary counter. Should that counter be global or local, and why?", a: "Local, declared inside each procedure. A global variable would be shared by both procedures, meaning one procedure's counter value could leak into or get clobbered by the other's — exactly the kind of coupling that scoping to local avoids." }
+    },
+    {
+      id: "alcs-03-operators", group: "syntax", n: "03", title: "Operators quick reference",
+      dur: "8 min read",
+      summary: "Member, assignment, grouping, indexing, scope and range operators, plus the arithmetic/Boolean/relational categories the deck names but doesn't spell out symbol by symbol.",
+      concepts: [
+        { h: "The seven symbol operators, recapped", p: "The same seven symbols from the syntax-basics lesson are, formally, AL's operator set: `.` (member of), `:=` (assignment), `()` (grouping), `[]` (indexing), `::` (scope), `..` (range), and `@` (case-insensitive). If you already have those from Lesson 01, this entry doesn't add new symbols — it names them as operators rather than punctuation, because that's how the source material categorizes them." },
+        { h: "Operator behavior depends on the data type involved", p: "The source deck frames its operator table as being 'grouped by category, depending on the data types we are using with a particular operator' — the same symbol can behave differently depending on what it's applied to. This is a real and important property of AL (and of most languages with operator overloading), even though the specific symbol-by-symbol arithmetic/Boolean/relational tables aren't included in what follows." },
+        { h: "Arithmetic, Boolean and relational operators: named, not detailed here", p: "The deck dedicates a slide title to each of these three categories — arithmetic operators, Boolean operators, relational operators — but the slide content captured for this cheat sheet stops at the title; no symbol table was extracted for any of the three. Rather than guessing at a list, this entry flags the gap honestly: **[expand later]**, once the original slide deck's tables for these three categories can be reviewed directly." },
+        { h: "What to do in the meantime", p: "For arithmetic, Boolean and relational operators specifically, Microsoft's own AL language reference documentation is the reliable source until this lesson is filled in — treat this cheat sheet entry as confirming that these three categories exist and are distinct in AL, not as the full symbol table for any of them." }
+      ],
+      why: "A cheat sheet that quietly guesses at symbols it never confirmed would be worse than useless — it would look authoritative while being wrong. Flagging the gap here means nobody trusts a fabricated relational-operator table that was never actually in the source.",
+      check: { q: "Why does this lesson list the seven punctuation-style operators in detail but only name arithmetic, Boolean and relational operators without listing their symbols?", a: "Because the source material behind this cheat sheet captured a full table for the seven punctuation operators (member, assignment, grouping, indexing, scope, range, case-insensitive), but only slide titles — no symbol tables — for the arithmetic, Boolean and relational categories. The lesson reflects exactly what was confirmed rather than inventing the missing tables." }
+    },
+    {
+      id: "alcs-04-message-dialog", group: "methods", n: "04", title: "Message & Dialog methods",
+      dur: "8 min read",
+      summary: "Message(), Error(), Confirm() — three ways to talk to the user, and the one that stops your code cold when it fires.",
+      concepts: [
+        { h: "Message(): tells the user something, then keeps going", p: "`Message('Operation completed');` pops a dialog the user has to dismiss, but once dismissed, execution resumes exactly where it left off. Use it for confirmation that something succeeded — never for anything that needs the user to make a decision, because Message() has no return value to act on." },
+        { h: "Error(): stops execution and rolls back", p: "`Error('Invalid value');` immediately halts the current process, shows the message, and rolls back any uncommitted changes made since the last commit point. This is the method to reach for the instant a business rule is violated and the operation genuinely cannot continue — there's no 'resume after' with Error(), by design." },
+        { h: "Confirm(): the only one of the three that branches", p: "`if Confirm('Delete record?') then` returns a Boolean — Yes maps to true, No maps to false — and your code decides what happens next in either branch. This is the method for anything destructive or irreversible where the user should get a chance to back out." },
+        { h: "Picking the right one under pressure", p: "A fast way to choose: if the code can't sensibly continue, use Error(). If the user just needs to know something happened, use Message(). If the next step depends on what the user wants, use Confirm(). Reaching for Message() where Error() was needed is a common code-review flag — it lets a broken process silently continue instead of stopping it." }
+      ],
+      why: "Using Message() where Error() belongs is one of the more dangerous small mistakes in AL — it lets a process that should have stopped keep running with bad data, and nobody notices until the bad data shows up somewhere downstream.",
+      check: { q: "A validation check finds that a required field is blank. Should the code use Message() or Error(), and what actually happens if you pick the wrong one?", a: "Error() — the process cannot correctly continue with a required field blank. Using Message() instead would show the same text to the user but let execution continue anyway, meaning the record could still be inserted or modified with the missing value." },
+      code: "// Message(): informs, execution continues\nMessage('Operation completed');\n\n// Error(): stops execution, rolls back uncommitted changes\nif Quantity <= 0 then\n    Error('Quantity must be greater than zero.');\n\n// Confirm(): returns Boolean, code branches on the answer\nif Confirm('Delete record?') then\n    Customer.Delete()\nelse\n    exit;"
+    },
+    {
+      id: "alcs-05-string-methods", group: "methods", n: "05", title: "String methods",
+      dur: "10 min read",
+      summary: "StrLen, CopyStr, UpperCase, LowerCase, Format, Evaluate — the everyday text-handling toolkit, and the one pair (Format/Evaluate) that moves values in and out of text form.",
+      concepts: [
+        { h: "Measuring and slicing: StrLen, CopyStr", p: "`StrLen(Name)` returns how many characters a string holds — useful before writing into a fixed-length field, so you don't truncate silently. `CopyStr(Text, 1, 5)` extracts a substring starting at position 1 for 5 characters; the two arguments after the source string are start position and length, in that order, and mixing them up is a common source of an off-by-a-chunk bug." },
+        { h: "Case conversion: UpperCase, LowerCase", p: "`UpperCase(Name)` and `LowerCase(Email)` return a new string in the requested case without modifying the original variable — like most AL string methods, they're non-mutating functions, not in-place transformations, so the result has to be assigned somewhere to be kept." },
+        { h: "Format(): turning any value into text", p: "`Format(Today)` converts a non-text value — a date, a decimal, a Boolean — into its text representation, using the type's default display format unless you tell it otherwise. This is the method behind almost every place a non-text field gets concatenated into a message or a log line." },
+        { h: "Evaluate(): the reverse direction, and the one that can fail", p: "`Evaluate(MyDate, TxtDate)` parses a text value into a typed variable — here, into a Date. Unlike Format(), Evaluate() can fail if the text doesn't parse into the target type, so its Boolean return value (unused in the simple example, but present) is worth checking before trusting the result in anything that processes external or user-typed input." },
+        { h: "Format() and Evaluate() are inverses", p: "Format() goes typed-value-to-text; Evaluate() goes text-to-typed-value. Any time you're moving a value across a boundary that only speaks text — a CSV import, a message string, a URL parameter — one of these two methods is almost always involved." }
+      ],
+      why: "CopyStr's argument order (start, then length — not start and end) is the single most common string-method mistake in AL code review; getting it backwards doesn't error, it just silently returns the wrong substring.",
+      check: { q: "You need the first 3 characters of a Customer No. that might be up to 20 characters long. Which call gets you that, and what would `CopyStr(CustNo, 3, 1)` give you instead by comparison?", a: "`CopyStr(CustNo, 1, 3)` — start at position 1, take 3 characters. `CopyStr(CustNo, 3, 1)` starts at position 3 and takes only 1 character, which is a different substring entirely — a reminder that the two numeric arguments are start position and length, not two endpoints." },
+      code: "// Measuring and slicing\nLen := StrLen(Name);\nFirstFive := CopyStr(Text, 1, 5);\n\n// Case conversion\nUpperName := UpperCase(Name);\nLowerEmail := LowerCase(Email);\n\n// Typed value to text\nTodayAsText := Format(Today);\n\n// Text to typed value — check the return value on real input\nif Evaluate(MyDate, TxtDate) then\n    // MyDate now holds the parsed date\nelse\n    Error('%1 is not a valid date.', TxtDate);"
+    },
+    {
+      id: "alcs-06-date-time-methods", group: "methods", n: "06", title: "Date & Time methods",
+      dur: "9 min read",
+      summary: "Today, CurrentDateTime, CalcDate — the three ways AL reads the clock, plus the date formula syntax that makes CalcDate useful.",
+      concepts: [
+        { h: "Today(): the current date", p: "`WorkDate := Today();` returns today's date with no time component. In AL, `WorkDate` is itself a special notion — a configurable working date separate from the real calendar date, commonly used in testing so a whole scenario can be run as if it were any date without changing the system clock." },
+        { h: "CurrentDateTime(): date and time together", p: "`DT := CurrentDateTime();` returns the current system date and time as a single DateTime value, at whatever precision the system clock provides. Use this over Today() whenever the time component actually matters — logging when something happened, not just on what day." },
+        { h: "CalcDate(): a date, offset by a formula", p: "`CalcDate('+1M', Today);` takes a date formula and a starting date, and returns the date that results from applying the formula. It's the method behind almost every 'due date', 'next period', or 'X days from now' calculation in Business Central." },
+        { h: "Date formula syntax, briefly", p: "A date formula combines a sign (`+` or `-`), a number, and a unit letter: `D` for day, `WD` for weekday, `M` for month, `Y` for year — so `'+1M'` means 'one month later' and `'-7D'` means 'seven days earlier.' `CM` (current month) and similar period shortcuts also appear in formulas used elsewhere in Business Central, such as payment terms." }
+      ],
+      why: "Hardcoding a date calculation by hand — adding 30 to a day number and hoping the month doesn't roll over — is a recurring source of off-by-a-few-days bugs. CalcDate() with a proper date formula handles month and year boundaries correctly every time.",
+      check: { q: "A payment term needs to calculate a due date exactly one month after the posting date. What's the CalcDate() call, and why is it more reliable than manually adding 30 to the day?", a: "`CalcDate('+1M', PostingDate)`. Manually adding 30 days doesn't reliably land one calendar month later — months have different lengths — while the '+1M' formula tells BC to move forward by a calendar month regardless of how many days that month actually has." },
+      code: "// Today's date, no time component\nWorkDate := Today();\n\n// Current date and time together\nDT := CurrentDateTime();\n\n// A date, offset by a formula: one month later\nDueDate := CalcDate('+1M', Today);\n\n// A date, offset backward: seven days earlier\nReminderDate := CalcDate('-7D', DueDate);"
+    },
+    {
+      id: "alcs-07-math-utility-methods", group: "methods", n: "07", title: "Math & Utility methods",
+      dur: "8 min read",
+      summary: "Round, Random, Clear, Sleep — a small grab-bag of methods that don't fit anywhere else, but that show up constantly once you're writing real AL.",
+      concepts: [
+        { h: "Round(): rounding to a precision, not a decimal count", p: "`Round(Amount, 0.01)` rounds `Amount` to the nearest 0.01 — the second argument is a precision value, not a number of decimal places, which is a subtle but important distinction from rounding functions in some other languages. `Round(Amount, 1)` rounds to the nearest whole number; `Round(Amount, 5)` rounds to the nearest 5." },
+        { h: "Random(): a bounded random integer", p: "`Random(100)` returns a random integer, typically used where test data or a non-deterministic tie-breaker is genuinely needed. It's uncommon in real business logic — most AL code should be deterministic — but shows up in demo data generation and some load-testing scenarios." },
+        { h: "Clear(): resets a variable to its default", p: "`Clear(CustomerRec)` resets the variable to its type's default/blank state — for a Record variable, that means every field goes back to its default value, as if freshly declared. This is different from `Init()` on a Record, which only resets the fields, not the variable's other state; `Clear()` is the more general-purpose reset that works on any variable type." },
+        { h: "Sleep(): pausing execution", p: "`Sleep(1000)` pauses execution for the given number of milliseconds — 1000 here means one second. Legitimate uses are rare in day-to-day AL (retry logic with backoff, deliberately staged demo scripts); reaching for Sleep() to 'fix' a race condition is usually masking a deeper ordering problem rather than solving it." }
+      ],
+      why: "The Round() precision argument is the one beginners get backwards most often — passing '2' expecting two decimal places when the method actually wants a precision value like 0.01 produces a wildly wrong rounded amount that's easy to miss in testing with round numbers.",
+      check: { q: "You want an amount rounded to the nearest cent. What's the correct Round() call, and what would `Round(Amount, 2)` actually do instead?", a: "`Round(Amount, 0.01)` rounds to the nearest 0.01, i.e. the nearest cent. `Round(Amount, 2)` rounds to the nearest 2 — a completely different and much coarser result, since the second argument is a precision value, not a decimal-place count." },
+      code: "// Round to the nearest cent (precision, not decimal-place count)\nRoundedAmount := Round(Amount, 0.01);\n\n// A random integer between 0 and 99\nDieRoll := Random(100);\n\n// Reset a Record variable to its blank state\nClear(CustomerRec);\n\n// Pause for one second\nSleep(1000);"
+    },
+    {
+      id: "alcs-08-record-db-methods", group: "methods", n: "08", title: "Record & Database methods",
+      dur: "12 min read",
+      summary: "The full lifecycle of a record — create it, find it, change it, remove it — plus the housekeeping methods that sit around that lifecycle.",
+      concepts: [
+        { h: "The lifecycle: Init, Insert, Modify, Delete", p: "`Init()` resets a record variable to its default values before you start filling it in. `Insert()` writes a new record to the table. `Modify()` writes changes to a record you already have loaded. `Delete()` removes it. All four operate on the record variable currently held in memory — none of them re-reads from the database first, so the variable has to already reflect the record you mean to act on." },
+        { h: "Finding records: Get, FindFirst, FindSet, FindLast, Next", p: "`Get()` retrieves one record by its primary key — `Customer.Get('C0001');` — and is the fastest lookup when you already know the key. `FindFirst()` and `FindLast()` return the first or last record matching the current filters. `FindSet()` is the one you loop with: `if Customer.FindSet() then repeat ... until Customer.Next() = 0;`. `Next()` advances the cursor and returns 0 once there are no more records, which is what ends the loop." },
+        { h: "Aggregate and housekeeping: Count, IsEmpty, Commit", p: "`Count()` returns how many records match the current filter. `IsEmpty()` answers the yes/no version of the same question without materializing a count, and is cheaper when all you need is 'are there any rows at all.' `Commit()` permanently saves everything done so far in the current transaction — including work outside the current procedure." },
+        { h: "Get() vs FindFirst(): pick by what you know", p: "Use `Get()` when you have the primary key value in hand — it goes straight to the row. Use `FindFirst()`/`FindSet()` when you only have a filter and need whichever record (or set of records) satisfies it. Reaching for `FindFirst()` when a `Get()` would do is a common performance smell in code review — it filters and scans instead of doing a direct key lookup." },
+        { h: "Commit() is the one to be careful with", p: "Calling `Commit()` inside a larger process locks in every change made so far, even changes made by other codeunits earlier in the same call chain, and it breaks the ability to roll everything back on a later error. The deck's own examples treat it as a deliberate, standalone step (`Commit();` with nothing else on the line) rather than something to sprinkle inside a loop." }
+      ],
+      why: "Choosing the wrong method here doesn't just cost performance — Get() vs FindFirst() on a large table is the difference between a key lookup and a table scan, and a misplaced Commit() can silently make a later rollback only partial. This is the table every AL developer ends up needing multiple times a day, which is exactly why it belongs in a cheat sheet rather than a tutorial.",
+      check: { q: "You need to loop through every open Sales Order for a customer and total their amounts. Which methods do you reach for, and why not Get()?", a: "FindSet() to enter the loop and Next() to advance through it, because you don't know the primary keys in advance — you only have a filter (customer + open status). Get() only works when you already know the exact primary key of the single record you want." },
+      code: "// Lifecycle\nRentalContract.Init();\nRentalContract.\"No.\" := 'RC-0001';\nRentalContract.Insert();\n\nRentalContract.Get('RC-0001');\nRentalContract.Status := RentalContract.Status::Active;\nRentalContract.Modify();\n\nRentalContract.Delete();\n\n// Looping a filtered set\nCustomer.SetRange(\"Country/Region Code\", 'TN');\nif Customer.FindSet() then\n    repeat\n        // process Customer\n    until Customer.Next() = 0;\n\n// Housekeeping\nTotal := Customer.Count();\nif Customer.IsEmpty() then\n    exit;\nCommit();"
+    },
+    {
+      id: "alcs-09-filtering-validation-methods", group: "methods", n: "09", title: "Filtering & Validation methods",
+      dur: "10 min read",
+      summary: "SetRange, SetFilter, Reset, Validate, TestField — how you narrow down which records you're working with, and how you keep bad data from ever reaching the database.",
+      concepts: [
+        { h: "SetRange(): the simple, common case", p: "`Customer.SetRange(\"Country\", 'TN');` filters the record variable down to rows matching a single value or a from/to range. It's the method to reach for first — clearer to read than SetFilter() and covers the majority of real filtering needs." },
+        { h: "SetFilter(): when you need an expression", p: "`Customer.SetFilter(Name, 'A*');` applies BC's full filter-expression syntax — wildcards, ranges, OR conditions — to a field. Reach for this once a plain value or range (what SetRange handles) isn't expressive enough." },
+        { h: "Reset(): clearing filters, not data", p: "`Customer.Reset();` removes every filter currently applied to the record variable, returning it to an unfiltered state so the next Find/Get operates over the whole table again. It does not touch any data — only the filter state on that variable." },
+        { h: "Validate(): assignment plus business rules", p: "`Customer.Validate(Name, 'Kacem');` doesn't just set the field — it runs the same OnValidate trigger logic that fires when a user types into that field on a page. Assigning a field directly (`Customer.Name := 'Kacem';`) skips that trigger entirely, which is exactly why Validate() is the safer default any time a field has validation logic behind it." },
+        { h: "TestField(): fail loudly if a field is blank", p: "`Customer.TestField(Name);` throws a standard, consistent error if the field is empty or zero — it's a one-line guard clause used constantly before posting or processing, instead of hand-writing `if Name = '' then Error(...)` every time." }
+      ],
+      why: "Assigning a field directly instead of calling Validate() is a bug that hides well — the record saves fine, the field looks correct, and only later does something downstream break because the OnValidate logic (which might set a related field, or block an invalid combination) never ran.",
+      check: { q: "Why does `Customer.Name := 'Kacem';` behave differently from `Customer.Validate(Name, 'Kacem');`, even though both end up with the same field value?", a: "Direct assignment only changes the value in memory — it does not run the field's OnValidate trigger. Validate() runs that trigger, which is where any business logic tied to changing that field (recalculating a dependent field, enforcing a rule) actually lives. Skipping Validate() means that logic silently never executes." },
+      code: "// SetRange: simple value or range match\nCustomer.SetRange(\"Country\", 'TN');\n\n// SetFilter: expression syntax\nCustomer.SetFilter(Name, 'A*');\n\n// Reset: clear filters, keep data untouched\nCustomer.Reset();\n\n// Validate: assignment that also runs OnValidate logic\nCustomer.Validate(Name, 'Kacem');\nCustomer.Modify();\n\n// TestField: fail loudly if blank\nCustomer.TestField(Name);"
+    },
+    {
+      id: "alcs-10-object-types", group: "objects", n: "10", title: "AL object types quick reference",
+      dur: "10 min read",
+      summary: "All the object types Business Central compiles, grouped into Data, UI and Logic layers, in one recap table.",
+      concepts: [
+        { h: "Three layers, one architecture", p: "Every AL object sorts into one of three layers: a Data layer that stores and structures business data, a UI layer that presents and lets a user manipulate that data, and a Logic layer that implements business rules and everything else that isn't pure storage or pure screen. Knowing which layer an object belongs to answers 'where does this logic go' before you've even opened VS Code." },
+        { h: "The full recap table", p: "See the code block for the complete 13-row table: which object type sits in which layer, and what it's actually for. This is the source material's own end-of-course recap, not a re-derivation — it's the table to skim when you're not sure which object type a new requirement calls for." },
+        { h: "One inconsistency worth flagging honestly", p: "The source material's early framing (introducing the three layers) groups Profile and XMLport under the Logic layer, alongside Codeunit and Report. Its later, more complete recap table — the one reproduced here — places Profile and XMLport under UI instead, and adds Permission Set (Data) and Report Extension (Logic), which the early framing doesn't mention at all. This lesson follows the later, fuller recap table as the more authoritative version, since it's the one that actually accounts for all 13 object types." },
+        { h: "Why the grouping is useful day to day", p: "When a new requirement comes in — 'we need to track X' — sorting it into Data/UI/Logic first narrows the object-type decision fast: if it's about storing something new, you're choosing between Table and Table Extension; if it's about how something looks or is entered, Page or Page Extension; if it's about a rule or a calculation, Codeunit, Report, or Query." }
+      ],
+      why: "A developer who reaches for a Codeunit to store data, or a Table to implement a calculation, has picked the wrong layer for the job — it usually still compiles, but it fights the platform's own conventions and confuses the next developer who opens the object.",
+      check: { q: "Which layer does Permission Set belong to in the recap table, and why might that classification surprise someone new to AL?", a: "Data layer. It's a bit surprising because permission sets feel like a security or access-control concern rather than data storage — but the recap groups it with Data because a permission set declares access rights over data objects (tabledata entries) rather than implementing business logic itself." },
+      code: "// AL object types — Data / UI / Logic recap\n// Object              | Layer | What you use it for\n// Table                | Data  | Stores structured business data, with keys and validation\n// Table extension       | Data  | Adds fields, keys and triggers to a standard table\n// Enum                  | Data  | A fixed list of allowed values, shown as a dropdown\n// Enum extension        | Data  | Adds values to an enum owned by someone else\n// Query                 | Data  | Read-only join and aggregation across several tables\n// Permission set         | Data  | Declares who may read, write and execute what\n// Page                  | UI    | The screen users see and edit their data on\n// Page extension         | UI    | Adds fields, groups and actions to a standard page\n// Profile                | UI    | Binds a role to its Role Center and its customizations\n// XMLport                | UI    | Imports and exports data as XML or as delimited text\n// Codeunit               | Logic | Reusable business logic, plus event publishers and subscribers\n// Report                 | Logic | Formatted output of data, for print, PDF or Excel\n// Report extension        | Logic | Adds columns and layouts to a standard report"
+    },
+    {
+      id: "alcs-11-snippets", group: "objects", n: "11", title: "VS Code snippet cheat sheet",
+      dur: "14 min read",
+      summary: "Every object-scaffolding snippet the AL Language extension ships, in one lookup table, with the codeunit skeleton fully spelled out as a worked example.",
+      concepts: [
+        { h: "One snippet per object type", p: "Typing the snippet prefix and pressing Tab scaffolds a compilable skeleton of that object type: `ttable` for a table, `tenum` for an enum, `tpage` for a page, `tcodeunit` for a codeunit, `treport` for a report, `txmlport` for an XMLport, `tquery` for a query. Extension objects get their own prefixes — `ttableext`, `tpageext`, `tenumext` — and there's a dedicated Role Center starter, `tpagerolecenterwaldo`, from the community Waldo's snippet pack many AL setups include." },
+        { h: "What each skeleton actually gives you", p: "A table snippet gives you `fields { }` and `keys { }` sections with an `Id` and name placeholder. A codeunit snippet gives you an empty `trigger OnRun()` and a `var` section — nothing else, because a codeunit's real content is whatever procedures you add. A report snippet is the most opinionated: it pre-fills `UsageCategory`, `ApplicationArea`, `DefaultLayout` and a `dataset`/`requestpage` shell, because a report without those properties won't show up anywhere a user could run it." },
+        { h: "Object snippets not covered by this source material", p: "The decks this cheat sheet is drawn from do not show a dedicated interface-object snippet (`tinterface`) or list one explicitly — interfaces are covered functionally in the AL Academy series instead. If your VS Code AL Language extension version ships one, it isn't documented here; treat that gap as **[expand later]**." },
+        { h: "The codeunit skeleton, worked in full", p: "`codeunit Id MyCodeunit { trigger OnRun() begin end; var myInt: Integer; }` is the entire scaffold `tcodeunit` produces. Everything useful — `CheckAvailability()`, `CalculateRentalPrice()`, and so on — gets added by hand afterward; the snippet only guarantees the object compiles empty so you have a stable starting point." }
+      ],
+      why: "Typing a full object skeleton from memory is slow and error-prone — a missing brace or semicolon in a hand-typed `report` block costs more debugging time than the two seconds it takes to type `treport` and Tab. Knowing which snippet exists for which object type removes the temptation to hand-roll boilerplate.",
+      check: { q: "You're about to add fields to an existing standard table without touching the original object. Which snippet, and what does 'without touching the original' actually mean here?", a: "ttableext. It scaffolds a tableextension object with its own fields/keys/fieldgroups sections that layer on top of the target table — the original table object is never opened or modified, which is what keeps the change upgrade-safe." },
+      code: "// tcodeunit — the full skeleton this snippet produces\ncodeunit Id MyCodeunit\n{\n    trigger OnRun()\n    begin\n    end;\n\n    var\n        myInt: Integer;\n}\n\n// Snippet quick reference\n// ttable            -> table\n// tenum             -> enum\n// tpage             -> page\n// ttableext         -> tableextension\n// tpageext          -> pageextension\n// tcodeunit         -> codeunit\n// treport           -> report\n// txmlport          -> xmlport\n// tquery            -> query\n// tenumext          -> enumextension\n// tpagerolecenterwaldo -> Role Center page starter"
+    },
+    {
+      id: "alcs-12-app-launch-json", group: "tooling", n: "12", title: "app.json & launch.json field reference",
+      dur: "12 min read",
+      summary: "Every field in both files, what it controls, and why confusing the two is the most common beginner mistake.",
+      concepts: [
+        { h: "launch.json: how VS Code runs and debugs your project", p: "launch.json configures running and debugging of the AL project inside VS Code — its main role is connecting your VS Code session to a Business Central sandbox. Pressing F5 reads this file to know which server to publish to, which object to open, and what to do on error. Nothing in launch.json ships with the extension; it's purely a local development-session setting." },
+        { h: "launch.json field reference", p: "`type` is usually `al`. `request` defines the action, usually `launch`. `name` is the display name of that launch configuration (you can have several). `server` and `serverInstance` point at the Business Central environment. `authentication` sets the login method (UserPassword or AAD). `startupObjectType` and `startupObjectId` control what opens automatically after publish — a Page, a RoleCenter, and so on. `breakOnError` decides whether an unhandled error stops execution in the debugger." },
+        { h: "app.json: what the extension actually is", p: "app.json is the main configuration file of an AL extension — it defines the extension's identity: what it's called, who publishes it, what version it's at, and what it depends on. This file's contents get compiled into the .app file and travel with the extension wherever it's installed; unlike launch.json, it isn't local-only." },
+        { h: "app.json field reference", p: "`id` is the extension's GUID. `name` and `publisher` identify it in any environment it's installed to. `version` tracks releases. `brief` and `description` are the short and long summaries shown in the extension listing. `platform` and `application` declare which Business Central platform/application versions this extension supports. `dependencies` lists other extensions it requires. `idRanges` reserves the block of object IDs this extension is allowed to use — the setting that prevents two extensions in the same environment from colliding on object numbers." },
+        { h: "Why beginners mix them up", p: "Both files are JSON, both live at the project root, and both feel like 'settings.' But launch.json only affects how you personally debug against a sandbox right now — change it and nothing about the extension itself changes. app.json defines the extension itself — its identity, its dependencies, its reserved ID range — and mistakes there (a wrong idRanges value, a missing dependency) show up as compile errors or publish failures that have nothing to do with your debug session." }
+      ],
+      why: "A developer who edits launch.json trying to fix an object ID collision, or edits app.json trying to point their debug session at a different sandbox, is editing the wrong file — the two control genuinely different things, and confusing them wastes real troubleshooting time on a change that can't possibly fix the symptom.",
+      check: { q: "You need to reserve object IDs 78600–78649 so no other extension in the environment collides with your rental project. Which file, and which field?", a: "app.json, the idRanges field. It's part of the extension's own identity and compiled behavior, not a debug-session setting — launch.json has no concept of object ID ranges at all." },
+      code: "// launch.json (excerpt)\n{\n  \"version\": \"0.2.0\",\n  \"configurations\": [\n    {\n      \"type\": \"al\",\n      \"request\": \"launch\",\n      \"name\": \"Rental Sandbox\",\n      \"server\": \"https://businesscentral.dynamics.com\",\n      \"serverInstance\": \"BC\",\n      \"authentication\": \"AAD\",\n      \"startupObjectType\": \"Page\",\n      \"startupObjectId\": 78603,\n      \"breakOnError\": true\n    }\n  ]\n}\n\n// app.json (excerpt)\n{\n  \"id\": \"a1b2c3d4-0000-0000-0000-000000000000\",\n  \"name\": \"Rental Management\",\n  \"publisher\": \"Talan\",\n  \"version\": \"1.0.0.0\",\n  \"brief\": \"Rental equipment management extension\",\n  \"description\": \"Adds equipment rental tracking to Business Central.\",\n  \"platform\": \"24.0.0.0\",\n  \"application\": \"24.0.0.0\",\n  \"dependencies\": [],\n  \"idRanges\": [ { \"from\": 78600, \"to\": 78649 } ]\n}"
+    },
+    {
+      id: "alcs-13-vscode-essentials", group: "tooling", n: "13", title: "VS Code essentials for AL",
+      dur: "10 min read",
+      summary: "Explorer, Source Control, Debugger, Problems, Output, Status bar, Command Palette — one line each, so you know where to look before you go hunting.",
+      concepts: [
+        { h: "Explorer, Source Control, Search", p: "The Explorer view is the default view when you open a project — it lists the project's files and lets you select one or more for editing. Source Control, once activated, automatically tracks and displays every change made to files in the workspace. Search lets you find text across the whole project rather than one file at a time." },
+        { h: "The code editor, the Debugger, and Extensions", p: "The code editor itself is where you spend most of your time — it activates when you create or open a file. The built-in Debugger handles basic troubleshooting of your running code. Out of the box, VS Code doesn't understand AL syntax at all; the AL Language extension, installed from the Extensions view, is what turns on AL-aware editing, IntelliSense, and compilation." },
+        { h: "Problems and Output: where compiler feedback lands", p: "With an extension like AL that has advanced editing features, VS Code flags code problems while you type, colorizing problem lines and categorizing each one as an error, a warning, or an info message — all of them collected in the Problems panel. The Output panel is where VS Code displays messages during and after a command runs, such as a publish or a symbol download." },
+        { h: "The status bar, left to right", p: "The status bar reports, in order: Git branch info (if source control is enabled), the current count of errors and warnings, cursor position (line and column), indentation size and type, the file's encoding, its line terminator (CR/LF), the language mode of the current file (click it to change languages), a feedback button, and a notification icon for product updates. It's a lot of information packed into one thin strip, but every item is a one-glance answer to a question you'd otherwise dig for." },
+        { h: "The Command Palette: the fastest way to do anything", p: "The Command Palette gives quick access to standard and extended commands, and it's one of the most important tools in VS Code. You can open it via F1 (the most-used method), the Ctrl+Shift+P keyboard shortcut, the View menu, or the gear/Manage icon. Almost every AL-specific action — AL: Go!, AL: Download symbols, AL: Publish — is run through it rather than through a dedicated button." }
+      ],
+      why: "A developer who doesn't know the status bar shows a live error/warning count wastes time opening the Problems panel just to check whether the file compiles clean — the same information is sitting one glance away the entire time they're typing.",
+      check: { q: "You want to know, without opening any panel, whether your current file has any compile errors. Where do you look?", a: "The status bar — it shows a running count of errors and warnings for the current file at all times, updated live as you type, without needing to open the Problems panel." }
+    }
+  ]
+},
+
+/* ---------------- HANDS: HANDS-ON DEVELOPMENT (RENTAL MANAGEMENT) ---------------- */
+{
+  code: "HANDS", track: "developer", accent: "lime",
+  title: "Hands-on Development: Rental Management",
+  tagline: "One extension, twelve object types, built module by module until it ships.",
+  audience: "AL developers building their first real extension, technical consultants moving into development",
+  desc: "A project-based walkthrough that builds one real extension — table to capstone — teaching each AL object type by using it, not just describing it.",
+  groups: [
+    { key: "setup", label: "Project setup" },
+    { key: "objects", label: "Table, Enum, Page" },
+    { key: "extensions", label: "Extensions & Codeunit" },
+    { key: "reporting", label: "Report, XMLPort, Query" },
+    { key: "rolecenter", label: "Role Center & Security" },
+    { key: "capstone", label: "Capstone" }
+  ],
+  lessons: [
+    {
+      id: "hands-01-setup", group: "setup", n: "01", title: "Project setup: the Rental Management project",
+      dur: "15 min read",
+      summary: "What you're building across this series, the three-layer architecture every object in it belongs to, and the naming/numbering conventions that keep it all coherent.",
+      concepts: [
+        { h: "What you're building", p: "One project, six modules, twelve AL object types: a Rental Management extension that lets a business rent out equipment, price the rental automatically, report on availability, and import its equipment catalogue from a CSV file. Every lesson in this series adds one object to that same project — nothing here is a throwaway example." },
+        { h: "Three layers, one architecture", p: "The project sorts into a Data layer (Table, Enum, Query — stores and structures the business data), a UI layer (Page, Page Extension — presents and manipulates it), and a Logic layer (Codeunit, Report, XMLPort, Profile, Permission Set — implements the business rules and everything else that isn't pure storage or pure screen). Knowing which layer an object belongs to answers 'where does this logic go' before you've even opened VS Code." },
+        { h: "Naming and numbering conventions", p: "Every object in this project carries the same prefix — 'Rental' in captions, `Rental...` in names — and every object ID sits inside one reserved range (78601 through 78638 by the time the capstone is done). This isn't cosmetic: the project's own definition of done later requires that every object 'carries the project prefix and a Caption that reads well in the client,' and that it sits inside the assigned ID range. Decide the prefix and reserve the range before writing the first table." },
+        { h: "How the modules build on each other", p: "Modules 1–3 add Table, Enum and Page — the data you can see. Modules 4–6 add Table/Page extensions and the Codeunit — logic layered onto both standard and your own objects. Modules 7–10 add Report, Query and XMLPort — getting data in and out. Modules 11–12 add the Role Center, Profile, Enum extension and Permission Set — making the whole thing usable and secure for a real user. The capstone reuses every object type from modules 1–5 to ship one end-to-end feature. Compile after each object, and test it in the client before moving to the next." }
+      ],
+      why: "A project that skips this step usually ends up with inconsistent captions, an ID range that collides with something else in the environment, and a permission set built too late to catch objects nobody remembered to grant access to. Deciding the prefix and ID range on day one is the cheapest insurance in the whole series.",
+      check: { q: "Why does this project reserve one contiguous ID range (78601–78638) instead of letting each new object take the next free number in the environment?", a: "A reserved range keeps every object belonging to one extension identifiable as a block, avoids collisions with other extensions' objects, and is what app.json's idRanges setting is actually for — the compiler and the publishing pipeline both rely on it to catch a numbering conflict before it reaches a shared environment." },
+      exercise: "Before writing any AL: create (or open) app.json for the rental project, set idRanges to cover 78600–78649, and write down — in a comment at the top of your workspace notes — the exact caption prefix you'll use for every object ('Rental ...'). You'll reuse both decisions in every lesson that follows; changing them later means renaming objects you've already built."
+    },
+    {
+      id: "hands-02-table", group: "objects", n: "02", title: "Table: RentalEquipment (78601)",
+      dur: "20 min read",
+      summary: "The object every other layer of this project depends on: what it stores, which properties matter on day one, and which triggers you'll actually write code in.",
+      concepts: [
+        { h: "What it is", p: "A table is the primary database object: structured business data behind a unique primary key, with as many fields as the business needs. Every other AL object in this project ultimately reads from or writes to a table." },
+        { h: "Why it matters", p: "Tables are the foundation everything else is built on — customers, items, transactions, and in this project, rental equipment. A page can't display data that doesn't live in a table first, and a codeunit has nothing to validate without one." },
+        { h: "When to use it", p: "Create a table when you need persistent storage for business data that will be queried, updated, and reported on over time. If the data only exists for the duration of one process (a working buffer, an intermediate calculation), a temporary record or a different pattern is usually the better fit — but that's outside what this table is for." },
+        { h: "Table properties worth setting deliberately", p: "`Caption` is what users see for the table ('Rental Equipment'). `DataCaptionFields` controls which fields show to the left of that caption on pages that display this table's content. `DataPerCompany` defaults to `true` (company-specific data) — flip it to `false` only for data genuinely shared across companies. `DrillDownPageID` and `LookupPageID` set which page opens when a user drills down or looks up a record from elsewhere. `Permissions` declares extra permissions the object needs beyond the default. `TableType` stays `Normal` unless you're pointing at CRM, an external SQL table, or Microsoft Graph." },
+        { h: "Triggers you'll actually use", p: "`OnInsert()` runs when a new record is inserted — the place to set defaults. `OnModify()` runs on every change — the place to re-validate. `OnDelete()` runs before deletion — the place to block it if conditions aren't met. `OnValidate()` runs per field when its value changes — most of your business-rule code lives here. The less common ones — `OnRename()`, `OnLookup()`, `OnDrillDown()`, `OnAssistEdit()` — matter once you need key renaming, a custom lookup page, drill-down navigation, or an auto-generated document number respectively." },
+        { h: "In the rental project", p: "RentalEquipment (table 78601) stores No., Description, Equipment Type (the enum built in the next lesson), Daily Rental Price, Available (a status flag), and Last Maintenance Date, with a secondary key on Equipment Type." }
+      ],
+      why: "A weak primary key or a missing secondary key doesn't show up in testing with ten rows — it shows up as a slow equipment list once the table holds a few thousand rows and the rental-manager view filters by Equipment Type on every load. Getting the keys right at table-design time is far cheaper than adding an index after the page is already built and users are complaining.",
+      check: { q: "Why does RentalEquipment need a secondary key on Equipment Type, given the primary key is already No.?", a: "The primary key (No.) is what makes each row unique, but it doesn't help BC find or sort records by Equipment Type efficiently. Any page or report that lists, filters, or groups equipment by type — which this project does repeatedly, in the list page and the availability report — benefits from a secondary key built on that field instead of scanning the whole table in primary-key order." },
+      exercise: "Use the ttable snippet to scaffold table 78601 RentalEquipment. Add the fields named above with correct data types (No.: Code, Description: Text, Equipment Type: Enum \"Equipment Type\", Daily Rental Price: Decimal, Available: Boolean, Last Maintenance Date: Date), set the primary key on No., add a secondary key on Equipment Type, and compile with zero errors and zero warnings before moving on.",
+      code: "table 78601 \"Rental Equipment\"\n{\n    Caption = 'Rental Equipment';\n    DataClassification = CustomerContent;\n\n    fields\n    {\n        field(1; \"No.\"; Code[20]) { Caption = 'No.'; }\n        field(2; Description; Text[100]) { Caption = 'Description'; }\n        field(3; \"Equipment Type\"; Enum \"Equipment Type\") { Caption = 'Equipment Type'; }\n        field(4; \"Daily Rental Price\"; Decimal) { Caption = 'Daily Rental Price'; MinValue = 0; }\n        field(5; Available; Boolean) { Caption = 'Available'; }\n        field(6; \"Last Maintenance Date\"; Date) { Caption = 'Last Maintenance Date'; }\n    }\n\n    keys\n    {\n        key(PK; \"No.\") { Clustered = true; }\n        key(TypeKey; \"Equipment Type\") { }\n    }\n}"
+    },
+    {
+      id: "hands-02-enum", group: "objects", n: "03", title: "Enum: EquipmentType (78602)",
+      dur: "15 min read",
+      summary: "A closed, dropdown-safe list of equipment categories, and why the table from the previous lesson can only ever hold one of four known values.",
+      concepts: [
+        { h: "What it is", p: "An enum (enumeration) is a restricted list of predefined constant values — a closed set the compiler and the database both understand, rather than open text a user could type anything into. Each value in the list gets both an internal numeric ID and a caption shown to the user, and a field typed as an enum can only ever hold one of the declared values." },
+        { h: "Why it matters", p: "Enums buy type safety at the field level: a Text field for 'Equipment Type' lets someone type 'Projecter' with a typo, or 'projector' in lowercase, or leave it blank, and none of those mistakes surface until a report or filter silently misses the row. An enum field can't hold anything except the values you declared, and the client renders it as a dropdown, so the choice is made instead of typed." },
+        { h: "When to use it", p: "Reach for an enum whenever a field's legitimate values form a fixed, known set: equipment types, statuses, payment methods, classifications. If the list of valid values is open-ended, user-editable, or grows with business data (customer names, item numbers), a table with a lookup relationship is the right tool instead — an enum is for closed lists, not master data." },
+        { h: "Extensible, and why that flag matters more than it looks", p: "Marking an enum `Extensible = true` is what lets a different extension add its own values later without touching your object — the same non-destructive pattern table extensions use for fields. Leave an enum non-extensible only when you deliberately want to prevent anyone, including your own project later, from adding a fifth equipment type without editing this object directly." },
+        { h: "Best practices", p: "Assign numeric values deliberately, not just in whatever order occurs to you first — the dropdown lists values by ID order, not declaration order, so plan the sequence to read well. Always set a `Caption` per value; the name is what your code refers to, the caption is what the user sees, and the two should not be assumed to be the same string." },
+        { h: "In the rental project", p: "EquipmentType (enum 78602) declares four values: Projector (0), Laptop (1), Tablet (2), and Audio Kit (3). Table 78601's Equipment Type field, built in the previous lesson, is typed as `Enum \"Equipment Type\"` — which is the only reason a rental manager sees a dropdown of exactly those four choices instead of a free-text box." }
+      ],
+      why: "A free-text 'Equipment Type' field looks fine in a demo with five rows typed by the person who built the table. It breaks quietly once three different people are entering equipment and each spells or capitalizes the category slightly differently — the availability report built later in this series groups by this field, and a typo splits one category into two silent buckets that don't sum right.",
+      check: { q: "Table 78601 could have stored Equipment Type as a Text field with validation logic in OnValidate instead of an enum. What does the enum give you that hand-written validation doesn't?", a: "A closed set enforced by the compiler and rendered as a dropdown automatically — no OnValidate code has to run to reject a bad value, because an invalid value can't be assigned to an enum-typed field in the first place. Hand-written Text validation only catches what the validation code happens to check for; the enum makes invalid values structurally impossible." },
+      exercise: "Use the tenum snippet to scaffold enum 78602 EquipmentType. Replace the three placeholder values with Projector (0), Laptop (1), Tablet (2), and Audio Kit (3), give each a Caption, leave Extensible = true, then go back to table 78601's Equipment Type field from the previous lesson and confirm it's typed as Enum \"Equipment Type\" — compile both and open the table's page to see the dropdown.",
+      code: "enum 78602 \"Equipment Type\"\n{\n    Extensible = true;\n\n    value(0; Projector)\n    {\n        Caption = 'Projector';\n    }\n    value(1; Laptop)\n    {\n        Caption = 'Laptop';\n    }\n    value(2; Tablet)\n    {\n        Caption = 'Tablet';\n    }\n    value(3; \"Audio Kit\")\n    {\n        Caption = 'Audio Kit';\n    }\n}"
+    },
+    {
+      id: "hands-02-page", group: "objects", n: "04", title: "Page: RentalEquipmentList, Card & FactBox (78603–78605)",
+      dur: "22 min read",
+      summary: "The three page types working together on the same table: a List for bulk viewing, a Card for detail editing, and a FactBox for related-data context.",
+      concepts: [
+        { h: "What it is", p: "A page is the user interface object that displays and allows editing of table data. Business Central defines several page types for this, but three cover almost every case: List (an overview of many records), Card (detail editing of one record), and FactBox (related data shown alongside another page)." },
+        { h: "Why it matters", p: "Users interact through pages, never through tables directly. Good page design — the right controls bound to the right fields, sensible actions, sensible sorting — is what makes data entry fast instead of frustrating; bad page design doesn't break anything technically, it just makes every user slower." },
+        { h: "When to use each type", p: "List page for bulk viewing and light editing across many records at once. Card page for detailed editing of a single record, field by field. FactBox for surfacing related information — related records, calculated context — next to whatever the user is currently looking at, without navigating away." },
+        { h: "Page properties worth setting deliberately", p: "`DataCaptionFields` is good practice on list pages (e.g. show No. and Name in the caption). `DelayedInsert` helps on list pages where you don't want a blank row committed the instant a user starts a new line. `DeleteAllowed` and `InsertAllowed` default to allowing both — set either to `false` deliberately when a page should be view-only for that operation. `Editable` controls whether the page allows changes at all. `Extensible` is usually left `true` so other extensions can add to your page later the same way you'll add to Microsoft's." },
+        { h: "Page triggers, the ones you'll hit first", p: "`OnOpenPage` runs when the page opens, right after `OnInit` — the place to preset filters. `OnAfterGetRecord` runs after every record is retrieved, useful for calculating display-only values per row. `OnNewRecord` fires when a new record is being created; `OnInsertRecord`, `OnModifyRecord`, and `OnDeleteRecord` fire around the corresponding data changes. `OnQueryClosePage` runs before the page closes and can cancel the close — useful for a 'you have unsaved changes' style check. The full trigger set is larger (it also covers background-task completion and error handling), but these cover the everyday cases." },
+        { h: "In the rental project", p: "RentalEquipmentList (78603) is the List page, RentalEquipmentCard (78604) is the Card page, and RentalEquipmentFactBox (78605) is the FactBox — together they give a full data-editing experience over the RentalEquipment table from the previous lesson." }
+      ],
+      why: "Binding a FactBox to the wrong context, or building a Card page with no clear source table relationship, doesn't fail at compile time — it fails at the moment a rental manager opens the equipment card expecting to see availability and maintenance history right there, and instead has to navigate away to find it. Page design decisions are invisible in code review and very visible in daily use.",
+      check: { q: "Why does the rental project need three separate pages (List, Card, FactBox) instead of one page that does everything?", a: "Each page type is optimized for a different task: the List page is for scanning and bulk operations across many equipment records, the Card page is for focused single-record editing, and the FactBox surfaces related context without forcing navigation away from whatever page the user is already on. Collapsing them into one page would make all three tasks worse at once." },
+      exercise: "Use the tpage snippet three times: build RentalEquipmentList as a List page with SourceTable \"Rental Equipment\", build RentalEquipmentCard as a Card page on the same table, and add an action on the List page that opens the Card. Then build RentalEquipmentFactBox and place it on the Card page so maintenance date and availability are visible without opening another page.",
+      code: "page 78603 \"Rental Equipment List\"\n{\n    PageType = List;\n    SourceTable = \"Rental Equipment\";\n    CardPageId = \"Rental Equipment Card\";\n    UsageCategory = Lists;\n    ApplicationArea = All;\n\n    layout\n    {\n        area(Content)\n        {\n            repeater(General)\n            {\n                field(\"No.\"; Rec.\"No.\") { ApplicationArea = All; }\n                field(Description; Rec.Description) { ApplicationArea = All; }\n                field(\"Equipment Type\"; Rec.\"Equipment Type\") { ApplicationArea = All; }\n                field(Available; Rec.Available) { ApplicationArea = All; }\n            }\n        }\n    }\n}"
+    },
+    {
+      id: "hands-03-tableext", group: "extensions", n: "05", title: "Table Extension: Item.Rental & Customer.Rental (78606)",
+      dur: "18 min read",
+      summary: "Attaching rental-specific data to the standard Item and Customer tables without ever opening either original object.",
+      concepts: [
+        { h: "What it is", p: "A table extension adds new fields — and a few other elements — to an existing table without replacing or modifying the original object. The base table (Item, Customer, or one of your own) stays exactly as Microsoft or the original author shipped it; your fields live in a separate object that layers on top." },
+        { h: "Why it matters", p: "Standard Business Central tables like Item and Customer already carry everything the base application needs, and neither one has a 'rental' concept. A table extension is the only way to attach rental-specific data to those standard records without forking the base table — forking it would mean losing every future Microsoft update to Item or Customer the moment you touch the original object." },
+        { h: "When to use it", p: "Use a table extension whenever the data you need to store belongs conceptually to a standard table — a Boolean flag on Item, a discount percentage on Customer — rather than a wholly new entity. If what you're storing doesn't already have a natural home on an existing table, a new table (like RentalEquipment itself) is the right object instead." },
+        { h: "What you can — and cannot — extend", p: "A table extension can add new fields, using IDs from your own object range (`field(78620; \"Is Rental Equipment\"; Boolean)`), add secondary keys including ones built on your new fields, push your fields into existing DropDown or Brick fieldgroups with `addlast(Brick; ...)`, add OnInsert/OnModify/OnDelete/OnRename trigger logic, and add procedures callable on the extended record. What you can never do is delete a standard field or change its type — if a standard field genuinely doesn't fit anymore, the answer is adding your own replacement field and marking it obsolete later, not editing the original." },
+        { h: "Best practices", p: "Assign field IDs from your reserved range so two extensions adding fields to the same standard table can never collide. Give every added field a Caption users will actually understand in context — 'Is Rental Equipment' reads fine on a rental-focused card, but only because the field name says exactly what it does. Keep validation on the new field where it belongs — in the field's own OnValidate trigger inside the extension, not scattered into pages that happen to display it." },
+        { h: "In the rental project", p: "Item.Rental (table extension 78606) adds an 'Is Rental Equipment' Boolean to the standard Item table, so any item can be flagged as rentable without a new table. Customer.Rental adds 'Is Rental Customer' Boolean and 'Rental Discount %' Decimal to the standard Customer table — the discount field is what the capstone's pricing codeunit later reads to reduce a contract's total. The source material gives 78606 as the ID for the Item extension but doesn't state a separate ID for the Customer extension — reserve the next free number in your own range rather than guessing at one." }
+      ],
+      why: "Editing Item or Customer directly to add a rental flag would compile and work in the sandbox — right up until the next Business Central update ships a modified base Item table and the merge either fails outright or silently drops your change. A table extension survives every base-application update because it was never part of the base object to begin with.",
+      check: { q: "Why can a table extension add a new field to Item but not change the data type of an existing standard field like 'Unit Price'?", a: "Because every other extension and every part of the base application already assumes Unit Price's declared type — changing it out from under them would silently break code nobody involved in this extension wrote or can see. Table extensions are additive by design; anything destructive to the original object is exactly what they're built to prevent." },
+      exercise: "Use the ttableext snippet twice: build Item.Rental (table extension 78606, extends Item) adding an 'Is Rental Equipment' Boolean field at ID 78620, and build a Customer.Rental extension (pick your own next free ID) extending Customer with 'Is Rental Customer' (Boolean) and 'Rental Discount %' (Decimal, MinValue 0, MaxValue 100). Compile both and confirm the new fields appear on the standard Item and Customer tables without the original objects showing as modified in source control.",
+      code: "tableextension 78606 \"Item Rental\" extends Item\n{\n    fields\n    {\n        field(78620; \"Is Rental Equipment\"; Boolean)\n        {\n            Caption = 'Is Rental Equipment';\n        }\n    }\n}"
+    },
+    {
+      id: "hands-03-pageext", group: "extensions", n: "06", title: "Page Extension: ItemCard & DocumentAttachmentDet (78607, 78625)",
+      dur: "18 min read",
+      summary: "Surfacing the fields from the previous lesson's table extensions on the standard Item Card, and adding one action to a standard attachment page.",
+      concepts: [
+        { h: "What it is", p: "A page extension modifies an existing page — adding fields, groups, actions, or FactBoxes — without replacing the original object. Like a table extension, it layers changes on top; the standard page it targets is never opened or edited directly." },
+        { h: "Why it matters", p: "The fields added by Item.Rental and Customer.Rental in the previous lesson are invisible to users until something puts them on a page. Editing the standard Item Card or Customer Card directly to show them would carry the same upgrade risk as editing the standard table — a page extension is the non-destructive way to surface new data on an existing screen." },
+        { h: "When to use it", p: "Use a page extension whenever you need to expose new fields, add an action, or attach a FactBox to a page Microsoft or another team already owns — the Item Card, Customer Card, a Sales Order. If the screen doesn't exist yet at all, that's a new page (as built in Module 2), not an extension of one." },
+        { h: "Layout modifiers", p: "Placement on a page extension is controlled by anchors: `addfirst(anchor)` and `addlast(anchor)` put new controls at the start or end of an existing group or area, `addafter(control)` and `addbefore(control)` position them relative to a specific existing control, and `movefirst`/`movelast`/`moveafter`/`movebefore` reposition controls that already exist rather than adding new ones. `modify(control)` changes a property — visibility, for instance — on a control that's already there. The same anchors apply inside `actions { }` for adding actions and promoted groups, not just inside `layout { }`." },
+        { h: "Best practices", p: "Wrap related added fields in their own group rather than scattering them loose into an existing one — it keeps your addition visually identifiable as a block on the card. Keep each extension focused on one page's worth of changes; a page extension that reaches into unrelated concerns is harder to review and harder to remove cleanly if the feature is ever retired." },
+        { h: "In the rental project", p: "The ItemCard extension (78607) adds a rental group containing the 'Is Rental Equipment' field plus a FactBox, onto the standard Item Card. DocumentAttachmentDet (78625) adds a 'View PDF' action onto the standard document attachment details page." }
+      ],
+      why: "A page extension that dumps a new field loose into an existing group, with no caption context and no visual grouping, technically works but reads as if Microsoft's own team put it there half-finished — the giveaway that undermines trust in the whole extension is almost always a page-extension detail, not a data-model one.",
+      check: { q: "The rental team wants the new 'Is Rental Equipment' field to appear directly after the standard 'Type' field on the Item Card, not at the end of the group. Which anchor do you use?", a: "addafter(Type) — it inserts the new control directly after the named existing control, rather than addlast which would put it at the end of the group regardless of where Type happens to sit." },
+      exercise: "Use the tpageext snippet to build the ItemCard extension (78607, extends Item Card): add a group containing the 'Is Rental Equipment' field from the previous lesson, placed with addafter() next to a logical existing field, and attach a FactBox showing rental status. Then build a second, separate page extension on the Document Attachment Details page (78625) adding a 'View PDF' promoted action.",
+      code: "pageextension 78607 \"Item Card Rental\" extends \"Item Card\"\n{\n    layout\n    {\n        addafter(Type)\n        {\n            group(Rental)\n            {\n                Caption = 'Rental';\n                field(\"Is Rental Equipment\"; Rec.\"Is Rental Equipment\")\n                {\n                    ApplicationArea = All;\n                }\n            }\n        }\n    }\n}"
+    },
+    {
+      id: "hands-03-codeunit", group: "extensions", n: "07", title: "Codeunit: RentalManagement & RentalProcess (78609, 78618)",
+      dur: "22 min read",
+      summary: "Where the project's business rules actually live: individual building-block procedures in one codeunit, combined into a single workflow in another.",
+      concepts: [
+        { h: "What it is", p: "A codeunit is a reusable container for business-logic procedures — a library of functions implementing calculations, validations, and multi-step operations, with no user interface of its own. It's the object type almost everything else in a project ends up calling into." },
+        { h: "Why it matters", p: "Logic that lives only inside a page's trigger code can only ever be reused by that page. The same pricing calculation, availability check, or validation rule is often needed from a page, a report, and another codeunit — writing it once in a codeunit and calling it from all three is the difference between one function to fix and three near-identical copies to keep in sync." },
+        { h: "When to use it", p: "Reach for a codeunit for calculations, validations, or processes reused across more than one page or report, and for any workflow complex enough that it shouldn't live inline in a trigger. A single one-off calculation used in exactly one place doesn't necessarily need its own codeunit — but the moment a second caller shows up, it usually should move into one." },
+        { h: "Codeunit properties worth setting deliberately", p: "`Subtype` marks the codeunit's special role — Normal by default, or Test/TestRunner/Install/Upgrade for the codeunits that run during specific lifecycle events. `SingleInstance` keeps one instance of the codeunit alive for the whole session so its global variables persist between calls, instead of the default where every call gets a fresh instance. `TableNo` binds a table to the codeunit so its `OnRun` trigger receives a record of that type automatically. `Access` controls whether other extensions can call the codeunit at all (Public by default, or Internal/Local to keep it project-private). `Permissions` and `InherentPermissions` grant the extra access the codeunit's own logic needs to run, independent of what permission set the calling user holds." },
+        { h: "Triggers and events", p: "`trigger OnRun()` is the entry point invoked by `Codeunit.Run()` — the natural home for a process that has one clear starting point. `[EventSubscriber]` reacts when an event raised elsewhere fires; `[IntegrationEvent]` and `[BusinessEvent]` are how a codeunit declares its own events for other code — or other applications — to subscribe to, `[InternalEvent]` the same but restricted to your own app. `[TryFunction]` lets a call fail without stopping its caller, which is what makes 'try to parse this value, and handle a bad one gracefully' possible. `[NonDebuggable]` hides a method's body from the debugger for secrets and tokens, and `[Obsolete('message', 'version')]` marks a method as deprecated with a message pointing at its replacement, before it's eventually removed." },
+        { h: "Best practices", p: "Expose what other objects need to call as public procedures, and keep everything that's purely internal implementation as local — a smaller public surface is easier to keep stable across versions. Take parameters and return values explicitly rather than reading and writing global state where a function call would do, so the procedure's behavior is visible from its signature alone." },
+        { h: "In the rental project", p: "RentalManagement (codeunit 78609) holds the individual building blocks — CheckAvailability(), CalculateRentalPrice(), MarkEquipmentUnavailable() — as procedures other objects can call independently. RentalProcess (codeunit 78618) combines them into one RentEquipment() workflow, calling RentalManagement's procedures in sequence rather than reimplementing any of their logic." }
+      ],
+      why: "Splitting RentalManagement and RentalProcess into two codeunits instead of one large one isn't a stylistic choice — it means CheckAvailability() and CalculateRentalPrice() stay independently callable from a page, a report, or a future feature that only needs the availability check and nothing else about the full rental workflow. Collapsing both into one codeunit would work today and quietly force every future caller to depend on the whole workflow just to reuse one piece of it.",
+      check: { q: "RentalProcess's RentEquipment() calls RentalManagement's CheckAvailability() and CalculateRentalPrice() rather than reimplementing that logic itself. What would go wrong if RentEquipment() had its own separate copy of the availability check instead?", a: "The two copies would drift — a bug fix or a rule change made to CheckAvailability() in RentalManagement wouldn't automatically apply to RentEquipment()'s private copy, so the workflow codeunit could end up renting out equipment the standalone check would have correctly refused. Calling the shared procedure is what keeps both callers using the same rule." },
+      exercise: "Use the tcodeunit snippet to scaffold codeunit 78609 RentalManagement with three public procedures: CheckAvailability(EquipmentNo: Code[20]): Boolean, CalculateRentalPrice(EquipmentNo: Code[20]; Days: Integer): Decimal, and MarkEquipmentUnavailable(EquipmentNo: Code[20]). Then scaffold codeunit 78618 RentalProcess with one public procedure, RentEquipment(), that calls all three RentalManagement procedures in sequence rather than duplicating their logic.",
+      code: "codeunit 78609 \"Rental Management\"\n{\n    procedure CheckAvailability(EquipmentNo: Code[20]): Boolean\n    var\n        RentalEquipment: Record \"Rental Equipment\";\n    begin\n        if RentalEquipment.Get(EquipmentNo) then\n            exit(RentalEquipment.Available);\n        exit(false);\n    end;\n\n    procedure CalculateRentalPrice(EquipmentNo: Code[20]; Days: Integer): Decimal\n    var\n        RentalEquipment: Record \"Rental Equipment\";\n    begin\n        RentalEquipment.Get(EquipmentNo);\n        exit(RentalEquipment.\"Daily Rental Price\" * Days);\n    end;\n\n    procedure MarkEquipmentUnavailable(EquipmentNo: Code[20])\n    var\n        RentalEquipment: Record \"Rental Equipment\";\n    begin\n        RentalEquipment.Get(EquipmentNo);\n        RentalEquipment.Available := false;\n        RentalEquipment.Modify();\n    end;\n}"
+    },
+    {
+      id: "hands-04-report", group: "reporting", n: "08", title: "Report: EquipmentAvailability (78610)",
+      dur: "22 min read",
+      summary: "Turning raw equipment rows into a formatted, groupable view of what's available by type — for a manager on screen and a customer on paper.",
+      concepts: [
+        { h: "What it is", p: "A report is a document object that summarizes business data for printing or export, with its own filtering, sorting, and formatted layout. Unlike a page, its job is presenting a snapshot of data as output, not letting a user edit records live." },
+        { h: "Why it matters", p: "Reports are how raw table data becomes something a manager or a customer can actually act on — aggregated, sorted, formatted. Without a report object, 'how much equipment is available by type' means someone opening the equipment list page and counting rows by eye." },
+        { h: "When to use it", p: "Use a report for management summaries, operational metrics, regulatory output, statements, or any data export — anything where the point is a formatted, often printable or exportable, view of aggregated or filtered data rather than an editable screen." },
+        { h: "Report properties worth setting deliberately", p: "`Caption` is the name users see searching for the report and on its request page. `UsageCategory` decides where it surfaces in Tell Me — ReportsAndAnalysis, Documents, Tasks, Lists, or History. `ApplicationArea` gates which application areas can even see it exists. `DefaultLayout` picks which rendering format applies when the user doesn't choose one explicitly — RDLC, Word, or Excel — and `RDLCLayout`/`WordLayout` point at the actual layout file shipped inside the extension. `ProcessingOnly` runs the report's logic without producing a printed document at all, which is the pattern for data fixes and posting routines that happen to be built as reports. `ShowPrintStatus` toggles the progress dialog while it runs." },
+        { h: "Report triggers", p: "At the report level, `OnInitReport()` runs once before anything else — the place to set defaults — `OnPreReport()` runs after the request page but before any data is read, and `OnPostReport()` runs after every record has been processed, for cleanup and final messages. At the data-item level, `OnPreDataItem()` runs before the first record and is where filters get applied, `OnAfterGetRecord()` runs for every record read and is where per-row calculations and running totals happen, and `OnPostDataItem()` runs once after the last record of that data item. On the request page itself, `OnOpenPage()` presets filters when it opens, and `OnQueryClosePage()` runs before it closes and can validate what the user typed." },
+        { h: "Best practices", p: "Source the report's data from tables or, for anything that needs aggregation across records, from a query instead of hand-rolling the aggregation in AL. Add columns and expressions deliberately rather than dumping every field, apply sorting that matches how the report will actually be read, and format numbers and dates for the audience — a customer-facing report and an internal audit report don't need the same precision." },
+        { h: "In the rental project", p: "EquipmentAvailability (report 78610) shows rental status by equipment type, formatted for both management review and customer communication — meaning its layout has to read cleanly whether it's opened inside BC or exported and handed to someone outside it." }
+      ],
+      why: "A report with ProcessingOnly left at its default (false) but no real layout behind it either fails confusingly or produces a blank document — the property exists precisely so a data-fix report and a printable report don't get confused with each other. Getting UsageCategory and ApplicationArea wrong doesn't break the report technically; it just makes it invisible to the users who need to find it in Tell Me.",
+      check: { q: "EquipmentAvailability needs to group rows by Equipment Type and show each type's availability count. Which trigger is the right place to accumulate that count, and why not OnPostDataItem()?", a: "OnAfterGetRecord() — it runs once per record read, which is exactly when you'd increment a running counter for that record's type. OnPostDataItem() only runs once, after the entire data item has finished, so it's the right place to do something with a finished total, not to build one up record by record." },
+      exercise: "Use the treport snippet to scaffold report 78610 EquipmentAvailability with UsageCategory = ReportsAndAnalysis, ApplicationArea = All, and a dataitem on Rental Equipment. Add columns for No., Description, Equipment Type, and Available, sorted by Equipment Type, and set DefaultLayout to RDLC with a layout file that groups rows visually by type.",
+      code: "report 78610 \"Equipment Availability\"\n{\n    UsageCategory = ReportsAndAnalysis;\n    ApplicationArea = All;\n    DefaultLayout = RDLC;\n    RDLCLayout = './Layouts/EquipmentAvailability.rdl';\n\n    dataset\n    {\n        dataitem(Equipment; \"Rental Equipment\")\n        {\n            RequestFilterFields = \"Equipment Type\", Available;\n\n            column(No_; \"No.\") { }\n            column(Description; Description) { }\n            column(EquipmentType; \"Equipment Type\") { }\n            column(IsAvailable; Available) { }\n\n            trigger OnAfterGetRecord()\n            begin\n                // per-row totals by Equipment Type accumulate here\n            end;\n        }\n    }\n\n    requestpage\n    {\n        layout { area(Content) { } }\n    }\n}"
+    },
+    {
+      id: "hands-04-reportext", group: "reporting", n: "09", title: "Report Extension: CustomerList (78611)",
+      dur: "16 min read",
+      summary: "Adding two rental-specific columns to the standard Customer List report, instead of maintaining a second report that drifts from the original.",
+      concepts: [
+        { h: "What it is", p: "A report extension adds columns — and optionally request-page controls or an extra layout — to an existing standard report, the same non-destructive pattern table and page extensions use, applied to reports." },
+        { h: "Why it matters", p: "Building a whole duplicate report just to add two rental-specific columns to the standard Customer List means maintaining two reports that drift apart over time, and users have to know which one to run. A report extension adds exactly the new columns and leaves everything else about the standard report — including future Microsoft improvements to it — intact." },
+        { h: "When to use it", p: "Use a report extension when a standard report is 90% of what you need and the gap is a handful of additional columns or dimensions, not a fundamentally different report. If the shape of the output is genuinely different, a new report (as built in the previous lesson) is the better fit." },
+        { h: "Structure", p: "A report extension needs a `dataset` section to hang new columns on — that's the one required piece. Inside it, `add(DataItemName) { column(...) { } }` attaches a new column to an existing data item in the target report by name. The `requestpage` section, for adding filters or controls to the request page, and the `rendering` section, for registering an additional layout, are both optional. Unlike table, page, and enum extensions, this deck doesn't name a dedicated VS Code snippet for report extensions — you build the object by typing `reportextension` by hand, using this structure as the template." },
+        { h: "Best practices", p: "Use addlast() to append new columns to the dataset rather than trying to reposition existing ones — the goal is additive, not a redesign. Keep additions relevant to what the report already reports on, and test every rendering format the target report supports (Print, PDF, Excel) since a column that renders correctly in one format can still be misaligned in another." },
+        { h: "In the rental project", p: "CustomerList (report extension 78611) adds a rental customer indicator and a discount percentage to the standard Customer List report's columns — both pulled from the Customer.Rental table extension built earlier, so a manager running the standard, familiar Customer List report also sees which customers rent equipment and at what discount, without opening a second report." }
+      ],
+      why: "The rental discount percentage only became visible on a report because a table extension put the field on Customer and a report extension surfaced it — skip either half and the data exists but nobody running the standard Customer List ever sees it. Report extensions are the last mile that makes a table extension's new field actually useful outside a custom card.",
+      check: { q: "CustomerList report extension adds a rental discount column. Where does that value actually come from — does the report extension calculate it?", a: "No — it comes from the 'Rental Discount %' field added to the standard Customer table by the Customer.Rental table extension. The report extension only adds a column that reads that existing field; it doesn't calculate or store anything new itself." },
+      exercise: "Build the reportextension object by hand (no dedicated snippet is named for this object type in the source material) to extend the standard Customer List report with two new columns: a Boolean for 'Is Rental Customer' and a Decimal for 'Rental Discount %', both sourced from the Customer.Rental table extension. Run the standard report afterward and confirm both new columns appear without any other column changing.",
+      code: "reportextension 78611 \"Customer List Rental\" extends \"Customer - List\"\n{\n    dataset\n    {\n        add(Customer)\n        {\n            column(IsRentalCustomer; \"Is Rental Customer\") { }\n            column(RentalDiscountPct; \"Rental Discount %\") { }\n        }\n    }\n}"
+    },
+    {
+      id: "hands-04-xmlport", group: "reporting", n: "10", title: "XMLPort: ImportRentalEquipment (78613)",
+      dur: "20 min read",
+      summary: "Loading equipment from an external CSV into RentalEquipment, and rejecting bad rows instead of silently dropping them.",
+      concepts: [
+        { h: "What it is", p: "An XMLport is the import/export object that moves data between Business Central and an external system, in XML or in delimited-text formats like CSV. It defines both the shape of the file and the mapping between file fields and table fields." },
+        { h: "Why it matters", p: "Almost no BC implementation starts with an empty database — equipment catalogues, price lists, customer lists usually already exist somewhere else, often as a spreadsheet. An XMLport is what turns 'a CSV a client emails us' into rows in a BC table without hand-entering them." },
+        { h: "When to use it", p: "Use an XMLport to import catalogs, customer lists, or price data from an external file, or to export orders, invoices, or transactions out to another system. If the integration needs to run automatically on a schedule or react to an external trigger rather than a user manually running an import, the XMLport is usually wrapped by a codeunit or job queue entry that calls it — the XMLport itself is the format/mapping definition." },
+        { h: "XMLPort properties worth setting deliberately", p: "`Direction` declares whether the object imports, exports, or does both (Both is the default). `Format` picks the file shape — Xml by default, or VariableText/FixedText for delimited and column-aligned text files. For the text formats, `FieldSeparator` sets what splits two fields on a line (comma, semicolon, tab), `RecordSeparator` sets what ends a record (typically newline), and `FieldDelimiter` sets what wraps each value ('\"' is typical, to let a field itself contain the separator character safely). `TextEncoding` sets the character encoding — UTF8, UTF16, WINDOWS, MSDOS — which matters more than it looks the moment a file has an accented character or a currency symbol in it. `UseRequestPage` shows a filter/options page before running, on by default. `FormatEvaluate` controls how values are parsed on import and formatted on export." },
+        { h: "XMLPort triggers", p: "At the XMLport level, `OnInitXmlPort()` runs before anything else, `OnPreXmlPort()` runs after the request page but before data is processed, and `OnPostXmlPort()` runs once the whole file is done. At the table-element level, `OnAfterInitRecord()` runs right after a new record is initialized but before values land in it, `OnBeforeInsertRecord()` runs right before the insert — the natural place to validate and reject a bad row — and `OnAfterInsertRecord()` runs after, for related updates or logging. At the field level, `OnAfterAssignField()` runs after a value is assigned during import, and `OnBeforePassVariable()` runs before a value is written out during export." },
+        { h: "Best practices", p: "Define the source table, choose the format deliberately rather than defaulting to Xml for what's actually a CSV file, add real validation rather than trusting the file, and handle bad rows by rejecting and reporting them instead of silently skipping or silently importing garbage. Document the expected file format somewhere a non-developer preparing the file can find it." },
+        { h: "In the rental project", p: "ImportRentalEquipment (XMLport 78613) reads CSV equipment data, validates the No. field and the price fields, and rejects rows with negative prices rather than loading them — the rejection has to happen in OnBeforeInsertRecord(), before the bad row ever reaches the RentalEquipment table." }
+      ],
+      why: "An import that silently skips a malformed row instead of reporting it looks like a successful import that quietly lost data — the person running it sees '47 rows processed' with no way to know three of the fifty in the source file never made it in. Validating and reporting failures explicitly in OnBeforeInsertRecord() is what turns 'the import ran' into 'the import can be trusted.'",
+      check: { q: "A CSV row for equipment import has a negative Daily Rental Price. In which trigger should that row be rejected, and why not wait until after the insert?", a: "OnBeforeInsertRecord() — rejecting it there stops the bad row before it's ever written to the RentalEquipment table. Waiting until OnAfterInsertRecord() means the invalid row has already been inserted, so 'rejecting' it at that point means detecting and then deleting a row that should never have been saved in the first place — worse, and riskier if anything else reacts to the insert in between." },
+      exercise: "Use the txmlport snippet to scaffold XMLport 78613 ImportRentalEquipment with Direction = Import, Format = VariableText, and a table element on Rental Equipment. Map No., Description, Equipment Type, and Daily Rental Price as field elements, and add an OnBeforeInsertRecord trigger that checks Daily Rental Price >= 0 and raises an error naming the row's No. if it isn't. Test with a ten-row CSV that includes at least one negative price.",
+      code: "xmlport 78613 \"Import Rental Equipment\"\n{\n    Direction = Import;\n    Format = VariableText;\n    FieldSeparator = ',';\n    UseRequestPage = false;\n\n    schema\n    {\n        textelement(RentalEquipmentList)\n        {\n            tableelement(Equipment; \"Rental Equipment\")\n            {\n                fieldelement(No_; Equipment.\"No.\") { }\n                fieldelement(Description; Equipment.Description) { }\n                fieldelement(EquipmentType; Equipment.\"Equipment Type\") { }\n                fieldelement(DailyRentalPrice; Equipment.\"Daily Rental Price\") { }\n\n                trigger OnBeforeInsertRecord()\n                begin\n                    if Equipment.\"Daily Rental Price\" < 0 then\n                        Error('Row %1: Daily Rental Price cannot be negative.', Equipment.\"No.\");\n                end;\n            }\n        }\n    }\n}"
+    },
+    {
+      id: "hands-04-query", group: "reporting", n: "11", title: "Query: RentalEquipmentSummary (78612)",
+      dur: "20 min read",
+      summary: "A read-only, set-based aggregate over RentalEquipment — item count and average price per type — without a single hand-written accumulation loop.",
+      concepts: [
+        { h: "What it is", p: "A query is a read-only object combining one or more tables with grouping, filtering, and aggregate calculations — the AL equivalent of a SQL SELECT with GROUP BY, expressed as an object instead of hand-written joins." },
+        { h: "Why it matters", p: "Aggregating data with hand-written AL — looping a filtered record set and accumulating totals yourself — works, but a query does the same aggregation as a single set-based operation and is usually both less code and faster, especially once the table involved has real volume." },
+        { h: "When to use it", p: "Use a query for aggregated views, KPIs, analytics, or any read-only presentation of summarized data across one or more tables. If you need to write to the data, or you need a single un-aggregated record, a query is the wrong tool — reach for a normal Record variable instead." },
+        { h: "Query properties worth setting deliberately", p: "`Caption` names the query wherever it's surfaced to a user. `QueryType` is Normal by default, or API to publish the query as an OData endpoint instead — which is when `APIPublisher`, `APIGroup`, and `APIVersion` matter, since together they identify the endpoint. `OrderBy` sorts the result set on the columns you choose (`OrderBy = descending(AveragePrice);`), and `TopNumberOfRows` caps the result to only the first N rows, useful for a 'top 10' style view. `DataAccessIntent` lets the query run against a read-only database replica when one is available, which can reduce load on the primary database for a query that's run often." },
+        { h: "Elements and methods", p: "`dataitem` declares a source table; `column` exposes one of its fields as a result column. `filter` declares a filter the caller can set at runtime rather than one baked into the query. When a query joins more than one dataitem, `DataItemLink` states the join condition and `SQLJoinType` picks the kind of join (InnerJoin, LeftOuterJoin, RightOuterJoin, CrossJoin). A column gets a `Method` — Sum, Count, Average, Min, Max — to turn it into an aggregate, and every non-aggregate column in the same query implicitly becomes the grouping. `ColumnFilter` filters on the aggregated result after grouping, the query equivalent of SQL's HAVING. In AL code, a query is walked with `Q.Open(); while Q.Read() do ...; Q.Close();`, the same read-loop pattern as a record's FindSet/Next." },
+        { h: "Best practices", p: "Define only the data sources you actually need — every dataitem you add is a join the query has to execute. Add filters to cut the result set down before it's aggregated rather than after, keep only the columns you want to group on as non-aggregate, and add the aggregate methods (SUM, COUNT, AVG, MIN, MAX) deliberately rather than defaulting every numeric column to Sum." },
+        { h: "In the rental project", p: "RentalEquipmentSummary (query 78612) groups by Equipment Type, counts how many items fall into each type, and calculates the average rental price per type — a single read-only aggregate a page, a report, or an API caller can all read from without any of them re-implementing the grouping logic." }
+      ],
+      why: "Doing this same Equipment-Type grouping by looping RentalEquipment in AL and accumulating counts and running averages by hand would take real code, would have to be re-tested every time the table's shape changes, and would still be slower than the query engine doing the aggregation in one set-based pass. The query object exists specifically so this kind of summary doesn't need custom loop code at all.",
+      check: { q: "RentalEquipmentSummary groups by Equipment Type and shows a count and an average price per type. Which column gets a Method, and which doesn't?", a: "Equipment Type has no Method — it's the plain column the results group by. The count and the average price columns each get a Method (Count and Average respectively), which is what turns them from per-row values into per-group aggregates." },
+      exercise: "Use the tquery snippet to scaffold query 78612 RentalEquipmentSummary with a dataitem on Rental Equipment. Add Equipment Type as a plain grouping column, a column with Method = Count for item count per type, and a column with Method = Average on Daily Rental Price. Open the query in AL with Q.Open()/Q.Read()/Q.Close() and print one line per equipment type to verify the grouping is correct.",
+      code: "query 78612 \"Rental Equipment Summary\"\n{\n    QueryType = Normal;\n    Caption = 'Rental Equipment Summary';\n\n    elements\n    {\n        dataitem(Equipment; \"Rental Equipment\")\n        {\n            column(EquipmentType; \"Equipment Type\") { }\n\n            column(ItemCount; \"No.\")\n            {\n                Method = Count;\n            }\n            column(AveragePrice; \"Daily Rental Price\")\n            {\n                Method = Average;\n            }\n        }\n    }\n}"
+    },
+    {
+      id: "hands-05-rolecenter", group: "rolecenter", n: "12", title: "Role Center: Rental Manager RC (78614)",
+      dur: "18 min read",
+      summary: "The dashboard a rental manager actually lands on — ten defined sections, and which one to use for which kind of information.",
+      concepts: [
+        { h: "What it is", p: "The Role Center is the main dashboard a user lands on when they sign in — a personalized workspace showing the data, activities, and navigation tailored to their specific role, rather than a generic start page every user sees regardless of job." },
+        { h: "Why it matters", p: "Centralizing the essential information for one role in one place is what turns 'log in, then go find the five pages I need' into 'log in, and everything I need today is already on screen.' The Role Center is often the only screen a role-specific user opens all day." },
+        { h: "When to use it", p: "Build a Role Center whenever a group of users shares a job — Rental Manager, Warehouse Clerk — and needs a monitoring/navigation surface built around that job's KPIs and daily tasks, rather than the generic Business Manager or default role center every environment ships with." },
+        { h: "Role Center sections", p: "A Role Center page is built from ten distinct sections, each with its own purpose: a Navigation Menu Area for menus and sub-menus into relevant entities, a Navigation Bar Area for quick links to frequently used or bookmarked pages, an Action Area for links to execute key tasks (pages, reports, codeunits), a Headline Area for dynamic business insights, a Wide Cue Area for key numerical indicators in a wide layout, a Data Cue Area for visualized aggregated KPIs, an Action Cue Area for actionable tiles tied to business tasks, a Chart Area for charts or Power BI reports, a CardPart/ListPart Area for embedded business data in card or list form, and a Control Add-in Area for custom HTML/JavaScript content." },
+        { h: "Best practices", p: "Keep the Role Center simple and focused — show only the KPIs and actions that role actually needs day to day, not everything the underlying data could theoretically surface. Use cues and tiles for quick, at-a-glance insight rather than tables of numbers, and make sure the frequently used pages for that role are one click away." },
+        { h: "In the rental project", p: "Rental Manager RC (page 78614) is the Role Center, paired with the Rental Manager profile from the next lesson, giving the rental team a dashboard tailored to managing rental operations, tracking activity, and reaching the equipment list, availability report, and rental workflow without navigating through generic BC menus first." }
+      ],
+      why: "A rental manager forced to use the default Business Manager Role Center sees KPIs and cues aimed at general business operations — none of them about equipment availability or active rentals — and has to navigate to find every rental-specific page manually, every single day. A purpose-built Role Center removes that daily navigation tax entirely.",
+      check: { q: "The Rental Manager RC needs to show how many equipment items are currently unavailable, as a single glanceable number. Which of the ten Role Center sections is that, specifically?", a: "The Data Cue Area — it's built for visualizing aggregated business data (KPIs) like a count, as opposed to the Wide Cue Area (numerical indicators in a wide layout) or the Action Cue Area (actionable tiles tied to a task rather than a pure metric)." },
+      exercise: "Use the tpagerolecenterwaldo snippet to scaffold page 78614 Rental Manager RC. Populate at minimum a Navigation Bar Area linking to the RentalEquipmentList and EquipmentAvailability report, and a Data Cue Area showing a count of equipment where Available = false. Leave the remaining sections empty for now — they get filled in as the project grows.",
+      code: "page 78614 \"Rental Manager RC\"\n{\n    PageType = RoleCenter;\n    Caption = 'Rental Manager';\n\n    layout\n    {\n        area(RoleCenter)\n        {\n            // Navigation Menu Area / Navigation Bar Area\n        }\n    }\n\n    actions\n    {\n        area(Sections)\n        {\n            group(RentalOperations)\n            {\n                Caption = 'Rental Operations';\n                action(EquipmentList)\n                {\n                    Caption = 'Rental Equipment';\n                    ApplicationArea = All;\n                    RunObject = page \"Rental Equipment List\";\n                }\n                action(AvailabilityReport)\n                {\n                    Caption = 'Equipment Availability';\n                    ApplicationArea = All;\n                    RunObject = report \"Equipment Availability\";\n                }\n            }\n        }\n    }\n}"
+    },
+    {
+      id: "hands-05-profile", group: "rolecenter", n: "13", title: "Profile: Rental Manager",
+      dur: "16 min read",
+      summary: "The named object with no ID that binds a group of users to the Role Center built for them — and to a customized version of the equipment list.",
+      concepts: [
+        { h: "What it is", p: "A profile is the AL object that defines a user role: it names the role, points at a Role Center page, and carries whatever page customizations that role should see. Unlike almost every other AL object type, a profile has no object ID — it's identified by its name." },
+        { h: "Why it matters", p: "One Business Central environment serves many different jobs. Without profiles, every user would land on the same generic start page regardless of whether they're in sales, warehouse, or — in this project — rental operations. The profile is what connects a group of users to the Role Center built specifically for them." },
+        { h: "When to use it", p: "Create a profile whenever a group of users shares a job and needs its own Role Center, its own default filters, or simplified pages — Rental Manager, Warehouse Clerk, any role distinct enough to deserve a tailored workspace rather than personalizing the default one by hand for each user." },
+        { h: "Profile properties", p: "`Caption` is the role name users pick in My Settings. `ProfileDescription` is the longer explanatory text shown alongside it. `RoleCenter` points at the page this role opens on by default. `Customizations` lists the page customization objects applied automatically to anyone on this role. `Enabled` controls whether users are even allowed to select it, and `Promoted` puts it near the top of the role picker. And — worth repeating because it's unusual among AL objects — a profile carries no object ID at all; it's identified purely by its declared name." },
+        { h: "Structure", p: "A profile itself carries no logic and no ID — everything it changes on a page lives in a separate `pagecustomization` object, referenced by name under `Customizations`. The pagecustomization object names the page it customizes (`customizes \"Rental Equipment List\"`) and, inside its own `layout` section, modifies existing controls — hiding a field with `modify(\"Last Maintenance Date\") { Visible = false; }`, for instance — the same modify-in-place pattern a page extension uses, but scoped to just this one role instead of applying to everyone." },
+        { h: "Best practices", p: "Give the profile a clear Caption and ProfileDescription so an administrator assigning roles knows exactly what they're picking. Point RoleCenter at your own purpose-built page rather than reusing a generic one. Ship page customizations through the profile itself instead of asking every user on that role to personalize their own screen by hand — the profile-level customization is what every new hire on that role gets automatically, on day one." },
+        { h: "In the rental project", p: "The Rental Manager profile points RoleCenter at page 78614 'Rental Manager RC,' and applies a pagecustomization that hides fields the rental team never uses on the day-to-day equipment list — Last Maintenance Date, for instance, which matters for planning but not for the daily rental workflow." }
+      ],
+      why: "Without the profile, page 78614 would compile and exist, but no user would ever land on it automatically — a Role Center page with nothing pointing a role at it is just an unreachable page. The profile is the one piece of wiring that turns a built dashboard into something a rental manager actually sees on login.",
+      check: { q: "Why does a profile have no object ID, when almost every other AL object type — table, page, codeunit, even permission set — does?", a: "A profile is identified by its declared name rather than a number, because it isn't a data or logic container the way those objects are — it's a named binding between a role, a Role Center page, and a set of customizations. There's nothing else that would ever need to reference a profile by numeric ID the way code references a table or calls a codeunit." },
+      exercise: "Define the Rental Manager profile with RoleCenter = \"Rental Manager RC\" (page 78614 from the previous lesson), a clear Caption and ProfileDescription, and Enabled = true. Then build one pagecustomization object targeting Rental Equipment List that hides the Last Maintenance Date field, and reference it under the profile's Customizations. Sign in as a test user, select the Rental Manager role in My Settings, and confirm both the Role Center and the hidden field take effect.",
+      code: "profile \"Rental Manager\"\n{\n    Caption = 'Rental Manager';\n    ProfileDescription = 'Manages equipment rental operations';\n    RoleCenter = \"Rental Manager RC\";\n    Customizations = RentalEquipmentListCust;\n    Enabled = true;\n    Promoted = false;\n}\n\npagecustomization RentalEquipmentListCust customizes \"Rental Equipment List\"\n{\n    layout\n    {\n        modify(\"Last Maintenance Date\")\n        {\n            Visible = false;\n        }\n    }\n}"
+    },
+    {
+      id: "hands-05-enumext", group: "rolecenter", n: "14", title: "Enum Extension: EquipmentType — Camera & Projector Screen (78620, 78621)",
+      dur: "15 min read",
+      summary: "Adding two more equipment categories to a Microsoft-adjacent-style enum without ever opening enum 78602 from Module 2.",
+      concepts: [
+        { h: "What it is", p: "An enum extension adds new values to an enum that already exists, without touching the original object — the same non-destructive pattern a table extension applies to tables, applied to enums instead." },
+        { h: "Why it matters", p: "The enum you need to extend is often owned by Microsoft, or by another team's extension entirely — you may not even be allowed to modify it directly. An enum extension adds your values while leaving the original object, and everyone else's ability to update it safely, completely intact." },
+        { h: "When to use it", p: "Use an enum extension when a standard or third-party enum is missing an option your business genuinely needs — a category, a status, a type — rather than duplicating the whole enum with your values added in, which would fragment every field and every piece of logic already built around the original." },
+        { h: "Rules to respect", p: "The target enum has to declare `Extensible = true` — you can't extend one that doesn't allow it. Every value ID you add has to come from your own reserved object range, because two different apps adding the same numeric ID to the same enum can't coexist. Values only ever get added, never removed — removing one would break any record that already stored it, so an obsolete value gets marked Obsolete on the original rather than deleted. The value's name is what your AL code refers to; its Caption is what the user actually reads, and the two aren't required to match. The dropdown lists values by numeric ID order, not by the order they were declared, so plan IDs with the final list in mind. And you can only declare one enumextension per enum per app — all your new values for a given enum belong in a single object, not spread across several." },
+        { h: "Best practices", p: "Confirm Extensible = true on the target before starting — if it isn't set, extending that enum isn't an option at all, no matter how badly you need the extra value. Take every value ID from your reserved range, and set a Caption on every value you add, the same as you would on a value in an enum you own outright." },
+        { h: "In the rental project", p: "An extension of EquipmentType (78602) adds Camera (value 78620) and Projector Screen (value 78621), so the enum's original four values — Projector, Laptop, Tablet, Audio Kit — stay exactly as declared in Module 2, and enum 78602 itself is never opened or edited to add these two. The source material states the value IDs but doesn't give the enumextension object's own ID — reserve one from your own range." }
+      ],
+      why: "EquipmentType was marked Extensible = true back in Module 2 for exactly this reason — a rental company's equipment catalogue grows over time, and the alternative to an enum extension would be editing enum 78602 directly every time a new category shows up, which defeats the entire point of having chosen an extensible enum in the first place.",
+      check: { q: "The enum extension adds Camera at value ID 78620 and Projector Screen at 78621 — IDs from the rental project's own object range, not from wherever the base EquipmentType enum's four values (0–3) happen to sit. Why does that matter?", a: "Because two different extensions adding values to the same target enum need their IDs to never collide — if this project's Camera and some other extension's added value both claimed ID 78620, the two couldn't be installed together. Reserving IDs from your own range, separate from the target enum's original 0–3 range, is what keeps that collision impossible by construction." },
+      exercise: "Use the tenumext snippet to build an enum extension on EquipmentType (78602) adding Camera at value 78620 and Projector Screen at value 78621, each with a Caption. Confirm EquipmentType still declares Extensible = true from Module 2, compile, and open the RentalEquipmentCard page from Module 2 to confirm both new values now appear in the Equipment Type dropdown alongside the original four.",
+      code: "enumextension 78622 \"Equipment Type Ext\" extends \"Equipment Type\" // object ID not stated in source material -- pick the next free number in your own range\n{\n    value(78620; Camera)\n    {\n        Caption = 'Camera';\n    }\n    value(78621; \"Projector Screen\")\n    {\n        Caption = 'Projector Screen';\n    }\n}"
+    },
+    {
+      id: "hands-05-permissionset", group: "rolecenter", n: "15", title: "Permission Set: Rental Full & Rental Read",
+      dur: "18 min read",
+      summary: "Without this object, every table, page, codeunit, report, query, and XMLport built so far only works for the one SUPER user testing it.",
+      concepts: [
+        { h: "What it is", p: "A permission set is the AL object listing exactly what a user may read, insert, modify, delete, or execute on each object an extension ships — the access-control layer that sits on top of everything else built in this series." },
+        { h: "Why it matters", p: "Business Central blocks any object a user has no permission for, full stop. Every table, page, codeunit, report, query, and XMLport built across this whole series is invisible or unusable to anyone who isn't SUPER until a permission set explicitly grants access to it — this isn't an edge case, it's the default." },
+        { h: "When to use it", p: "Every extension needs at least one permission set, no exceptions. Add more than one when different roles need different levels of access to the same objects — a full-access set for the team that manages the data, and a read-only set for people who only need to consult it." },
+        { h: "Letters and properties", p: "The access letters map directly to CRUD plus execution: R for read (open and view records), I for insert (create new ones), M for modify (change existing ones), D for delete (remove them), and X for execute — running a codeunit, report, query, or XMLport rather than reading/writing table data. `Assignable = true` marks a permission set an administrator can actually hand out to a user; leave it false on a set meant only to be pulled into other sets. `IncludedPermissionSets` pulls another set's entire permission list into this one, so a broader set can be built by composing narrower ones instead of repeating every entry. `Permissions` is the list itself, one entry per object: `tabledata X = RIMD, page Y = X`." },
+        { h: "Best practices", p: "Ship at least one full-access set and one read-only set as a pair, name both with the project's prefix so they're identifiable at a glance in a long permission list, and set Assignable = true only on the sets an administrator should actually be able to hand to a user — not on every set that exists." },
+        { h: "In the rental project", p: "Rental Full grants rimd on the rental tables plus execute on the rental codeunits, reports, queries and XMLports — everything a rental manager needs to fully operate the extension. Rental Read grants r only, for users who need to consult the equipment list and availability report without being able to change anything. The source material doesn't state object ID numbers for either permission set — reserve two from your own range rather than inventing specific ones." }
+      ],
+      why: "A rental manager who can open every page and codeunit built in this series but has no permission set granting rimd on RentalEquipment sees every operation fail at runtime with a permissions error — not a bug in the extension, working exactly as designed, because Business Central assumes no access until a permission set says otherwise. Shipping the extension without this object means it only ever works for the one SUPER user testing it.",
+      check: { q: "Rental Read grants r on the rental tables and nothing else. A user assigned only Rental Read tries to mark a piece of equipment unavailable through the Card page. What happens, and why isn't this a bug?", a: "The operation is blocked with a permissions error — Rental Read never granted M (modify) on Rental Equipment, only R (read). This is the permission set working exactly as designed: a read-only role is supposed to be unable to change data, and the block happens automatically because Business Central's default is no access, not because something forgot to check a flag." },
+      exercise: "Build two permission sets: Rental Full, granting RIMD on Rental Equipment and every other rental table built in this series, plus X on Rental Management, Rental Process, the Equipment Availability report, the Rental Equipment Summary query, and the Import Rental Equipment XMLport; and Rental Read, granting R only on the rental tables. Set Assignable = true on both, sign in as a non-SUPER test user assigned only Rental Read, and confirm every write operation is correctly blocked.",
+      code: "permissionset 78640 \"Rental Full\"\n{\n    Access = Public;\n    Assignable = true;\n    Caption = 'Rental Full Access';\n    IncludedPermissionSets = \"Rental Read\";\n    Permissions =\n        tabledata \"Rental Equipment\" = RIMD,\n        page \"Rental Equipment List\" = X,\n        page \"Rental Equipment Card\" = X,\n        codeunit \"Rental Management\" = X,\n        codeunit \"Rental Process\" = X,\n        report \"Equipment Availability\" = X,\n        query \"Rental Equipment Summary\" = X,\n        xmlport \"Import Rental Equipment\" = X;\n}\n\npermissionset 78641 \"Rental Read\"\n{\n    Access = Public;\n    Assignable = true;\n    Caption = 'Rental Read Only';\n    Permissions =\n        tabledata \"Rental Equipment\" = R;\n}"
+    },
+    {
+      id: "hands-06-capstone", group: "capstone", n: "16", title: "Capstone: the Rental Contract feature",
+      dur: "25 min read",
+      summary: "One end-to-end feature — rent equipment, price it automatically, report on it, import equipment from CSV — built using every object type from modules 1 to 5, on top of the project as it already stands.",
+      concepts: [
+        { h: "The scenario", p: "The rental company wants to rent equipment to customers, price each rental automatically, report on availability, and load its equipment list from a CSV file. This is not a new project — it's the next feature on the one you've been building since Lesson 01." },
+        { h: "Where you start", p: "The project as it stands after module 5: table 78601 (RentalEquipment), enum 78602 (EquipmentType), pages 78603–78605, and codeunit 78609 (RentalManagement) are already in place and compiling." },
+        { h: "What you will build", p: "Nine objects, listed in the table below, spanning every layer of the project. Build one at a time, compile after each, and test it in the client before starting the next — use the snippets from earlier lessons rather than typing objects from scratch." },
+        { h: "What good looks like", p: "A user opens the Rental Manager Role Center, imports equipment from a CSV, rents a projector, and sees both the calculated price and the availability report update to reflect it." }
+      ],
+      why: "This is the lesson that proves the series worked — every object type taught individually in modules 1 through 5 has to work together here, on real (if small) business logic, under the same naming and ID-range discipline set in Lesson 01. If a learner can complete this capstone cleanly, they can start a real extension.",
+      check: { q: "The capstone's definition of done requires the extension to compile with 'no errors and no warnings, and every object inside your assigned ID range.' Why call out warnings specifically, not just errors?", a: "A warning doesn't block compilation, so it's tempting to ignore — but in a shared codebase, unaddressed warnings (deprecated API usage, missing captions, etc.) accumulate silently and are exactly the kind of thing that turns into a real bug or a failed AppSource validation later. Treating warnings as blocking here builds the habit before it costs something real." },
+      exercise: "Build, in order: (1) Customer table extension 78630 adding \"Rental Discount %\" (Decimal, MinValue 0); (2) EquipmentType enum extension 78631 adding the Camera value with a Caption; (3) Rental Contract table 78632 (key on No., using the EquipmentType enum, and fields for customer, equipment, start date, days, total); (4) Rental Contract Card page 78633 (PageType Card, SourceTable = your new table); (5) Rental Pricing codeunit 78634, one public procedure returning a Decimal (daily rate × days, minus the customer's discount); (6) wire the pricing call to OnValidate on the Days field on the card, assigning the total field; (7) Import Equipment XMLport 78636 (Direction = Import, Format = VariableText), rejecting negative prices rather than silently skipping them; (8) Rental Availability report 78635 grouped by equipment type, and Rental Revenue query 78637 grouping contracts by type and summing the amount; (9) Rental Full permission set 78638 granting rimd on your new tables and X on the new codeunit, report and query — then test the entire flow logged in as a non-SUPER user.",
+      definitionOfDone: "The extension compiles with zero errors and zero warnings, every object sits inside the assigned ID range, and every object carries the project prefix with a caption that reads well in the client. A contract can be created, saved, reopened, and shows the values entered. The total follows daily rate × days minus the customer discount, recalculating on change. A negative price or a zero-day rental is refused with an actionable message. A ten-row CSV import loads correctly, with bad rows reported rather than silently skipped. The availability report reads well on screen and exports cleanly. A non-SUPER user can run the whole flow end to end — import, rent, price, report — using only the permission set you shipped."
+    }
+  ]
 }
+
+/* ---------------- HANDS QUIZZES (merge into the app's QUIZZES object) ---------------- */
 
 ];
 
@@ -3209,4 +3958,211 @@ const QUIZZES = {
       { q: "What does it usually mean if cherry-pick becomes a routine part of a team's workflow?", options: ["The team is using Git exactly as intended", "It means the team should rebase more often instead", "It's a warning sign that branches are scoped wrongly, since cherry-pick is best suited for occasional hotfixes", "It indicates the remote repository is misconfigured"], correct: 2 },
     ]
   },
+
+  "hands-01-setup": {
+      pass: 2,
+      questions: [
+        {
+          q: "Which layer does the Codeunit object belong to in this project's architecture?",
+          options: ["Data layer", "UI layer", "Logic layer", "It has no fixed layer"],
+          correct: 2
+        },
+        {
+          q: "Why does the rental project reserve one contiguous ID range instead of taking the next free number for each object?",
+          options: [
+            "It's required by Business Central's licensing model",
+            "It keeps the project's objects identifiable as one block and avoids collisions with other extensions",
+            "It makes objects load faster at runtime",
+            "AL doesn't allow object IDs above 50000 otherwise"
+          ],
+          correct: 1
+        },
+        {
+          q: "What should you decide before writing the very first table in a new extension?",
+          options: [
+            "The final page layout",
+            "The report's RDLC file",
+            "The object naming prefix and the reserved ID range",
+            "The permission set's Assignable flag"
+          ],
+          correct: 2
+        }
+      ]
+    },
+    "hands-02-table": {
+      pass: 2,
+      questions: [
+        {
+          q: "What does RentalEquipment's secondary key on Equipment Type actually improve?",
+          options: [
+            "It enforces that Equipment Type can't be blank",
+            "It speeds up filtering, sorting and grouping by Equipment Type instead of scanning in primary-key order",
+            "It lets two rows share the same No.",
+            "It replaces the need for a primary key"
+          ],
+          correct: 1
+        },
+        {
+          q: "Which trigger is the right place to re-validate a field's business rules every time its value changes?",
+          options: ["OnInsert()", "OnModify()", "OnValidate()", "OnRename()"],
+          correct: 2
+        },
+        {
+          q: "What snippet scaffolds a new table object in VS Code?",
+          options: ["tpage", "ttable", "tcodeunit", "tquery"],
+          correct: 1
+        }
+      ]
+    },
+    "hands-02-page": {
+      pass: 2,
+      questions: [
+        {
+          q: "Which page type is the right choice for detailed, single-record editing?",
+          options: ["List", "Card", "FactBox", "Query"],
+          correct: 1
+        },
+        {
+          q: "What is the FactBox on RentalEquipmentCard for?",
+          options: [
+            "Replacing the Card page entirely",
+            "Bulk-editing many equipment records at once",
+            "Surfacing related information alongside the Card without navigating away",
+            "Importing equipment from CSV"
+          ],
+          correct: 2
+        },
+        {
+          q: "Which page trigger runs before the page closes and can be used to cancel the close?",
+          options: ["OnOpenPage", "OnAfterGetRecord", "OnQueryClosePage", "OnNewRecord"],
+          correct: 2
+        }
+      ]
+    },
+    "hands-03-codeunit": {
+      pass: 2,
+      questions: [
+        {
+          q: "Why does RentalProcess call RentalManagement's CheckAvailability() instead of reimplementing the check itself?",
+          options: [
+            "It's required by AL syntax",
+            "So both codeunits share one rule instead of risking the logic drifting apart",
+            "Codeunits cannot contain more than one procedure",
+            "CheckAvailability() only works when called from RentalProcess"
+          ],
+          correct: 1
+        },
+        {
+          q: "Which codeunit property keeps one instance of the codeunit alive for the whole session, so its global variables persist between calls?",
+          options: ["TableNo", "Access", "SingleInstance", "Subtype"],
+          correct: 2
+        },
+        {
+          q: "What does marking a procedure 'local' rather than public actually do?",
+          options: [
+            "Makes it run faster",
+            "Restricts it to calls from within the same codeunit, keeping it out of the object's public surface",
+            "Prevents it from returning a value",
+            "Marks it deprecated"
+          ],
+          correct: 1
+        }
+      ]
+    },
+    "hands-04-report": {
+      pass: 2,
+      questions: [
+        {
+          q: "Which report trigger runs once per record and is the right place for per-row calculations?",
+          options: ["OnPreDataItem()", "OnAfterGetRecord()", "OnPostDataItem()", "OnInitReport()"],
+          correct: 1
+        },
+        {
+          q: "What does ProcessingOnly = true actually change about a report?",
+          options: [
+            "It hides the report from Tell Me",
+            "It runs the report's logic without producing a printed document",
+            "It disables all filters",
+            "It forces RDLC layout"
+          ],
+          correct: 1
+        },
+        {
+          q: "Where should EquipmentAvailability apply its filters, so they take effect before the first record is read?",
+          options: ["OnPostReport()", "OnAfterGetRecord()", "OnPreDataItem()", "OnQueryClosePage()"],
+          correct: 2
+        }
+      ]
+    },
+    "hands-04-query": {
+      pass: 2,
+      questions: [
+        {
+          q: "In RentalEquipmentSummary, which column has no Method set?",
+          options: [
+            "The item count column",
+            "The average price column",
+            "Equipment Type, the grouping column",
+            "There are no non-aggregate columns"
+          ],
+          correct: 2
+        },
+        {
+          q: "What is a query fundamentally, compared to a Record variable?",
+          options: [
+            "A writable table wrapper",
+            "A read-only aggregation object combining tables with grouping and filtering",
+            "A page that displays data",
+            "A trigger that runs on save"
+          ],
+          correct: 1
+        },
+        {
+          q: "Which AL pattern reads through a query's results in code?",
+          options: [
+            "Q.FindSet() / Q.Next()",
+            "Q.Open(); while Q.Read() do ...; Q.Close();",
+            "Q.Get() then Q.Modify()",
+            "Q.SetRange() then Q.Insert()"
+          ],
+          correct: 1
+        }
+      ]
+    },
+    "hands-05-permissionset": {
+      pass: 2,
+      questions: [
+        {
+          q: "A user assigned only Rental Read tries to modify a Rental Equipment record. What happens?",
+          options: [
+            "It succeeds because Read includes basic edits",
+            "It's blocked — Rental Read never granted M (modify)",
+            "It succeeds but logs a warning",
+            "It prompts the user to request access"
+          ],
+          correct: 1
+        },
+        {
+          q: "What does IncludedPermissionSets let a permission set do?",
+          options: [
+            "Delete another permission set",
+            "Pull another set's entire permission list into this one, so broader sets can compose narrower ones",
+            "Grant SUPER access automatically",
+            "Bypass Assignable = false"
+          ],
+          correct: 1
+        },
+        {
+          q: "Why does every extension need at least one permission set, without exception?",
+          options: [
+            "It's only required for extensions with tables",
+            "Business Central blocks any object a user has no permission for by default",
+            "Permission sets are required only for AppSource submission",
+            "It's optional but recommended for performance"
+          ],
+          correct: 1
+        }
+      ]
+    },
+
 };
