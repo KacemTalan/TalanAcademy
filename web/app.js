@@ -288,15 +288,18 @@ function renderShell() {
       <button class="menu-btn" id="menuBtn" aria-label="Menu">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
-      <div class="brand">
+      <div class="brand" data-home role="button" aria-label="Go to home">
         <img src="${LOGO_TALAN}" alt="Talan">
         <div class="brand-div"></div>
         <div class="brand-name">Academy<span>Business Central</span></div>
       </div>
       <div class="topbar-spacer"></div>
       <div class="searchbox" id="searchWrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-        <input type="search" id="search" placeholder="Search lessons" autocomplete="off">
+        <button class="search-icon-btn" id="searchToggle" aria-label="Search lessons" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </button>
+        <input type="text" id="search" placeholder="Search lessons…"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="talan-lesson-query">
       </div>
       <div class="overall" id="overallWrap">
         <div class="overall-bar"><div class="overall-fill" id="ovFill"></div></div>
@@ -364,6 +367,19 @@ function wireShell() {
     clearTimeout(searchTimer);
     const v = e.target.value;
     searchTimer = setTimeout(() => v.trim() ? renderSearch(v) : renderHome(), 180);
+  });
+
+  el('searchToggle').addEventListener('click', () => {
+    const wrap = el('searchWrap');
+    const opening = !wrap.classList.contains('expanded');
+    wrap.classList.toggle('expanded', opening);
+    if (opening) el('search').focus();
+  });
+  el('search').addEventListener('blur', () => {
+    if (!el('search').value.trim()) el('searchWrap').classList.remove('expanded');
+  });
+  el('search').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { el('search').value = ''; el('search').blur(); renderHome(); }
   });
 
   el('trackFilter').addEventListener('click', (e) => {
@@ -746,10 +762,13 @@ function openModal(html) {
   document.body.appendChild(wrap);
 }
 
-function openPasswordDialog() {
+function openPasswordDialog(forced = false) {
+  if (forced) localStorage.setItem('talan_pwdialog_seen_' + me.email, '1');
   openModal(`
     <h3>Change password</h3>
-    <p class="modal-sub">At least 10 characters, with upper, lower and a number.</p>
+    <p class="modal-sub">${forced
+      ? "You're signed in with a temporary password. Set your own now, or later from the account menu."
+      : 'At least 10 characters, with upper, lower and a number.'}</p>
     <label class="ml">Current password</label><input type="password" id="pwCur" class="mi">
     <label class="ml">New password</label><input type="password" id="pwNew" class="mi">
     <div class="modal-msg" id="pwMsg"></div>
@@ -778,7 +797,18 @@ function openPasswordDialog() {
 async function onAppClick(e) {
   const t = e.target;
 
-  if (t.closest('[data-home]')) { el('search').value = ''; return renderHome(); }
+  if (t.closest('[data-home]')) {
+    el('search').value = '';
+    if (view === 'admin') {
+      view = 'academy';
+      const toggle = el('viewToggle');
+      if (toggle) toggle.textContent = 'Admin';
+      document.querySelector('.shell').classList.remove('no-side');
+      el('searchWrap').style.display = '';
+      el('overallWrap').style.display = '';
+    }
+    return renderHome();
+  }
 
   const toggle = t.closest('[data-toggle]');
   if (toggle) return toggle.closest('.side-sec').classList.toggle('open');
@@ -1013,8 +1043,8 @@ async function boot() {
   renderShell();
   renderHome();
   renderOverall();
-  if (me.mustReset) {
-    openPasswordDialog();
+  if (me.mustReset && !localStorage.getItem('talan_pwdialog_seen_' + me.email)) {
+    openPasswordDialog(true);
   }
 }
 
