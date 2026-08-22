@@ -38,6 +38,13 @@ let watchedPct = 0;        // fraction of the current lesson's video watched thi
 let currentId = null;
 let filterTrack = 'all';
 let view = 'academy';   // 'academy' | 'admin'
+let theme = localStorage.getItem('talan_theme')
+  || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', theme);
+}
+applyTheme();
 
 /* ---------------- api ---------------- */
 async function api(path, options = {}) {
@@ -311,6 +318,10 @@ function renderShell() {
         <div class="usermenu-pop" id="userPop">
           <div class="um-head"><b>${esc(me.name)}</b><span>${esc(me.email)}</span>
             <em class="um-role">${me.role === 'admin' ? 'Administrator' : 'Consultant'}</em></div>
+          <button class="um-item" id="themeToggle">
+            <span>Dark mode</span>
+            <span class="um-switch ${theme === 'dark' ? 'on' : ''}" id="themeSwitch"><span class="knob"></span></span>
+          </button>
           <button class="um-item" id="changePw">Change password</button>
           <button class="um-item danger" id="signOutBtn">Sign out</button>
         </div>
@@ -343,6 +354,13 @@ function wireShell() {
   document.addEventListener('click', () => el('userPop')?.classList.remove('on'));
   el('signOutBtn').addEventListener('click', () => signOut());
   el('changePw').addEventListener('click', openPasswordDialog);
+  el('themeToggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    theme = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('talan_theme', theme);
+    applyTheme();
+    el('themeSwitch').classList.toggle('on', theme === 'dark');
+  });
   el('menuBtn').addEventListener('click', () => {
     el('sidebar').classList.toggle('open');
     el('scrim').classList.toggle('on');
