@@ -385,7 +385,7 @@ const CURRICULUM_A = [
 
 /* ---------------- FLOW: FUNCTIONAL FLOWS & CONSULTANT TOOLKIT ---------------- */
 {
-  code: "FLOW", track: "business", accent: "teal",
+  code: "FLOW", track: "business", accent: "teal", noVideo: true,
   title: "Functional Flows & Consultant Toolkit",
   tagline: "The process cheat sheets a consultant reaches for mid-call.",
   audience: "Functional consultants, business analysts, and implementation teams working day to day in Business Central",
@@ -401,6 +401,14 @@ const CURRICULUM_A = [
       id: "flow-01-o2c", group: "flows", n: "01", title: "Order to Cash, step by step",
       dur: "12 min read",
       summary: "The customer lifecycle from first quote to cash in hand, and the one release step that quietly links inventory and finance together.",
+      flow: [
+        { label: "Sales Quote", detail: "Sales Agent" },
+        { label: "Sales Order", detail: "Sales Agent" },
+        { label: "Pick / Ship", detail: "Warehouse Ops" },
+        { label: "Post Shipment", detail: "Warehouse Ops" },
+        { label: "Sales Invoice", detail: "Accountant" },
+        { label: "Payment", detail: "Accountant" }
+      ],
       concepts: [
         { h: "The six-step flow", p: "Order to Cash runs Sales Quote → Sales Order → Pick/Ship → Post Shipment → Sales Invoice → Payment. Three roles carry it: the Sales Agent creates the quote and order, Warehouse Operations handles the pick and ship, and the Accountant sees the invoice through to payment. Nothing here is optional if you're selling anything through BC — even a same-day cash sale still walks through an order and an invoice, just compressed." },
         { h: "Key documents, and why there are so many", p: "BC produces a distinct document at nearly every step: Sales Quote, Sales Order, Posted Shipment, Posted Invoice, Customer Ledger Entry, G/L Entry. This isn't bureaucracy — quotes and orders are editable working documents, while posted shipments and posted invoices are the permanent, unchangeable record. Once a document is posted, correcting it means issuing a new document (a credit memo, a corrective shipment), not editing the old one." },
@@ -1095,7 +1103,7 @@ const CURRICULUM_B = [
 
 /* ---------------- ALCS: AL LANGUAGE CHEAT SHEET ---------------- */
 {
-  code: "ALCS", track: "developer", accent: "magenta",
+  code: "ALCS", track: "developer", accent: "magenta", noVideo: true,
   title: "AL Language Cheat Sheet",
   tagline: "Look it up in ten seconds, not ten minutes.",
   audience: "AL developers who already know the objects and want the fact, not the tutorial",
@@ -1296,7 +1304,7 @@ const CURRICULUM_B = [
 
 /* ---------------- HANDS: HANDS-ON DEVELOPMENT (RENTAL MANAGEMENT) ---------------- */
 {
-  code: "HANDS", track: "developer", accent: "lime",
+  code: "HANDS", track: "developer", accent: "lime", noVideo: true, progressiveCode: true,
   title: "Hands-on Development: Rental Management",
   tagline: "One extension, twelve object types, built module by module until it ships.",
   audience: "AL developers building their first real extension, technical consultants moving into development",
@@ -1314,6 +1322,11 @@ const CURRICULUM_B = [
       id: "hands-01-setup", group: "setup", n: "01", title: "Project setup: the Rental Management project",
       dur: "15 min read",
       summary: "What you're building across this series, the three-layer architecture every object in it belongs to, and the naming/numbering conventions that keep it all coherent.",
+      layers: [
+        { label: "Data Layer", items: ["Table", "Enum", "Query"], detail: "Stores and structures business data" },
+        { label: "UI Layer", items: ["Page", "Page Extension"], detail: "Presents and manipulates data" },
+        { label: "Logic Layer", items: ["Codeunit", "Report", "XMLPort", "Profile", "Permission Set"], detail: "Implements business rules" }
+      ],
       concepts: [
         { h: "What you're building", p: "One project, six modules, twelve AL object types: a Rental Management extension that lets a business rent out equipment, price the rental automatically, report on availability, and import its equipment catalogue from a CSV file. Every lesson in this series adds one object to that same project — nothing here is a throwaway example." },
         { h: "Three layers, one architecture", p: "The project sorts into a Data layer (Table, Enum, Query — stores and structures the business data), a UI layer (Page, Page Extension — presents and manipulates it), and a Logic layer (Codeunit, Report, XMLPort, Profile, Permission Set — implements the business rules and everything else that isn't pure storage or pure screen). Knowing which layer an object belongs to answers 'where does this logic go' before you've even opened VS Code." },
@@ -1470,8 +1483,34 @@ const CURRICULUM_B = [
         { h: "What it is", p: "An XMLport is the import/export object that moves data between Business Central and an external system, in XML or in delimited-text formats like CSV. It defines both the shape of the file and the mapping between file fields and table fields." },
         { h: "Why it matters", p: "Almost no BC implementation starts with an empty database — equipment catalogues, price lists, customer lists usually already exist somewhere else, often as a spreadsheet. An XMLport is what turns 'a CSV a client emails us' into rows in a BC table without hand-entering them." },
         { h: "When to use it", p: "Use an XMLport to import catalogs, customer lists, or price data from an external file, or to export orders, invoices, or transactions out to another system. If the integration needs to run automatically on a schedule or react to an external trigger rather than a user manually running an import, the XMLport is usually wrapped by a codeunit or job queue entry that calls it — the XMLport itself is the format/mapping definition." },
-        { h: "XMLPort properties worth setting deliberately", p: "`Direction` declares whether the object imports, exports, or does both (Both is the default). `Format` picks the file shape — Xml by default, or VariableText/FixedText for delimited and column-aligned text files. For the text formats, `FieldSeparator` sets what splits two fields on a line (comma, semicolon, tab), `RecordSeparator` sets what ends a record (typically newline), and `FieldDelimiter` sets what wraps each value ('\"' is typical, to let a field itself contain the separator character safely). `TextEncoding` sets the character encoding — UTF8, UTF16, WINDOWS, MSDOS — which matters more than it looks the moment a file has an accented character or a currency symbol in it. `UseRequestPage` shows a filter/options page before running, on by default. `FormatEvaluate` controls how values are parsed on import and formatted on export." },
-        { h: "XMLPort triggers", p: "At the XMLport level, `OnInitXmlPort()` runs before anything else, `OnPreXmlPort()` runs after the request page but before data is processed, and `OnPostXmlPort()` runs once the whole file is done. At the table-element level, `OnAfterInitRecord()` runs right after a new record is initialized but before values land in it, `OnBeforeInsertRecord()` runs right before the insert — the natural place to validate and reject a bad row — and `OnAfterInsertRecord()` runs after, for related updates or logging. At the field level, `OnAfterAssignField()` runs after a value is assigned during import, and `OnBeforePassVariable()` runs before a value is written out during export." },
+        { h: "XMLPort properties worth setting deliberately", p: "The properties that shape how a file gets read or written — set these before you touch the schema.",
+          table: {
+            headers: ["Property", "What it controls", "Values or example"],
+            rows: [
+              ["Direction", "Whether the XMLport imports, exports, or does both", "Import, Export, Both (default)"],
+              ["Format", "The file format that is handled", "Xml (default), VariableText, FixedText"],
+              ["FieldSeparator", "What separates two fields in the text formats", "',' or ';' or '<TAB>'"],
+              ["RecordSeparator", "What ends each record in the text formats", "'<NewLine>'"],
+              ["FieldDelimiter", "What wraps each field value in the text formats", "'\"'"],
+              ["TextEncoding", "The character encoding used for the text formats", "UTF8, UTF16, WINDOWS, MSDOS"],
+              ["UseRequestPage", "Shows a request page before the XMLport runs", "true (default) / false"],
+              ["FormatEvaluate", "How values are parsed on import and formatted on export", "Legacy (default), Xml"]
+            ]
+          } },
+        { h: "XMLPort triggers", p: "Three levels of triggers — XMLport-wide, per table element, and per field — each firing at a different point in the read/write cycle.",
+          table: {
+            headers: ["Trigger", "Level", "When it runs"],
+            rows: [
+              ["OnInitXmlPort()", "XMLport", "Before anything else — set your defaults here"],
+              ["OnPreXmlPort()", "XMLport", "After the request page, before data is processed"],
+              ["OnPostXmlPort()", "XMLport", "After the whole file has been processed"],
+              ["OnAfterInitRecord()", "Table element", "After a new record is initialised, before values land"],
+              ["OnBeforeInsertRecord()", "Table element", "Before the insert — validate and default here"],
+              ["OnAfterInsertRecord()", "Table element", "After the insert — related updates and logging"],
+              ["OnAfterAssignField()", "Field element", "After a value has been assigned to a field (import)"],
+              ["OnBeforePassVariable()", "Field element", "Before a value is written out to the file (export)"]
+            ]
+          } },
         { h: "Best practices", p: "Define the source table, choose the format deliberately rather than defaulting to Xml for what's actually a CSV file, add real validation rather than trusting the file, and handle bad rows by rejecting and reporting them instead of silently skipping or silently importing garbage. Document the expected file format somewhere a non-developer preparing the file can find it." },
         { h: "In the rental project", p: "ImportRentalEquipment (XMLport 78613) reads CSV equipment data, validates the No. field and the price fields, and rejects rows with negative prices rather than loading them — the rejection has to happen in OnBeforeInsertRecord(), before the bad row ever reaches the RentalEquipment table." }
       ],

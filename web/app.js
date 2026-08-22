@@ -35,6 +35,7 @@ let videos = {};
 let quizResults = {};
 let quizSelections = {};   // lessonId -> array of chosen option indices, in-progress attempt
 let watchedPct = 0;        // fraction of the current lesson's video watched this session
+let openedConcepts = {};   // lessonId -> Set of concept indices the learner has expanded
 let currentId = null;
 let filterTrack = 'all';
 let view = 'academy';   // 'academy' | 'admin'
@@ -548,6 +549,7 @@ function renderLesson(id) {
 
   watchedPct = 0;
   if (l.quiz && !quizSelections[id]) quizSelections[id] = new Array(l.quiz.questions.length).fill(-1);
+  if (!openedConcepts[id]) openedConcepts[id] = new Set([0]); // first concept starts open
 
   el('viewRoot').innerHTML = `
   <div class="pane lesson">
@@ -557,27 +559,25 @@ function renderLesson(id) {
     <div class="lesson-meta">
       <span class="pill accent">${TRACK_LABEL[s.track]}</span>
       <span class="pill">${esc(l.dur)}</span>
-      ${videos[l.id] ? '<span class="pill">Video available</span>' : ''}
+      ${!s.noVideo && videos[l.id] ? '<span class="pill">Video available</span>' : ''}
     </div>
     <p class="summary">${esc(l.summary)}</p>
 
+    ${l.flow ? `<div class="sec-label">Process flow</div>${flowHtml(l.flow, ACCENTS[s.accent].c)}` : ''}
+    ${l.layers ? `<div class="sec-label">Architecture</div>${layersHtml(l.layers, ACCENTS[s.accent].c)}` : ''}
+
     <div class="sec-label">Key concepts</div>
     <div class="concepts">${l.concepts.map((c, i) => `
-      <div class="concept ${i === 0 ? 'open' : ''}">
+      <div class="concept ${openedConcepts[id].has(i) ? 'open' : ''}" data-concept-idx="${i}">
         <button class="concept-h"><span class="concept-n">${String(i + 1).padStart(2, '0')}</span>
           <b>${esc(c.h)}</b>
           <svg class="cc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="concept-b"><p>${esc(c.p)}</p></div></div>`).join('')}</div>
+        <div class="concept-b">${conceptBodyHtml(c)}</div></div>`).join('')}</div>
 
-    ${l.samples ? `<div class="sec-label">In code <em class="lbl-count">${l.samples.length} example${l.samples.length === 1 ? '' : 's'}</em></div>
-      ${l.samples.map(sm => `<div class="sample">
-        <div class="sample-h"><span class="sample-lbl">${esc(sm.label)}</span>
-          <span class="sample-lang">${esc(sm.lang || 'AL')}</span>
-          <button class="copybtn" data-copy>Copy</button></div>
-        <div class="codewrap"><pre>${highlightAL(sm.src)}</pre></div></div>`).join('')}` : ''}
+    <div id="codeBox">${codeSectionHtml(l, s)}</div>
 
-    <div class="sec-label">Video</div>
-    <div class="videobox" id="videoBox">${videoHtml(l)}</div>
+    ${s.noVideo ? '' : `<div class="sec-label">Video</div>
+    <div class="videobox" id="videoBox">${videoHtml(l)}</div>`}
 
     <div class="why"><div class="why-h">Why it matters</div><p>${esc(l.why)}</p></div>
 
@@ -631,6 +631,59 @@ function attachVideoTracking() {
   v.addEventListener('timeupdate', () => {
     if (v.duration) watchedPct = Math.max(watchedPct, v.currentTime / v.duration);
   });
+}
+
+/* ---------------- concept tables & diagrams ---------------- */
+function conceptBodyHtml(c) {
+  return `<p>${esc(c.p)}</p>${c.table ? tableHtml(c.table) : ''}`;
+}
+
+function tableHtml(t) {
+  return `<div class="concept-table-wrap"><table class="concept-table">
+    ${t.title ? `<caption>${esc(t.title)}</caption>` : ''}
+    <thead><tr>${t.headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${t.rows.map(r => `<tr>${r.map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function flowHtml(steps, color) {
+  return `<div class="flow-diagram">${steps.map((step, i) => `
+    <div class="flow-step">
+      <div class="flow-step-n" style="background:${esc(color)}">${i + 1}</div>
+      <div class="flow-step-body"><b>${esc(step.label)}</b>${step.detail ? `<span>${esc(step.detail)}</span>` : ''}</div>
+    </div>
+    ${i < steps.length - 1 ? `<div class="flow-arrow" style="color:${esc(color)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h13M13 6l6 6-6 6"/></svg></div>` : ''}`
+  ).join('')}</div>`;
+}
+
+function layersHtml(layers, color) {
+  return `<div class="layers-diagram">${layers.map(layer => `
+    <div class="layer-box">
+      <div class="layer-box-h" style="border-color:${esc(color)}">${esc(layer.label)}</div>
+      <ul class="layer-items">${layer.items.map(it => `<li>${esc(it)}</li>`).join('')}</ul>
+      ${layer.detail ? `<p class="layer-detail">${esc(layer.detail)}</p>` : ''}
+    </div>`
+  ).join('')}</div>`;
+}
+
+function codeSectionHtml(l, s) {
+  if (!l.samples) return '';
+  const total = l.concepts.length;
+  const opened = openedConcepts[l.id]?.size || 0;
+  if (s.progressiveCode && opened < total) {
+    return `<div class="sec-label">In code <em class="lbl-count">locked</em></div>
+      <div class="code-locked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <b>Open every concept above to reveal the code</b>
+        <p>${opened} of ${total} opened so far.</p>
+      </div>`;
+  }
+  return `<div class="sec-label">In code <em class="lbl-count">${l.samples.length} example${l.samples.length === 1 ? '' : 's'}</em></div>
+    ${l.samples.map(sm => `<div class="sample">
+      <div class="sample-h"><span class="sample-lbl">${esc(sm.label)}</span>
+        <span class="sample-lang">${esc(sm.lang || 'AL')}</span>
+        <button class="copybtn" data-copy>Copy</button></div>
+      <div class="codewrap"><pre>${highlightAL(sm.src)}</pre></div></div>`).join('')}`;
 }
 
 /* ---------------- quiz ---------------- */
@@ -939,7 +992,18 @@ async function onAppClick(e) {
   }
 
   const ch = t.closest('.concept-h');
-  if (ch) return ch.closest('.concept').classList.toggle('open');
+  if (ch) {
+    const conceptEl = ch.closest('.concept');
+    conceptEl.classList.toggle('open');
+    const idx = Number(conceptEl.dataset.conceptIdx);
+    const l = LESSON_BY_ID[currentId];
+    if (!openedConcepts[currentId]) openedConcepts[currentId] = new Set();
+    openedConcepts[currentId].add(idx);
+    if (l.series.progressiveCode && l.samples) {
+      el('codeBox').innerHTML = codeSectionHtml(l, l.series);
+    }
+    return;
+  }
 
   if (t.closest('[data-reveal]')) return el('check').classList.add('shown');
 
