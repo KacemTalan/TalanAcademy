@@ -433,10 +433,55 @@ const lessonBtn = l =>
   `<button class="side-lesson ${progress.has(l.id) ? 'done' : ''} ${l.id === currentId ? 'active' : ''}" data-lesson="${l.id}">
      <span class="num">${esc(l.n)}</span><span class="ttl">${esc(l.title)}</span></button>`;
 
+function ringChart(pct, color, size = 96, stroke = 10) {
+  const r = (size - stroke) / 2, C = 2 * Math.PI * r, cx = size / 2, cy = size / 2;
+  return `<svg class="dash-ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+    <circle class="bg" cx="${cx}" cy="${cy}" r="${r}" stroke-width="${stroke}"></circle>
+    <circle class="fg" cx="${cx}" cy="${cy}" r="${r}" stroke-width="${stroke}" stroke="${esc(color)}"
+      stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(2)}" stroke-linecap="round"></circle>
+  </svg>`;
+}
+
+function hBarRow(label, color, done, total) {
+  const pct = total ? done / total : 0;
+  return `<div class="dbar-row">
+    <span class="dbar-label"><span class="dbar-dot" style="background:${esc(color)}"></span>${esc(label)}</span>
+    <div class="dbar-track"><div class="dbar-fill" style="width:${(pct * 100).toFixed(1)}%;background:${esc(color)}">
+      <title>${esc(label)}: ${done} of ${total} (${Math.round(pct * 100)}%)</title></div></div>
+    <span class="dbar-val">${done}/${total}</span>
+  </div>`;
+}
+
 function renderOverall() {
   const done = progress.size, total = FLAT.length;
   if (el('ovFill')) el('ovFill').style.width = (total ? done / total * 100 : 0) + '%';
   if (el('ovTxt')) el('ovTxt').textContent = `${done} / ${total}`;
+}
+
+function renderConsultantDashboard() {
+  const overallPct = FLAT.length ? progress.size / FLAT.length : 0;
+  const qEntries = Object.values(quizResults);
+  const qAvg = qEntries.length ? Math.round(qEntries.reduce((s, r) => s + r.score / r.total, 0) / qEntries.length * 100) : null;
+  const qPassed = qEntries.filter(r => r.passed).length;
+
+  return `<div class="dash-card">
+    <div class="sec-label">Your progress</div>
+    <div class="dash-grid">
+      <div class="dash-ring-wrap">
+        ${ringChart(overallPct, 'var(--blue)', 112, 12)}
+        <div class="dash-ring-txt"><b>${Math.round(overallPct * 100)}%</b><span>overall</span></div>
+      </div>
+      <div class="dash-bars">
+        ${SERIES.map(s => {
+          const done = s.lessons.filter(l => progress.has(l.id)).length;
+          return hBarRow(s.code, ACCENTS[s.accent].c, done, s.lessons.length);
+        }).join('')}
+      </div>
+    </div>
+    ${qEntries.length ? `<div class="dash-quiz-foot">
+      <b>${qAvg}%</b> average quiz score <span class="sep">·</span> <b>${qPassed}</b> of ${qEntries.length} quizzes passed
+    </div>` : ''}
+  </div>`;
 }
 
 /* ---------------- home ---------------- */
@@ -453,6 +498,7 @@ function renderHome() {
       <div class="hs"><b>${progress.size}</b><span>You've completed</span></div>
       <div class="hs"><b>${Object.keys(videos).length}</b><span>Videos published</span></div>
     </div>
+    ${renderConsultantDashboard()}
     <div class="eco"><div class="eco-h">What this covers</div><div class="eco-row">
       ${LOGOS_ECO.map(([src, name]) => `<div class="eco-item"><img src="${src}" alt=""><span>${esc(name)}</span></div>`).join('')}
     </div></div>
@@ -639,6 +685,43 @@ async function renderAdmin() {
   paintAdmin();
 }
 
+function renderAdminDashboard(others, approvedCount) {
+  const countByLesson = Object.fromEntries((adminStats.lessonCompletions || []).map(r => [r.lesson_id, r.n]));
+  const denom = Math.max(approvedCount, 1);
+
+  const seriesBars = SERIES.map(s => {
+    const done = s.lessons.reduce((sum, l) => sum + (countByLesson[l.id] || 0), 0);
+    const possible = s.lessons.length * denom;
+    return hBarRow(s.code, ACCENTS[s.accent].c, done, possible);
+  }).join('');
+
+  const top = [...others].sort((a, b) => b.completed - a.completed).slice(0, 6);
+  const maxCompleted = Math.max(1, ...top.map(u => u.completed));
+  const learnerBars = top.length
+    ? top.map(u => hBarRow(u.name.split(' ')[0], 'var(--blue)', u.completed, Math.max(maxCompleted, FLAT.length))).join('')
+    : '<p class="muted">No consultant activity yet.</p>';
+
+  const quiz = adminStats.quiz || { attempts: 0, passed: 0 };
+  const quizPassRate = quiz.attempts ? Math.round(quiz.passed / quiz.attempts * 100) : null;
+
+  return `<div class="dash-card admin-dash">
+    <div class="sec-label">Learning activity across the org</div>
+    <div class="admin-dash-grid">
+      <div>
+        <div class="dash-subh">Completion by curriculum <em>% of approved consultants</em></div>
+        <div class="dash-bars">${seriesBars}</div>
+      </div>
+      <div>
+        <div class="dash-subh">Top learners <em>lessons completed</em></div>
+        <div class="dash-bars">${learnerBars}</div>
+      </div>
+    </div>
+    ${quiz.attempts ? `<div class="dash-quiz-foot">
+      <b>${quiz.attempts}</b> quiz attempts <span class="sep">·</span> <b>${quizPassRate}%</b> pass rate
+    </div>` : ''}
+  </div>`;
+}
+
 function paintAdmin() {
   const pending = adminUsers.filter(u => u.status === 'pending');
   const others = adminUsers.filter(u => u.status !== 'pending');
@@ -657,6 +740,8 @@ function paintAdmin() {
       <div class="astat"><b>${adminStats.totalCompletions}</b><span>Lessons completed</span></div>
       <div class="astat"><b>${Object.keys(videos).length}</b><span>Videos published</span></div>
     </div>
+
+    ${renderAdminDashboard(others, st.approved)}
 
     ${pending.length ? `
       <div class="sec-label">Awaiting approval <em class="lbl-count">${pending.length}</em></div>

@@ -499,7 +499,7 @@ app.delete('/api/admin/users/:id', requireAuth, requireAdmin, writeLimiter, asyn
 });
 
 app.get('/api/admin/stats', requireAuth, requireAdmin, async (_req, res) => {
-  const [users, completions, popular, recent] = await Promise.all([
+  const [users, completions, popular, allLessons, quiz, recent] = await Promise.all([
     q(`SELECT
          COUNT(*)::int                                        AS total,
          COUNT(*) FILTER (WHERE status='pending')::int        AS pending,
@@ -510,6 +510,9 @@ app.get('/api/admin/stats', requireAuth, requireAdmin, async (_req, res) => {
     q('SELECT COUNT(*)::int AS n FROM progress'),
     q(`SELECT lesson_id, COUNT(*)::int AS n FROM progress
        GROUP BY lesson_id ORDER BY n DESC LIMIT 10`),
+    q(`SELECT lesson_id, COUNT(*)::int AS n FROM progress GROUP BY lesson_id`),
+    q(`SELECT COUNT(*)::int AS attempts, COUNT(*) FILTER (WHERE passed)::int AS passed
+       FROM quiz_results`),
     q(`SELECT a.action, a.detail, a.created_at, u.name AS actor
        FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id
        ORDER BY a.created_at DESC LIMIT 20`)
@@ -519,6 +522,8 @@ app.get('/api/admin/stats', requireAuth, requireAdmin, async (_req, res) => {
     users: users.rows[0],
     totalCompletions: completions.rows[0].n,
     popularLessons: popular.rows,
+    lessonCompletions: allLessons.rows,
+    quiz: quiz.rows[0],
     recentActivity: recent.rows
   });
 });
