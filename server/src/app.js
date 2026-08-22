@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import crypto from 'node:crypto';
 import PDFDocument from 'pdfkit';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 import { q, audit } from './db.js';
 import { createSignedUploadUrl, createSignedPlaybackUrl, removeVideo } from './storage.js';
@@ -12,6 +14,8 @@ import {
   hashPassword, verifyPassword, signToken, publicUser,
   requireAuth, requireAdmin
 } from './auth.js';
+
+const LOGO_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'assets', 'talan-logo.png');
 
 const app = express();
 app.set('trust proxy', 1); // Railway/Vercel sit behind a proxy
@@ -252,27 +256,44 @@ app.post('/api/certificate', requireAuth, writeLimiter, async (req, res) => {
   doc.pipe(res);
 
   const W = doc.page.width, H = doc.page.height;
-  doc.rect(0, 0, W, H).fill('#FBFAF7');
-  doc.rect(24, 24, W - 48, H - 48).lineWidth(1.5).stroke('#D8D3C4');
-  doc.rect(34, 34, W - 68, H - 68).lineWidth(0.75).stroke('#D8D3C4');
+  const C = {
+    blue: '#2E86C1', green: '#7A9A2A', magenta: '#E04A80',
+    lightBlue: '#3498DB', yellowGreen: '#9DAA2C', darkText: '#1C1C1C'
+  };
 
-  doc.fillColor('#2E6F5E').fontSize(14).font('Helvetica-Bold')
-    .text('TALAN ACADEMY', 0, 78, { align: 'center' });
-  doc.fillColor('#8A8272').fontSize(10).font('Helvetica')
-    .text('CERTIFICATE OF COMPLETION', 0, 100, { align: 'center', characterSpacing: 2 });
+  doc.rect(0, 0, W, H).fill('#FDFCFA');
 
-  doc.fillColor('#1B1B18').fontSize(30).font('Helvetica-Bold')
-    .text(req.user.name, 0, 160, { align: 'center' });
+  // Diagonal banner, top edge — magenta -> yellow-green -> green -> light blue -> blue
+  const bandColors = [C.magenta, C.yellowGreen, C.green, C.lightBlue, C.blue];
+  const bandH = 34, skew = 26, bandW = W / bandColors.length + skew;
+  bandColors.forEach((color, i) => {
+    const x0 = i * (W / bandColors.length) - skew / 2;
+    doc.polygon([x0, 0], [x0 + bandW, 0], [x0 + bandW - skew, bandH], [x0 - skew, bandH]).fill(color);
+  });
 
-  doc.fillColor('#5B5648').fontSize(13).font('Helvetica')
-    .text('has successfully completed', 0, 205, { align: 'center' });
+  doc.image(LOGO_PATH, W / 2 - 42, 64, { width: 84 });
 
-  doc.fillColor('#2E6F5E').fontSize(22).font('Helvetica-Bold')
-    .text(seriesTitle, 0, 230, { align: 'center' });
+  doc.fillColor(C.darkText).fontSize(11).font('Helvetica').opacity(0.55)
+    .text('CERTIFICATE OF COMPLETION', 0, 128, { align: 'center', characterSpacing: 2.5 }).opacity(1);
 
-  doc.fillColor('#8A8272').fontSize(10).font('Helvetica')
-    .text(`${lessonIds.length} lessons · issued ${new Date(finishedAt).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}`,
-      0, 275, { align: 'center' });
+  doc.fillColor(C.darkText).fontSize(32).font('Helvetica-Bold')
+    .text(req.user.name, 0, 170, { align: 'center' });
+
+  doc.fillColor(C.darkText).fontSize(13).font('Helvetica').opacity(0.7)
+    .text('has successfully completed', 0, 218, { align: 'center' }).opacity(1);
+
+  doc.fillColor(C.blue).fontSize(23).font('Helvetica-Bold')
+    .text(seriesTitle, 0, 242, { align: 'center' });
+
+  doc.fillColor(C.darkText).fontSize(10).font('Helvetica').opacity(0.55)
+    .text(`${lessonIds.length} lessons · Talan Academy · issued ${new Date(finishedAt).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+      0, 288, { align: 'center' }).opacity(1);
+
+  // Mirrored diagonal banner along the bottom edge
+  bandColors.forEach((color, i) => {
+    const x0 = i * (W / bandColors.length) - skew / 2;
+    doc.polygon([x0, H], [x0 + bandW, H], [x0 + bandW - skew, H - bandH], [x0 - skew, H - bandH]).fill(color);
+  });
 
   doc.end();
 
