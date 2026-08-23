@@ -38,7 +38,10 @@ let watchedPct = 0;        // fraction of the current lesson's video watched thi
 let openedConcepts = {};   // lessonId -> Set of concept indices the learner has expanded
 let currentId = null;
 let filterTrack = 'all';
-let view = 'academy';   // 'academy' | 'admin'
+let view = 'academy';   // 'academy' | 'admin' | 'dict'
+let dictModuleId = null;   // null = dictionary hub, else a BC_DICTIONARY module id
+let dictSearchTimer;
+let sidebarCollapsed = localStorage.getItem('talan_sidebar_collapsed') === '1';
 let theme = localStorage.getItem('talan_theme')
   || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
@@ -330,8 +333,12 @@ function renderShell() {
     </div>
   </div>
   <div class="scrim" id="scrim"></div>
-  <div class="shell">
+  <div class="shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}">
     <aside class="sidebar" id="sidebar">
+      <button class="dict-nav-btn" id="dictNavBtn" data-dict-open>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>BC Dictionary<i>EN ↔ FR reference</i></span>
+      </button>
       <div class="track-filter" id="trackFilter">
         <button class="tf on" data-t="all">All</button>
         <button class="tf" data-t="business">Business</button>
@@ -341,6 +348,9 @@ function renderShell() {
       </div>
       <div id="sideNav"></div>
     </aside>
+    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="${sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}" title="${sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
     <main class="main"><div id="viewRoot"></div></main>
   </div>`;
 
@@ -363,13 +373,18 @@ function wireShell() {
     el('themeSwitch').classList.toggle('on', theme === 'dark');
   });
   el('menuBtn').addEventListener('click', () => {
-    el('sidebar').classList.toggle('open');
-    el('scrim').classList.toggle('on');
+    if (window.matchMedia('(max-width:1080px)').matches) {
+      el('sidebar').classList.toggle('open');
+      el('scrim').classList.toggle('on');
+    } else {
+      toggleSidebarCollapsed();
+    }
   });
   el('scrim').addEventListener('click', () => {
     el('sidebar').classList.remove('open');
     el('scrim').classList.remove('on');
   });
+  el('sidebarCollapseBtn').addEventListener('click', () => toggleSidebarCollapsed());
 
   const toggle = el('viewToggle');
   if (toggle) toggle.addEventListener('click', () => {
@@ -412,6 +427,15 @@ function wireShell() {
 
   document.addEventListener('click', onAppClick);
   document.addEventListener('input', onAppInput);
+}
+
+function toggleSidebarCollapsed() {
+  sidebarCollapsed = !sidebarCollapsed;
+  localStorage.setItem('talan_sidebar_collapsed', sidebarCollapsed ? '1' : '0');
+  document.querySelector('.shell').classList.toggle('sidebar-collapsed', sidebarCollapsed);
+  const btn = el('sidebarCollapseBtn');
+  btn.setAttribute('aria-label', sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar');
+  btn.title = sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar';
 }
 
 /* ---------------- sidebar ---------------- */
@@ -505,6 +529,7 @@ function renderConsultantDashboard() {
 
 /* ---------------- home ---------------- */
 function renderHome() {
+  leaveDictIfNeeded();
   currentId = null; setAccent('blue');
   el('viewRoot').innerHTML = `
   <div class="pane home">
@@ -539,6 +564,7 @@ function renderHome() {
 
 /* ---------------- lesson ---------------- */
 function renderLesson(id) {
+  leaveDictIfNeeded();
   const idx = FLAT.findIndex(l => l.id === id);
   if (idx < 0) return renderHome();
   const l = FLAT[idx], s = l.series;
@@ -737,6 +763,155 @@ function renderSearch(query) {
       <span><b>${mark(l.title)}</b><p>${mark(l.summary)}</p>
       <i>${esc(l.series.title)} · ${esc(l.n)} · ${esc(l.dur)}</i></span></button>`).join('')
       : '<p style="color:var(--ink-3);font-size:14px">Nothing matched. Try a shorter term.</p>'}</div>`;
+}
+
+/* ============================================================
+   BC DICTIONARY — bilingual (EN ↔ FR) reference
+   ============================================================ */
+const DICT_FLAT = BC_DICTIONARY.flatMap(m =>
+  m.terms.map(t => ({ ...t, moduleId: m.id, moduleEn: m.module, moduleFr: m.moduleFr, accent: m.accent })));
+
+function leaveDictIfNeeded() {
+  if (view !== 'dict') return;
+  view = 'academy';
+  dictModuleId = null;
+  el('searchWrap').style.display = '';
+  el('overallWrap').style.display = '';
+}
+
+function openDictionary() {
+  view = 'dict';
+  currentId = null;
+  dictModuleId = null;
+  el('search').value = '';
+  el('searchWrap').style.display = 'none';
+  el('overallWrap').style.display = 'none';
+  document.querySelector('.shell').classList.remove('no-side');
+  renderDictHub();
+  renderSidebar();
+}
+
+const dictMark = (text, term) => {
+  const t = String(text ?? '');
+  if (!term) return esc(t);
+  return esc(t).replace(new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>');
+};
+
+function dictMapHtml() {
+  const n = BC_DICTIONARY.length;
+  const pts = BC_DICTIONARY.map((m, i) => {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    return { m, x: 50 + 39 * Math.cos(angle), y: 50 + 39 * Math.sin(angle) };
+  });
+  return `<div class="dict-map">
+    <svg class="dict-map-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+      ${pts.map(p => `<line x1="50" y1="50" x2="${p.x.toFixed(2)}" y2="${p.y.toFixed(2)}"></line>`).join('')}
+    </svg>
+    <div class="dict-map-center"><b>Business<br>Central</b><span>EN ↔ FR</span></div>
+    ${pts.map((p, i) => {
+      const a = ACCENTS[p.m.accent];
+      return `<button class="dict-node" data-dict-module="${p.m.id}" title="${esc(p.m.module)} · ${esc(p.m.moduleFr)}" style="left:${p.x.toFixed(2)}%;top:${p.y.toFixed(2)}%;animation-delay:${i * 55}ms;--node-c:${a.c}">
+        <span class="dict-node-dot"></span>
+        <span class="dict-node-txt"><b>${esc(p.m.module)}</b><i>${esc(p.m.moduleFr)}</i></span>
+        <span class="dict-node-n">${p.m.terms.length}</span>
+      </button>`;
+    }).join('')}
+  </div>
+  <div class="dict-grid-mobile">
+    ${BC_DICTIONARY.map(m => {
+      const a = ACCENTS[m.accent];
+      return `<button class="tcard" data-dict-module="${m.id}">
+        <span class="tcard-bar" style="background:${a.c}"></span>
+        <span class="tcard-body"><h3>${esc(m.module)}</h3><p>${esc(m.moduleFr)}</p></span>
+        <span class="tcard-meta"><b>${m.terms.length}</b><span>terms</span></span></button>`;
+    }).join('')}
+  </div>`;
+}
+
+function dictTermRowHtml(t, query) {
+  return `<div class="dict-term" data-dict-term>
+    <button class="dict-term-h" data-dict-term-toggle>
+      <span class="dict-term-en">${dictMark(t.en, query)}</span>
+      <span class="dict-term-fr">${dictMark(t.fr, query)}</span>
+      <svg class="cc" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="dict-term-b">
+      <p>${dictMark(t.desc, query)}</p>
+      ${t.notes ? `<p class="dict-term-notes">${dictMark(t.notes, query)}</p>` : ''}
+      ${t.ids ? `<span class="dict-term-ids mono">${esc(t.ids)}</span>` : ''}
+      <button class="dict-copy-btn" data-dict-copy="${esc(t.fr)}">Copy FR</button>
+    </div>
+  </div>`;
+}
+
+function dictResultsHtml(terms, query, opts = {}) {
+  if (!terms.length) return '<p style="color:var(--ink-3);font-size:14px">Nothing matched. Try a shorter term.</p>';
+  return `<div class="dict-term-list">${terms.map(t => {
+    const tag = opts.showModule ? `<span class="dict-term-tag" style="color:${ACCENTS[t.accent].c}">${esc(t.moduleEn)}</span>` : '';
+    return tag ? `<div class="dict-term-wrap">${tag}${dictTermRowHtml(t, query)}</div>` : dictTermRowHtml(t, query);
+  }).join('')}</div>`;
+}
+
+function dictHubBodyHtml(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return dictMapHtml();
+  const hits = DICT_FLAT.filter(t => [t.en, t.fr, t.desc, t.notes].join(' ').toLowerCase().includes(q));
+  return `<div class="dict-results"><div class="rsub">${hits.length} result${hits.length === 1 ? '' : 's'} for "${esc(query)}"</div>${dictResultsHtml(hits, q, { showModule: true })}</div>`;
+}
+
+function dictModuleBodyHtml(m, query) {
+  const q = query.trim().toLowerCase();
+  const terms = q ? m.terms.filter(t => [t.en, t.fr, t.desc, t.notes].join(' ').toLowerCase().includes(q)) : m.terms;
+  return dictResultsHtml(terms, q);
+}
+
+function renderDictHub(query = '') {
+  currentId = null; setAccent('blue');
+  dictModuleId = null;
+
+  el('viewRoot').innerHTML = `<div class="pane pane-wide">
+    <div class="home-eyebrow">Reference · Talan Academy</div>
+    <h1>BC Dictionary<em>.</em></h1>
+    <p class="home-lede">Business Central, in both languages. Ten modules, ${DICT_FLAT.length} terms — click a module to browse, or search across all of them.</p>
+    <div class="dict-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="text" id="dictSearch" placeholder="Search English or French…" value="${esc(query)}"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div id="dictHubBody">${dictHubBodyHtml(query)}</div>
+    <p class="dict-note">Table and page numbers reflect the standard W1 base application and may vary by localization or extension — verify in your environment.</p>
+  </div>`;
+  renderSidebar();
+}
+
+function renderDictModule(moduleId, query = '') {
+  const m = BC_DICTIONARY.find(x => x.id === moduleId);
+  if (!m) return renderDictHub();
+  currentId = null; setAccent(m.accent);
+  dictModuleId = moduleId;
+
+  el('viewRoot').innerHTML = `<div class="pane pane-wide">
+    <div class="crumb"><button data-dict-back style="color:var(--ink-3)">BC Dictionary</button><span class="sep">/</span><b>${esc(m.module)}</b></div>
+    <h1>${esc(m.module)} <em>· ${esc(m.moduleFr)}</em></h1>
+    <p class="home-lede">${m.terms.length} terms in this module.</p>
+    <div class="dict-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="text" id="dictSearch" placeholder="Search this module…" value="${esc(query)}"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div id="dictHubBody">${dictModuleBodyHtml(m, query)}</div>
+    <p class="dict-note">Table and page numbers reflect the standard W1 base application and may vary by localization or extension — verify in your environment.</p>
+  </div>`;
+  renderSidebar();
+}
+
+function dictLiveUpdate(query) {
+  if (dictModuleId) {
+    const m = BC_DICTIONARY.find(x => x.id === dictModuleId);
+    if (m) el('dictHubBody').innerHTML = dictModuleBodyHtml(m, query);
+  } else {
+    el('dictHubBody').innerHTML = dictHubBodyHtml(query);
+  }
 }
 
 /* ============================================================
@@ -991,6 +1166,31 @@ async function onAppClick(e) {
     return;
   }
 
+  const dictOpen = t.closest('[data-dict-open]');
+  if (dictOpen) {
+    openDictionary();
+    el('sidebar').classList.remove('open');
+    el('scrim').classList.remove('on');
+    return;
+  }
+
+  const dictMod = t.closest('[data-dict-module]');
+  if (dictMod) { renderDictModule(dictMod.dataset.dictModule); return; }
+
+  if (t.closest('[data-dict-back]')) { renderDictHub(); return; }
+
+  const dictTermToggle = t.closest('[data-dict-term-toggle]');
+  if (dictTermToggle) { dictTermToggle.closest('.dict-term').classList.toggle('open'); return; }
+
+  const dictCopy = t.closest('[data-dict-copy]');
+  if (dictCopy) {
+    e.stopPropagation();
+    try { await navigator.clipboard.writeText(dictCopy.dataset.dictCopy); dictCopy.textContent = 'Copied'; }
+    catch { dictCopy.textContent = 'Select manually'; }
+    setTimeout(() => { dictCopy.textContent = 'Copy FR'; }, 1600);
+    return;
+  }
+
   const ch = t.closest('.concept-h');
   if (ch) {
     const conceptEl = ch.closest('.concept');
@@ -1166,6 +1366,12 @@ async function onAppClick(e) {
 
 let noteTimer;
 function onAppInput(e) {
+  if (e.target.id === 'dictSearch') {
+    clearTimeout(dictSearchTimer);
+    const v = e.target.value;
+    dictSearchTimer = setTimeout(() => dictLiveUpdate(v), 150);
+    return;
+  }
   if (e.target.id !== 'noteArea') return;
   const state = el('noteState');
   state.textContent = 'Saving…';

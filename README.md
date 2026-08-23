@@ -205,3 +205,40 @@ To add a lesson, append to a series' `lessons` array:
 Progress rows reference lesson ids, so **do not rename an id** once people have
 completed it — their progress would be orphaned. Adding and removing lessons is
 otherwise safe.
+
+---
+
+## Editing the BC Dictionary
+
+The bilingual (English ↔ French) Business Central term reference lives in
+`web/dictionary.js` as `BC_DICTIONARY` — an array of modules, each with a
+`terms` array. It has no backend and no dependency on progress tracking, so
+editing it is always safe.
+
+```js
+{
+  id: "dict-finance",           // must be unique across the file
+  module: "Finance",            // English module name
+  moduleFr: "Finances",         // French module name
+  accent: "blue",                // blue | lime | magenta | teal (cycled across modules)
+  terms: [
+    {
+      en: "General Ledger",
+      fr: "Grand Livre",
+      desc: "Main accounting ledger storing all financial transactions.",
+      ids: "T17 · P20",          // optional — Table/Page reference, omit if unknown
+      notes: "Extra detail worth a second line, if any."   // optional
+    }
+  ]
+}
+```
+
+To add a term, append an object to the relevant module's `terms` array — only
+`en`, `fr`, and `desc` are required. To add a whole new module, append a new
+object to `BC_DICTIONARY` with a unique `id` and pick one of the four existing
+`accent` values; the hub's mind-map and the sidebar entry pick it up
+automatically, no other file needs to change.
+
+Object/page IDs (`ids`) are standard W1 base-application references and can
+vary by localization or extension — verify in your own BC environment before
+treating them as exact.
