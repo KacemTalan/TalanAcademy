@@ -86,8 +86,7 @@ function highlightAL(src) {
   let out = esc(src);
   out = out.replace(/(\/\/[^\n]*)/g, '<span class="tok-c">$1</span>');
   out = out.replace(/(#[^\n]*)/g, '<span class="tok-c">$1</span>');
-  out = out.replace(/('[^']*')/g, '<span class="tok-s">$1</span>');
-  out = out.replace(/("[^"]*")/g, '<span class="tok-s">$1</span>');
+  out = out.replace(/('[^']*'|"[^"]*")/g, '<span class="tok-s">$1</span>');
   out = out.replace(/\[([A-Za-z]+)/g, '[<span class="tok-a">$1</span>');
   out = out.replace(/\b(table|page|codeunit|report|query|enum|interface|permissionset|tableextension|pageextension|enumextension|xmlport|controladdin|profile|field|fields|keys|key|layout|actions|area|group|procedure|local|var|begin|end|if|then|else|repeat|until|exit|implements|extends|trigger|Caption|MinValue|MaxValue|NotBlank|Editable|FieldClass|CalcFormula|Clustered|Extensible|Assignable|Permissions|IncludedPermissionSets|ApplicationArea|SourceTable|PageType|Subtype|value|addafter|addlast|addfirst|modify|Sum|Count|WHERE|FIELD|Record|Codeunit|Decimal|Integer|Code|Text|Boolean|Date|DateTime)\b/g, '<span class="tok-k">$1</span>');
   out = out.replace(/\b(git|Assert|Error|Confirm|Message|Round|Evaluate|CalcDate|CalcFields|UpperCase|LowerCase|StrLen|CopyStr|Format|Today|WorkDate|CurrentDateTime|FindSet|FindFirst|FindLast|SetRange|SetFilter|Validate|Modify|Reset|Delete|Next|Init|Insert|Get|IsEmpty|TestField)\b/g, '<span class="tok-n">$1</span>');
