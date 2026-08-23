@@ -1998,10 +1998,130 @@ const CURRICULUM_B = [
       definitionOfDone: "The extension compiles with zero errors and zero warnings, every object sits inside the assigned ID range, and every object carries the project prefix with a caption that reads well in the client. A contract can be created, saved, reopened, and shows the values entered. The total follows daily rate × days minus the customer discount, recalculating on change. A negative price or a zero-day rental is refused with an actionable message. A ten-row CSV import loads correctly, with bad rows reported rather than silently skipped. The availability report reads well on screen and exports cleanly. A non-SUPER user can run the whole flow end to end — import, rent, price, report — using only the permission set you shipped."
     }
   ]
+},
+{
+  code: "BP", track: "developer", accent: "teal", noVideo: true,
+  title: "Best Practices", audience: "AL developers, technical consultants, anyone reviewing or writing extension code",
+  tagline: "The habits that separate code that works from code that survives the next update, the next reviewer, and the next developer.",
+  desc: "Eight short lessons on the engineering discipline around AL: the extension model, naming and IDs, clean structure, performance, error handling, Git workflow, code review, and what 'done' actually means.",
+  lessons: [
+    {
+      id: "bp-01-extension-model", n: "01", title: "Extension model first",
+      dur: "10 min read",
+      summary: "The one architectural decision every other lesson in this series assumes you already made: never touch a base-application object directly.",
+      concepts: [
+        { h: "What \"extension model first\" means", p: "Every customization in Business Central — a new field, a new page, a changed business rule — gets built as a separate extension object layered on top of the standard application, never as an edit to a Microsoft (or another vendor's) object. The base app stays exactly as shipped; your logic sits beside it, in table extensions, page extensions, event subscribers, and your own new objects." },
+        { h: "Why this is non-negotiable, not a style preference", p: "Business Central ships monthly updates to the base application. An extension that never touched a base object survives every one of those updates automatically. An extension that forked or patched a base object has to be manually re-merged against every update, forever — and the first update that changes the object you patched either breaks the merge outright or silently drops your change.",
+          callouts: [{ type: "avoid", text: "Copying a standard table, page, or codeunit into your app and modifying the copy \"just this once\" to hit a deadline — it looks identical to a real extension in code review but breaks on the next base-app update." }] },
+        { h: "Events are how you change behavior without changing objects", p: "When you need to react to or influence something happening inside a standard object — validate a field after it changes, block a document from posting, add a line automatically — subscribe to a published event instead of editing the trigger. Business Central publishes hundreds of integration events on standard objects specifically so extensions never have to touch them directly." },
+        { h: "When the extension model says no", p: "Occasionally the standard object genuinely doesn't publish the event you need. That's a real limitation, not a reason to fall back to editing the base object — the right move is requesting a new event through Microsoft's or the partner's channel, finding a different event that fires close enough, or restructuring the feature around what the extension model actually allows.",
+          callouts: [{ type: "good", text: "Before writing any code, search the standard object's published event list (or ask in code review) for an existing integration event you can subscribe to — it's usually already there." }] }
+      ],
+      why: "A demo built by editing base objects looks identical to a properly extended one — until the first monthly update ships and the difference becomes an emergency instead of a design decision.",
+      check: { q: "A developer needs to add a validation rule that runs whenever a Sales Line's quantity changes. What's the extension-model-correct way to do it, and what's the giveaway that a solution violates the model?", a: "Subscribe to the OnAfterValidateEvent published on the Sales Line table's Quantity field (or a comparable published event) from your own codeunit. The giveaway of a model violation is any change that requires opening and editing a standard object's source — including \"just adding one line\" to its trigger — rather than reacting to it from outside." }
+    },
+    {
+      id: "bp-02-naming-ids", n: "02", title: "Naming, IDs & captions",
+      dur: "11 min read",
+      summary: "The prefix, the ID range, and the caption discipline that keep one extension from colliding with every other extension in the same environment.",
+      concepts: [
+        { h: "Every object needs a project prefix", p: "A short, consistent prefix — agreed once, before the first object is written — goes in front of every custom object's AL name: table \"Tal Rental Equipment\", codeunit \"Tal Rental Management\". It's what keeps your table extension from colliding, in name, with someone else's identically-purposed extension installed in the same environment. AppSource requires it; a well-run per-tenant project follows the same discipline anyway." },
+        { h: "Object IDs come from a reserved range, not from whatever's free", p: "app.json's idRanges setting reserves a block of object IDs before a single object is written. Every object — table, page, codeunit, everything — gets its ID from inside that range. Two extensions with overlapping ranges can't both be installed in the same environment; Business Central refuses to publish the second one.",
+          table: { headers: ["Range", "Typically used for"], rows: [["50000–99999", "Per-tenant extensions (PTE), self-assigned"], ["100000+", "AppSource apps, assigned by Microsoft on submission"]] } },
+        { h: "Captions are what the user actually sees, and they're not optional polish", p: "Every field, action, and page needs a Caption property set explicitly — leaving it blank means Business Central falls back to the raw AL name, which a user should never have to read. A field named \"Is Rental Equipment\" with no Caption shows exactly that string, underscores and all, on a live screen." },
+        { h: "File naming follows the same discipline, especially for AppSource", p: "AppSource submission enforces a strict file-naming notation: full objects as Prefix_ObjectNameExcludingAffix_FullTypeName.al, extension objects as Prefix_ObjectNameExcludingAffix_FullTypeNameExt.al, written only with [A-Za-z0-9]. Following the same convention even on projects that never go to AppSource means the file list matches the object list at a glance.",
+          callouts: [{ type: "good", text: "Decide the prefix and reserve the ID range in app.json before writing the first object — changing either one later means renaming or renumbering everything already built." }, { type: "avoid", text: "Leaving a field or action's Caption unset because \"I'll fill it in later\" — it ships to the client exactly as often as it gets forgotten." }] }
+      ],
+      why: "A missing prefix or an unreserved ID range doesn't fail in your own sandbox — it fails the day this extension is installed alongside a second one, in a shared environment, and two objects claim the same name or number.",
+      check: { q: "Two extensions from different vendors both need to add a Boolean field to the standard Customer table. What two conventions from this lesson keep them from colliding?", a: "The project prefix (each vendor's field gets a different AL name, e.g. \"Tal Is Rental Customer\" vs. another vendor's own prefixed name) and the reserved ID range (each vendor's field ID comes from their own block, so the numeric IDs can't collide either) — together they let both extensions coexist in the same environment without either one touching the other's object." }
+    },
+    {
+      id: "bp-03-clean-structure", n: "03", title: "Clean AL structure",
+      dur: "11 min read",
+      summary: "One object per file, a public surface small enough to trust, and comments that explain why instead of restating what.",
+      concepts: [
+        { h: "One object per file, file name matches object name", p: "AL's convention — enforced by tooling, not just style — is one object per .al file, named after the object it contains. Organizing files into folders by object type (Tables, Pages, Codeunits, and so on) means any developer, including a future one who never met the original author, can find any object in seconds instead of searching." },
+        { h: "Public surface vs. local implementation", p: "Procedures other objects need to call stay public (procedure); everything that's purely internal implementation stays local (local procedure). A smaller public surface is easier to keep stable across versions — every public procedure is a promise to every caller, and local procedures can be freely rewritten without breaking anything outside the object." },
+        { h: "Small, single-purpose procedures over one giant OnRun", p: "Breaking logic into named procedures with one clear responsibility each — CheckAvailability(), CalculatePrice(), not one 200-line OnRun that does all three — makes each piece independently testable, independently reusable from a different caller, and far easier to review one screen at a time.",
+          callouts: [{ type: "avoid", text: "A codeunit whose entire logic lives in OnRun with no named procedures underneath — nothing in it can be called individually, tested individually, or reused by anything else." }] },
+        { h: "Comments explain why, not what", p: "Well-named objects, fields, and procedures already say what the code does — a comment repeating that is noise. A comment earns its place when it captures something the code can't: a non-obvious business rule, a workaround for a specific platform limitation, a constraint that would otherwise surprise the next person to touch this code." }
+      ],
+      why: "Structure decisions are invisible in a demo with one developer and painfully visible six months later, when a second developer has to find, understand, and safely change code they didn't write — clean structure is what makes that possible without a guided tour.",
+      check: { q: "A codeunit has twelve procedures. Three are called from a page and a report; the other nine only ever get called from inside the same codeunit. How should those nine be declared, and why does it matter?", a: "As local procedures. It matters because it shrinks the codeunit's real public surface to the three procedures actually meant for outside callers — the other nine can be renamed, restructured, or removed later without checking whether anything outside the object depends on them, since nothing outside the object can." }
+    },
+    {
+      id: "bp-04-performance", n: "04", title: "Performance & data access",
+      dur: "12 min read",
+      summary: "Filter before you loop, load only what you'll use, and let the platform do aggregation instead of a hand-rolled running total.",
+      concepts: [
+        { h: "SetLoadFields before you read", p: "Calling SetLoadFields tells Business Central which fields a loop actually needs, so it only reads those columns off disk instead of every field on the table for every row. Skipping it works fine on a ten-row test table and gets measurably slower on every row after that — the cost scales with table size, not with how many fields you actually use." },
+        { h: "Filter before you loop, never after", p: "SetRange and SetFilter narrow the record set at the database, before any row reaches your AL code. Filtering \"after the fact\" — looping over every record and skipping the ones you don't want inside the loop — forces Business Central to read and discard rows that never needed to leave the database in the first place.",
+          callouts: [{ type: "avoid", text: "Nested FindSet loops — record A inside record B inside record C — where each additional level multiplies read cost and rarely survives past the demo dataset into a real customer's data volume." }] },
+        { h: "FlowFields for aggregation, not manual loops", p: "A FlowField backed by a SumIndexField lets the platform maintain a running total automatically, calculated on demand with CalcFields. Looping over related entries and accumulating a total by hand duplicates work the platform already does faster, and has to be kept correct by hand every time the underlying data model changes." },
+        { h: "Temporary tables and buffers for intermediate work", p: "When a report or a multi-step process needs to stage, reshape, or sort data before producing final output, use a temporary record (a table variable marked Temporary) instead of writing to and reading back from a real table. It avoids unnecessary database writes and never leaves half-finished buffer data behind if the process is interrupted.",
+          callouts: [{ type: "good", text: "Run a report or process against a realistic row count — thousands, not ten — before calling its performance acceptable. Problems that don't exist at demo scale are the ones that show up in production." }] }
+      ],
+      why: "Performance problems introduced this way are invisible in development, invisible in the demo, and invisible in code review unless the reviewer specifically checks for them — they only show up once, in production, on a customer's real data volume, which is the most expensive place to discover one.",
+      check: { q: "A report loops through Sales Lines to sum the quantity shipped per item, instead of using a FlowField. What's the concrete cost of that choice as the Sales Line table grows, and what should replace it?", a: "The loop's cost grows with the total number of sales lines in the system, re-read and re-summed every time the report runs, where a FlowField's SumIndexField lets Business Central maintain and retrieve the total far more efficiently. It should be replaced with a FlowField on the item (or a query, if the aggregation spans multiple tables) using CalcFields instead of a manual loop." }
+    },
+    {
+      id: "bp-05-errors-testing", n: "05", title: "Errors, testing & upgrade safety",
+      dur: "13 min read",
+      summary: "Fail loud with an actionable message, prove the logic with a test codeunit, and move existing data forward instead of leaving it behind.",
+      concepts: [
+        { h: "Fail loud and specific, not silent", p: "Error() and TestField() should tell the user exactly what's wrong and, wherever possible, what to do about it — \"Quantity must be greater than 0\" is far more useful than a generic failure. A process that silently skips a bad row instead of erroring on it hides a data problem until someone notices the totals don't add up, days or weeks later." },
+        { h: "Structured errors carry more than a string", p: "Modern AL error handling (ErrorInfo) can attach a suggested fix action, a support link, or additional context to an error — not just a message. It's worth the extra setup on errors a user will hit repeatedly, where a one-click fix saves a support ticket every single time it fires." },
+        { h: "Test codeunits aren't optional homework", p: "Automated test codeunits (Subtype = Test) for the logic most likely to be touched by a future change are what let the next developer refactor with confidence instead of fear. Untested logic doesn't stay untouched forever — it gets changed anyway, just without anything to catch a regression before a user does." },
+        { h: "Upgrade codeunits move data forward, they don't skip it", p: "When a table structure or a field's meaning changes between versions, an upgrade codeunit (Subtype = Upgrade) migrates existing data at update time. Without one, existing customers' data is silently left in the old shape while new installs get the new one — a split nobody notices until a report or a validation rule reads the old data and gets it wrong.",
+          callouts: [{ type: "avoid", text: "Catching an error just to suppress it so a process \"doesn't fail\" — the data keeps moving in a state nobody validated, and the failure resurfaces later, further from its actual cause." }, { type: "good", text: "Mark a field or procedure [Obsolete('reason', 'version')] the moment you know it's going away, instead of deleting it outright — it gives every caller a compiler warning and a real migration window." }] }
+      ],
+      why: "Error handling, tests, and upgrade logic are the parts of a feature that only prove their value later — when a user hits an edge case, when a developer changes code they didn't write, or when a customer updates from a version that predates a data-model change. Skipping them is invisible right up until one of those three things happens.",
+      check: { q: "A table's \"Status\" field changes from a Boolean to an Enum with four values, between two versions of an extension. What breaks for existing customers if there's no upgrade codeunit, and what does the upgrade codeunit need to do?", a: "Existing customers' data still holds the old Boolean values on disk; without an upgrade codeunit, that data is never converted to the new Enum's values, so it reads incorrectly (or fails to read at all) once the new version is installed. The upgrade codeunit needs to run once at update time, mapping every existing true/false value to the correct one of the four new Enum values before anything else reads the field." }
+    },
+    {
+      id: "bp-06-git-workflow", n: "06", title: "Git workflow for BC",
+      dur: "11 min read",
+      summary: "Why one-object-per-file makes AL unusually reviewable in Git, and the habits that keep it that way.",
+      concepts: [
+        { h: "One object, one file, one diff you can actually review", p: "AL's one-file-per-object convention means a pull request's diff maps directly to what actually changed — a one-field addition shows up as a small, focused diff on one file, not buried inside a wall of unrelated changes. Keeping that discipline is what makes AL diffs genuinely reviewable instead of just technically inspectable." },
+        { h: "app.json version bumps belong in their own commit", p: "Bumping the extension's version number alongside unrelated feature work makes it hard to tell, later, whether a version bump was intentional or accidental collateral from an unrelated change. Isolating it into its own commit keeps the history honest about what each change actually did." },
+        { h: "Branch per feature, scoped to one reviewable unit of work", p: "Small pull requests scoped to one object or one closely related group of objects get reviewed properly, line by line. A branch that touches a dozen unrelated objects at once gets rubber-stamped, because nobody has time to genuinely read all of it before the deadline it's attached to." },
+        { h: "The .al source is the source of truth, never the compiled .app", p: "Commit source files only; never commit the compiled package. Let CI, or the reviewer's own build, produce the .app from source — a committed binary can't be diffed, can't be reviewed, and inevitably drifts out of sync with the source that's supposed to have produced it.",
+          callouts: [{ type: "good", text: "Commit messages that name the object and the change (\"Add SetLoadFields to RentalEquipment availability loop\") instead of \"fix bug\" — the log becomes a second, searchable changelog." }, { type: "avoid", text: "Force-pushing over a branch someone else is reviewing mid-comment-thread — it silently invalidates every line comment already left on the old commits." }] }
+      ],
+      why: "Git workflow habits are what determine whether a code review actually catches problems or just exists as a formality — a reviewable diff gets reviewed properly; an unreviewable one gets approved on trust, which is exactly how the mistakes from every earlier lesson in this series make it into production.",
+      check: { q: "A developer's branch bundles a new field, an unrelated bug fix, and an app.json version bump into one commit with the message \"updates.\" What three separate problems does this create for whoever reviews or later reads this history?", a: "The reviewer can't approve or reject the new field, the bug fix, and the version bump independently — they're forced to accept or reject all three together. Anyone reading the history later can't tell which change the version bump was actually for. And a future revert of just the bug fix (if it turns out wrong) would also undo the unrelated field and the version bump, since all three are inseparably one commit." }
+    },
+    {
+      id: "bp-07-code-review", n: "07", title: "Code review checklist",
+      dur: "12 min read",
+      summary: "What an AL reviewer actually checks, in order — before style, before naming, before anything else.",
+      concepts: [
+        { h: "No direct base-object edits, anywhere in the diff", p: "This is the single fastest reject, and it comes first for a reason: a diff that touches a standard object's source — even one line — violates the extension model from Lesson 01 and has to be rejected before anything else about the change matters." },
+        { h: "Naming, prefix, and ID range", p: "Does every new object carry the agreed prefix and a Caption that reads well to a user, and does its ID fall inside the extension's reserved range? This is mechanical to check and catches the collisions and forgotten-caption problems from Lesson 02 before they reach a shared environment." },
+        { h: "Permissions match what the code actually needs", p: "A new table needs a matching permission set entry with exactly the access levels the feature requires — not more. A blanket rimd granted on everything \"to be safe\" is itself a review finding, not a shortcut; it's a wider attack surface and a harder thing to reason about than a precisely scoped grant." },
+        { h: "Performance and error-message quality, not just \"does it compile\"", p: "Does the new code filter before looping and load only the fields it uses? Does an Error() message tell the user what to do next, not just that something went wrong? A change that compiles cleanly can still fail both of these — and a reviewer who only checks for compilation errors will approve it anyway.",
+          callouts: [{ type: "good", text: "Review the diff in the order of this checklist, every time — extension-model violations and permission gaps first, style and naming last. Catching a base-object edit on line one of the review is cheaper than finding it after approving everything else." }] }
+      ],
+      why: "A checklist followed consistently catches the same class of problem every time, regardless of who's reviewing or how rushed the review is — an ad hoc \"looks fine to me\" review catches whatever the reviewer happens to notice that day, which is a very different and far less reliable thing.",
+      check: { q: "A pull request adds a new table, a matching permission set entry with full rimd access, and a page — and compiles with no errors or warnings. What single review finding from this lesson could still block it, and why?", a: "An over-broad permission grant — rimd (read, insert, modify, delete) on the new table when the feature might only need read and insert, for example. Compiling cleanly and having *a* permission set entry doesn't mean the entry is scoped correctly; \"more access than the code needs\" is a real finding on its own, independent of whether anything else in the diff is wrong." }
+    },
+    {
+      id: "bp-08-definition-of-done", n: "08", title: "Team Definition of Done",
+      dur: "10 min read",
+      summary: "The checklist that separates \"it works on my machine\" from actually done — and why every item on it is non-negotiable, not aspirational.",
+      concepts: [
+        { h: "Compiles clean, zero warnings — not just zero errors", p: "A warning doesn't block compilation, which is exactly why it's tempting to ignore. In a shared codebase, unaddressed warnings — deprecated API usage, a missing caption, an unused variable — accumulate silently and are exactly the kind of thing that turns into a real bug, or a failed AppSource validation, later." },
+        { h: "Reviewed and approved by someone who wasn't the author", p: "Definition of done requires an actual second set of eyes running the Lesson 07 checklist against the change — not a self-approval, and not a rubber stamp from someone who skimmed the diff. The review is where the extension-model, ID-range, and permission checks from earlier lessons actually get enforced." },
+        { h: "Permissions, captions, and documentation are part of \"done,\" not follow-up work", p: "A feature that works but ships without its permission set entries, without captions set on every field and action, or without a short note on what it does and why isn't done — it's a prototype that happens to compile. \"I'll add the permissions later\" is exactly the kind of follow-up work that quietly never happens." },
+        { h: "No TODOs, no commented-out code, no placeholder IDs left behind", p: "Scaffolding from the exercise or prototype stage — a // TODO: handle this properly, a block of commented-out code from an earlier approach, an object ID that was never moved into the real reserved range — tends to survive into production specifically because nobody explicitly checked for it. A definition-of-done checklist item for leftover scaffolding is what catches it before a reviewer has to.",
+          callouts: [{ type: "avoid", text: "Merging a change with a // TODO comment and no linked follow-up task — without a tracked task, \"later\" almost never actually arrives." }] }
+      ],
+      why: "A team without an explicit, written definition of done ends up with as many private definitions as it has developers — one person's \"done\" is another's \"still needs permissions and a review.\" Writing it down once and applying it to every change is what makes \"done\" mean the same thing regardless of who says it.",
+      check: { q: "A developer says a feature is \"done\" — it compiles, works in their sandbox, and they tested it manually. Using this lesson's checklist, name two things that could still be missing before it actually meets Definition of Done.", a: "Any two of: a review from someone other than the author; permission set entries and captions set on every new field/action; documentation of what the feature does; zero compiler warnings (not just zero errors); and no leftover TODOs, commented-out code, or placeholder IDs from development. \"Compiles and works for me\" covers none of these on its own." }
+    }
+  ]
 }
-
-/* ---------------- HANDS QUIZZES (merge into the app's QUIZZES object) ---------------- */
-
 ];
 
 
@@ -4579,5 +4699,22 @@ const QUIZZES = {
         }
       ]
     },
+
+  "bp-07-code-review": {
+    pass: 2,
+    questions: [
+      { q: "In a code review, which finding should block a PR before anything else is even checked?", options: ["A missing blank line between procedures", "A diff that edits a standard base-application object directly", "A commit message that doesn't mention the object name", "A procedure declared public instead of local"], correct: 1 },
+      { q: "A new table ships with a permission set entry granting full rimd access \"to be safe.\" How should a reviewer treat that?", options: ["Approve it — broad access avoids future permission bugs", "Flag it — permissions should match exactly what the feature needs, not more", "Ignore it — permissions aren't a code review concern", "Reject the PR outright with no explanation"], correct: 1 },
+      { q: "Besides naming and permissions, what else should a reviewer check that \"does it compile\" alone won't catch?", options: ["Whether the developer used tabs or spaces", "Whether the code filters before looping and whether error messages are actionable", "Whether the PR was opened on a Friday", "Whether the object ID is a round number"], correct: 1 },
+    ]
+  },
+  "bp-08-definition-of-done": {
+    pass: 2,
+    questions: [
+      { q: "A feature compiles and works in the developer's own sandbox. Is that enough to call it done?", options: ["Yes — compiling and working is the definition of done", "No — it still needs review, permissions, captions, and zero warnings before it's done", "Yes, as long as no errors appear in the output window", "No — it also needs a new object ID range"], correct: 1 },
+      { q: "Why does a definition of done treat compiler warnings as blocking, even though they don't stop the build?", options: ["Warnings are actually errors in disguise", "Unaddressed warnings accumulate silently and tend to become real bugs or failed validations later", "The AL compiler will eventually convert warnings to errors automatically", "Warnings slow down the build pipeline"], correct: 1 },
+      { q: "A PR ships with a `// TODO: handle this properly` comment and no linked follow-up task. What does this lesson say about that?", options: ["It's fine as long as the TODO is clearly worded", "Without a tracked task, \"later\" almost never actually arrives — it shouldn't merge as-is", "TODOs are required documentation and should stay", "It only matters if the TODO is in a public procedure"], correct: 1 },
+    ]
+  },
 
 };

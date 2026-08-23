@@ -340,6 +340,19 @@ h1,h2,h3,h4{font-weight:700;letter-spacing:-0.015em;line-height:1.18}
 .concept-table tr:last-child td{border-bottom:none}
 .concept-table tr:hover td{background:var(--paper-2)}
 
+/* best-practice / avoid callouts */
+.callout-list{display:grid;gap:8px;margin-top:14px}
+.callout{border-radius:10px;padding:12px 14px;border:1px solid;display:flex;flex-direction:column;gap:5px}
+.callout p{font-family:'Source Serif 4',serif;font-size:14px;line-height:1.55;color:var(--ink-2)}
+.callout-tag{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  font-weight:700;width:fit-content;padding:2px 9px;border-radius:20px;
+}
+.callout-good{background:color-mix(in srgb,var(--lime) 8%,var(--paper));border-color:color-mix(in srgb,var(--lime) 38%,var(--rule))}
+.callout-good .callout-tag{background:color-mix(in srgb,var(--lime) 26%,transparent);color:var(--lime-deep)}
+.callout-avoid{background:color-mix(in srgb,var(--magenta) 6%,var(--paper));border-color:color-mix(in srgb,var(--magenta) 32%,var(--rule))}
+.callout-avoid .callout-tag{background:color-mix(in srgb,var(--magenta) 16%,transparent);color:var(--magenta-deep)}
+
 /* process-flow diagram */
 .flow-diagram{
   display:flex;align-items:stretch;gap:0;margin-top:14px;overflow-x:auto;

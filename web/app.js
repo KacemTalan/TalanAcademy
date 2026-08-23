@@ -661,7 +661,17 @@ function attachVideoTracking() {
 
 /* ---------------- concept tables & diagrams ---------------- */
 function conceptBodyHtml(c) {
-  return `<p>${esc(c.p)}</p>${c.table ? tableHtml(c.table) : ''}`;
+  return `<p>${esc(c.p)}</p>${c.table ? tableHtml(c.table) : ''}${c.callouts ? calloutsHtml(c.callouts) : ''}`;
+}
+
+function calloutsHtml(callouts) {
+  return `<div class="callout-list">${callouts.map(co => {
+    const avoid = co.type === 'avoid';
+    return `<div class="callout ${avoid ? 'callout-avoid' : 'callout-good'}">
+      <span class="callout-tag">${avoid ? 'Avoid' : 'Best practice'}</span>
+      <p>${esc(co.text)}</p>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 function tableHtml(t) {
