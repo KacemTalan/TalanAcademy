@@ -74,6 +74,7 @@ async function api(path, options = {}) {
 
 /* ---------------- helpers ---------------- */
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const mdInline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 const el = id => document.getElementById(id);
 
 function setAccent(key) {
@@ -584,6 +585,7 @@ function renderLesson(id) {
     <div class="lesson-meta">
       <span class="pill accent">${TRACK_LABEL[s.track]}</span>
       <span class="pill">${esc(l.dur)}</span>
+      ${l.difficulty ? `<span class="pill">${esc(l.difficulty)}</span>` : ''}
       ${!s.noVideo && videos[l.id] ? '<span class="pill">Video available</span>' : ''}
     </div>
     <p class="summary">${esc(l.summary)}</p>
@@ -660,7 +662,7 @@ function attachVideoTracking() {
 
 /* ---------------- concept tables & diagrams ---------------- */
 function conceptBodyHtml(c) {
-  return `<p>${esc(c.p)}</p>${c.table ? tableHtml(c.table) : ''}${c.callouts ? calloutsHtml(c.callouts) : ''}`;
+  return `${c.p ? `<p>${mdInline(c.p)}</p>` : ''}${c.table ? tableHtml(c.table) : ''}${c.callouts ? calloutsHtml(c.callouts) : ''}`;
 }
 
 function calloutsHtml(callouts) {
@@ -677,7 +679,7 @@ function tableHtml(t) {
   return `<div class="concept-table-wrap"><table class="concept-table">
     ${t.title ? `<caption>${esc(t.title)}</caption>` : ''}
     <thead><tr>${t.headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
-    <tbody>${t.rows.map(r => `<tr>${r.map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
+    <tbody>${t.rows.map(r => `<tr>${r.map(cell => `<td>${mdInline(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
   </table></div>`;
 }
 

@@ -795,6 +795,684 @@ const CURRICULUM_A = [
       check: { q: "A client on an Essentials license wants BOM and routing-based production orders. What's the first thing to check before anything else?", a: "Whether they're prepared to upgrade to a Premium license — the Manufacturing module, including BOM and routing, is Premium-only and simply isn't available on Essentials, regardless of configuration effort." }
     }
   ]
+},
+
+/* ---------------- LAB: SANDBOX LABS ---------------- */
+{
+  code: "LAB", track: "platform", accent: "lime", noVideo: true,
+  title: "Sandbox Labs",
+  tagline: "Guided hands-on exercises with sample data — master data, sales, purchasing, inventory, and month-end close.",
+  audience: "Functional consultants and juniors with access to a BC sandbox (CRONUS or demo company OK)",
+  desc: "Guided hands-on exercises with sample data — master data, sales, purchasing, inventory, and month-end close.",
+  groups: [
+    { key: "intro", label: "Start here" },
+    { key: "master-data", label: "Master data" },
+    { key: "o2c", label: "Order to Cash" },
+    { key: "p2p", label: "Procure to Pay" },
+    { key: "inventory", label: "Inventory & corrections" },
+    { key: "finance", label: "Finance close" },
+    { key: "capstone", label: "Capstone" }
+  ],
+  lessons: [
+    {
+      id: "lab-00-intro", group: "intro", n: "00", title: "How to use Sandbox Labs",
+      dur: "10 min", difficulty: "Starter",
+      summary: "Sandbox safety, the recommended role, the LAB- naming convention, and how to reset if a lab goes sideways.",
+      concepts: [
+        { h: "Goal", p: "Know exactly where these labs are safe to run, which role to sign in as, how the LAB- naming convention works, and how to undo a lab that went wrong — before touching lab 01." },
+        { h: "Sandbox safety — read this before lab 01", p: "Every lab in this series posts real documents: sales orders, purchase invoices, payments, journal lines. Run them only in a sandbox or demo company — CRONUS International Ltd. is the obvious choice, since it ships with realistic master data and posting groups already configured. Never run these labs against a production company, even 'just to check something quickly.' If your tenant only has one company and you're not certain whether it's a sandbox, stop and ask before lab 01 — this is the one rule in the whole series that isn't recoverable by re-reading a later lab.",
+          table: { headers: ["Environment", "OK to run labs here?"], rows: [
+            ["CRONUS International Ltd. (or another CRONUS variant)", "Yes — this is what the series is written against"],
+            ["A dedicated sandbox / trial tenant", "Yes"],
+            ["A partner demo company with real-looking data", "Yes, if you're told it's disposable"],
+            ["Any production company", "No — never"]
+          ] } },
+        { h: "Recommended role", p: "Sign in with a user that has broad functional access — the **Business Manager** or **Accountant** role center covers everything these labs touch (Sales, Purchasing, Inventory, and posting). You don't need SUPER or admin permissions, just a role that isn't restricted to one narrow area. If your sandbox user only sees a stripped-down Role Center, switch roles from **My Settings** before lab 01." },
+        { h: "The LAB- naming convention", p: "Every record this series creates — customer, vendor, item, document — starts with the prefix `LAB-`. That's deliberate: it means you can filter any list page (Customers, Vendors, Items, Sales Orders...) on No. `LAB-*` at any point and see exactly what this series has touched, with zero risk of confusing a lab record for a real CRONUS one. Use the consolidated sample data sheet as your copy-paste reference for exact field values across labs 01–04." },
+        { h: "How to reset if you get lost", p: "Most labs are additive and don't need a reset — if a step fails, the 'If something fails' section in that lab tells you how to recover in place. If a lab genuinely goes wrong (wrong item quantity posted, wrong customer used), the safest fix is almost never 'undo' — Business Central doesn't have one for posted documents. Instead: post a correcting document (a credit memo, a negative adjustment) rather than trying to delete history. If an unposted document (a quote, an unposted order) is simply wrong, delete it and start that lab's Steps section over — unposted documents are the one thing in this series that's safe to throw away." }
+      ],
+      why: "Every lab after this one assumes you've read this once. Skipping it is how someone ends up running lab 05 against a production tenant, or spending twenty minutes hunting for a customer they definitely created but can't remember the exact No. of.",
+      check: { q: "You're not sure whether the company you're signed into is a real sandbox or accidentally production. What's the right move?", a: "Stop before running any lab and confirm with someone who knows the environment. These labs post real, hard-to-reverse documents — the cost of asking first is one delayed lab; the cost of guessing wrong is real data in a real company." }
+    },
+    {
+      id: "lab-01-customer", group: "master-data", n: "01", title: "Customer master — LAB-C001",
+      dur: "25 min", difficulty: "Starter",
+      summary: "Create a customer from scratch: posting groups, payment terms, credit limit, and an optional ship-to address.",
+      concepts: [
+        { h: "Goal", p: "Create customer LAB-C001 with valid posting groups, payment terms, and a credit limit, so it's ready to receive a sales order in lab 05." },
+        { h: "Prerequisites", p: "Lab 00 read (sandbox confirmed, role set). No previous lab required. Any functional or admin role in a CRONUS-type sandbox." },
+        { h: "Sample data", p: "Create new — use these exact values.",
+          table: { headers: ["Field", "Value"], rows: [
+            ["No.", "LAB-C001"],
+            ["Name", "Lab Consulting Customer 001"],
+            ["Customer Posting Group", "An existing domestic group, e.g. DOMESTIC"],
+            ["Gen. Bus. Posting Group", "Same domestic group as above"],
+            ["Payment Terms Code", "30 DAYS (or your CRONUS's net-30 equivalent)"],
+            ["Credit Limit (LCY)", "5000"],
+            ["Ship-to Address", "Optional — leave blank unless practicing multi-address setups"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Customers**, then select **New**."],
+            ["2", "In the No. field, type `LAB-C001` (if No. is greyed out / auto-filled, clear the No. Series default and type it manually, or accept the series and rename after)."],
+            ["3", "Set Name to `Lab Consulting Customer 001`."],
+            ["4", "Open the **Invoicing** FastTab. Set Customer Posting Group and Gen. Bus. Posting Group to the same existing domestic group (don't create a new one — see lab 04)."],
+            ["5", "Set Payment Terms Code to `30 DAYS` (or your sandbox's equivalent)."],
+            ["6", "Open the **General** FastTab (or Credit tab, version-dependent). Set Credit Limit (LCY) to `5000`."],
+            ["7", "Optional: add a Ship-to Address from the Customer card's related actions if you want to practice multi-address sales orders later."],
+            ["8", "Select **Save**, or simply navigate away — Business Central autosaves the card."]
+          ] } },
+        { h: "Expected result", p: "Customer LAB-C001 exists, opens without an error banner, and its Invoicing FastTab shows both posting groups populated (not blank)." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Customers list, filtered on LAB-*, shows exactly one row: LAB-C001"],
+            ["Customer Posting Group and Gen. Bus. Posting Group are both non-blank"],
+            ["Payment Terms Code shows 30 DAYS (or equivalent) on the card"],
+            ["Credit Limit (LCY) shows 5000"],
+            ["No error or warning banner appears at the top of the card"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["\"You must specify ... Customer Posting Group\" appears later, on a sales order", "Go back to the Customer card's Invoicing tab and set it — it's silently allowed to stay blank at customer-creation time, but nothing posts without it."],
+            ["No. field won't accept LAB-C001 (already numbered by a series)", "Check the No. Series setup on the Customers page (gear icon → No. Series), or accept the auto-number and manually overwrite it if your sandbox allows manual entry."],
+            ["\"The Payment Terms Code ... does not exist\"", "Your CRONUS variant may use a different code (e.g. N30, 1M(8D)). Open Payment Terms (Tell Me) and pick whichever existing code is closest to net-30."]
+          ] } }
+      ],
+      why: "A customer card built with the Invoicing tab skipped compiles fine and looks fine — right up until the first sales order tries to post and BC can't find a Receivables account. Getting posting groups right at creation time is the entire point of this lab; everything else on the card is secondary.",
+      check: { q: "Why does this lab insist on using an *existing* posting group rather than creating a new one?", a: "A brand-new posting group has no G/L account mapping behind it yet — using one would make lab 06's sales invoice fail to post with a missing-account error that has nothing to do with the customer itself. Reusing a posting group CRONUS already configured guarantees the accounts exist." }
+    },
+    {
+      id: "lab-02-vendor", group: "master-data", n: "02", title: "Vendor master — LAB-V001",
+      dur: "20 min", difficulty: "Starter",
+      summary: "Create a vendor from scratch, mirroring lab 01 on the payables side: posting groups and payment terms.",
+      concepts: [
+        { h: "Goal", p: "Create vendor LAB-V001 with valid posting groups and payment terms, ready for a purchase order in lab 08." },
+        { h: "Prerequisites", p: "Lab 00 read. Lab 01 not required (independent record) but recommended first since it establishes the pattern." },
+        { h: "Sample data", p: "Create new — use these exact values.",
+          table: { headers: ["Field", "Value"], rows: [
+            ["No.", "LAB-V001"],
+            ["Name", "Lab Sandbox Vendor 001"],
+            ["Vendor Posting Group", "An existing domestic group, e.g. DOMESTIC"],
+            ["Gen. Bus. Posting Group", "Same domestic group as above"],
+            ["Payment Terms Code", "30 DAYS (or your CRONUS's equivalent)"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Vendors**, then select **New**."],
+            ["2", "Set No. to `LAB-V001` (same manual-entry note as lab 01 if a No. Series intervenes)."],
+            ["3", "Set Name to `Lab Sandbox Vendor 001`."],
+            ["4", "Open the **Invoicing** FastTab. Set Vendor Posting Group and Gen. Bus. Posting Group to the same existing domestic group."],
+            ["5", "Set Payment Terms Code to `30 DAYS`."],
+            ["6", "Save / navigate away."]
+          ] } },
+        { h: "Expected result", p: "Vendor LAB-V001 exists with both posting groups populated and no error banner." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Vendors list filtered on LAB-* shows exactly one row: LAB-V001"],
+            ["Vendor Posting Group and Gen. Bus. Posting Group are both non-blank"],
+            ["Payment Terms Code shows 30 DAYS on the card"],
+            ["No error banner on the card"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["\"You must specify ... Vendor Posting Group\" on a later purchase document", "Return to the Vendor card's Invoicing tab and set it — same silent-gap issue as lab 01."],
+            ["Vendor No. collides with an existing CRONUS vendor", "CRONUS vendor numbers don't use the LAB- prefix, so this shouldn't happen — double-check you typed LAB-V001 exactly, not a default-series number."]
+          ] } }
+      ],
+      why: "Procure to Pay in lab 08 needs a vendor that can actually receive a purchase order and post an invoice — same failure mode as lab 01 if posting groups are skipped.",
+      check: { q: "What's the payables-side equivalent of the Customer Posting Group?", a: "Vendor Posting Group — it determines the Payables G/L account the same way Customer Posting Group determines the Receivables account." }
+    },
+    {
+      id: "lab-03-item", group: "master-data", n: "03", title: "Item master — LAB-I001",
+      dur: "25 min", difficulty: "Starter",
+      summary: "Create an inventory item with a base unit of measure, costing method, posting groups, and both a unit cost and unit price.",
+      concepts: [
+        { h: "Goal", p: "Create item LAB-I001 as a fully sellable, purchasable, stock-tracked item ready for both the O2C and P2P labs." },
+        { h: "Prerequisites", p: "Lab 00 read. No other lab required." },
+        { h: "Sample data", p: "Create new — use these exact values.",
+          table: { headers: ["Field", "Value"], rows: [
+            ["No.", "LAB-I001"],
+            ["Description", "Lab Sandbox Widget"],
+            ["Type", "Inventory"],
+            ["Base Unit of Measure", "PCS"],
+            ["Costing Method", "FIFO"],
+            ["Inventory Posting Group", "An existing group, e.g. RETAIL or MISC"],
+            ["Gen. Prod. Posting Group", "An existing group matching the above"],
+            ["Unit Cost", "50"],
+            ["Unit Price", "100"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Items**, then select **New**."],
+            ["2", "Set No. to `LAB-I001` and Description to `Lab Sandbox Widget`."],
+            ["3", "Confirm Type is `Inventory` (this is the default for most CRONUS item templates — verify, don't assume)."],
+            ["4", "Set Base Unit of Measure to `PCS`."],
+            ["5", "Open the **Costing** FastTab (or Replenishment, version-dependent). Set Costing Method to `FIFO`."],
+            ["6", "Open the **Posting** FastTab. Set Inventory Posting Group and Gen. Prod. Posting Group to existing groups already used on similar items."],
+            ["7", "Set Unit Cost to `50` and Unit Price to `100` on the Invoicing / Price FastTab."],
+            ["8", "Save / navigate away."]
+          ] } },
+        { h: "Expected result", p: "Item LAB-I001 exists, is type Inventory, and shows Unit Cost 50 / Unit Price 100 with both posting groups populated." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Items list filtered on LAB-* shows exactly one row: LAB-I001"],
+            ["Type = Inventory, Base Unit of Measure = PCS"],
+            ["Costing Method = FIFO"],
+            ["Inventory Posting Group and Gen. Prod. Posting Group are both non-blank"],
+            ["Unit Cost = 50, Unit Price = 100"],
+            ["Item card shows no error banner"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["\"Inventory Posting Group must have a value\" on a later purchase receipt", "Return to the item card's Posting tab — same silent-gap pattern as labs 01–02."],
+            ["Costing Method field is locked / greyed out", "It locks after the item's first transaction. If this happens, you're editing an item that already has ledger entries — you likely reused an existing CRONUS item by mistake instead of creating LAB-I001 fresh."]
+          ] } }
+      ],
+      why: "Costing method is the one field on this card that can't be changed later without consequence — decide it now, deliberately, not by accepting whatever the default happens to be.",
+      check: { q: "You realize after lab 09 that LAB-I001 should have used Average costing instead of FIFO. Can you just change it?", a: "No — Costing Method locks the moment the item has posted transactions. The realistic fix is creating a new item with the right costing method and using that going forward, not editing this one." }
+    },
+    {
+      id: "lab-04-posting-groups", group: "master-data", n: "04", title: "Posting groups sanity check",
+      dur: "20 min", difficulty: "Starter",
+      summary: "A read-only detective lab: verify the posting-group setup behind LAB-C001, LAB-V001, and LAB-I001 actually has G/L accounts mapped, before trusting it in labs 05–10.",
+      concepts: [
+        { h: "Goal", p: "Confirm that every posting group used by LAB-C001, LAB-V001, and LAB-I001 has a real G/L account behind it, without posting anything." },
+        { h: "Prerequisites", p: "Labs 01, 02, and 03 completed." },
+        { h: "Sample data", p: "None created in this lab — it only reads what labs 01–03 already set up.",
+          table: { headers: ["Record", "What to look up"], rows: [
+            ["LAB-C001", "Its Customer Posting Group and Gen. Bus. Posting Group"],
+            ["LAB-V001", "Its Vendor Posting Group and Gen. Bus. Posting Group"],
+            ["LAB-I001", "Its Inventory Posting Group and Gen. Prod. Posting Group"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "Open LAB-C001's Customer card, note its Customer Posting Group and Gen. Bus. Posting Group values."],
+            ["2", "**Tell Me → Customer Posting Groups**. Find the group from step 1, confirm the Receivables Account column has a real G/L account number, not blank."],
+            ["3", "**Tell Me → General Posting Setup**. Scan for the Gen. Bus. Posting Group from step 1 combined with LAB-I001's Gen. Prod. Posting Group. Confirm a row exists with Sales Account and COGS Account both populated."],
+            ["4", "Open LAB-V001's Vendor card, note its Vendor Posting Group."],
+            ["5", "**Tell Me → Vendor Posting Groups**. Confirm the Payables Account column is populated for that group."],
+            ["6", "Open LAB-I001's Item card, note its Inventory Posting Group."],
+            ["7", "**Tell Me → Inventory Posting Setup**. Confirm a row exists for that group with Inventory Account populated."],
+            ["8", "**Tell Me → VAT Posting Setup**. Confirm at least one row exists combining a VAT Business Posting Group and VAT Product Posting Group with both Sales VAT Account and Purchase VAT Account populated."]
+          ] } },
+        { h: "Expected result", p: "Every posting-group combination touched by LAB-C001, LAB-V001, and LAB-I001 has a real G/L account mapped — no blanks in the Account columns you checked." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Customer Posting Groups: Receivables Account populated for LAB-C001's group"],
+            ["General Posting Setup: a row exists for LAB-C001 × LAB-I001's group combination, Sales Account and COGS Account both populated"],
+            ["Vendor Posting Groups: Payables Account populated for LAB-V001's group"],
+            ["Inventory Posting Setup: Inventory Account populated for LAB-I001's group"],
+            ["VAT Posting Setup: at least one fully-mapped combination exists"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["A Receivables/Payables/Inventory Account column is blank", "Don't fix it yourself in a shared sandbox — that's a setup decision, not a lab exercise. Pick a different existing group for labs 01–03, or flag it to whoever owns the sandbox."],
+            ["No row exists in General Posting Setup for the combination you need", "Pick a Gen. Bus. Posting Group / Gen. Prod. Posting Group pair that CRONUS already has a complete row for, rather than assuming one exists."]
+          ] } }
+      ],
+      why: "This lesson exists because it catches the single highest-frequency real-world BC support ticket — a posting group that looks fine on a card but has no G/L account mapped underneath it — before labs 05–10 try to post real documents.",
+      check: { q: "This lab doesn't post anything, so why does it matter?", a: "Because it catches exactly the failure mode labs 01–03 can't see for themselves — a posting group that's set on a card but has no G/L account behind it. Finding that gap here turns a confusing runtime error later into a five-minute setup check now." }
+    },
+    {
+      id: "lab-05-quote-order", group: "o2c", n: "05", title: "Sales quote → order",
+      dur: "25 min", difficulty: "Starter",
+      summary: "Create a sales quote for LAB-C001 and LAB-I001, then convert it into a sales order — the first two documents in the Order to Cash chain.",
+      concepts: [
+        { h: "Goal", p: "Produce a sales order for LAB-C001, 5 units of LAB-I001, converted from a quote rather than created directly." },
+        { h: "Prerequisites", p: "Labs 01, 03, and 04 completed. Sales Order Processor or equivalent role." },
+        { h: "Sample data", p: "No new master data — reuses LAB-C001 and LAB-I001.",
+          table: { headers: ["Field", "Value"], rows: [
+            ["Sell-to Customer No.", "LAB-C001"],
+            ["Item No.", "LAB-I001"],
+            ["Quantity", "5"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Sales Quotes**, then select **New**."],
+            ["2", "Set Sell-to Customer No. to `LAB-C001`. Confirm Name auto-fills."],
+            ["3", "On the Lines FastTab, add a line: Type `Item`, No. `LAB-I001`, Quantity `5`."],
+            ["4", "Confirm Unit Price on the line shows 100 (from LAB-I001's card) — don't override it manually."],
+            ["5", "From the ribbon / actions, select **Make Order** (sometimes Convert to Order — Valider en commande in French UI)."],
+            ["6", "Confirm the conversion when prompted. Business Central opens the new Sales Order automatically."],
+            ["7", "On the resulting Sales Order, confirm Sell-to Customer, the line for LAB-I001, and Quantity 5 all carried over unchanged."]
+          ] } },
+        { h: "Expected result", p: "A Sales Order exists for LAB-C001 with one line for LAB-I001, Quantity 5, Unit Price 100 — and the originating quote no longer appears in the open Sales Quotes list." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Sales Orders list shows a new order for LAB-C001"],
+            ["The order's line shows LAB-I001, Quantity 5, Unit Price 100"],
+            ["Sales Quotes list no longer shows the original quote"],
+            ["Order Status (top of the card) shows Open, not yet released"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["\"Make Order\" action is missing from the ribbon", "You may be viewing the quote in a simplified/read-only view — open it from the Sales Quotes list directly rather than a related-records link."],
+            ["Unit Price shows 0 or blank on the line", "LAB-I001's Unit Price wasn't saved in lab 03 — go back and confirm it, then re-add the line."],
+            ["Customer or item can't be found by typing LAB-C001 / LAB-I001", "Confirm labs 01 and 03 actually saved — reopen the Customers / Items list filtered on LAB-* to check."]
+          ] } }
+      ],
+      why: "A quote and an order are separate document types with separate posting behavior (a quote never posts; an order does, eventually). Converting one into the other, deliberately, is what shows that BC treats them as a lifecycle rather than two unrelated screens.",
+      check: { q: "After Make Order runs, where did the original sales quote go?", a: "It's consumed by the conversion — Business Central doesn't keep both a quote and an order for the same sale. The quote no longer appears in the open Sales Quotes list once the order exists." }
+    },
+    {
+      id: "lab-06-ship-invoice", group: "o2c", n: "06", title: "Ship and invoice",
+      dur: "30 min", difficulty: "Intermediate",
+      summary: "Release the sales order from lab 05, post the shipment, then post the sales invoice — the two postings that actually move inventory and hit the G/L.",
+      concepts: [
+        { h: "Goal", p: "Post the shipment and the invoice for lab 05's sales order, and confirm both a G/L entry and an item ledger entry exist afterward." },
+        { h: "Prerequisites", p: "Lab 05 completed (an open, unreleased Sales Order exists for LAB-C001)." },
+        { h: "Sample data", p: "None new — continues the sales order from lab 05.",
+          table: { headers: ["Field", "Value"], rows: [["Document", "The Sales Order created in lab 05"]] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "Open the Sales Order from lab 05 (**Tell Me → Sales Orders**, filter on LAB-C001)."],
+            ["2", "From the ribbon, select **Release** (this exposes the order to shipping/warehouse processing)."],
+            ["3", "Select **Post** (Valider in French UI). Choose **Ship** in the posting dialog, not Ship and Invoice, so you post the two steps separately."],
+            ["4", "Confirm the posting succeeds — a message should confirm the shipment posted, and the order remains open (invoice still pending)."],
+            ["5", "With the order still open, select **Post** again, this time choosing **Invoice**."],
+            ["6", "Confirm the posting succeeds. The Sales Order should now disappear from the open list (fully posted)."],
+            ["7", "**Tell Me → Posted Sales Invoices**, find the new invoice for LAB-C001, and open it."]
+          ] } },
+        { h: "Expected result", p: "A Posted Sales Shipment and a Posted Sales Invoice both exist for LAB-C001, and LAB-I001's on-hand quantity has decreased by 5." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Posted Sales Shipments shows one new entry for LAB-C001"],
+            ["Posted Sales Invoices shows one new entry for LAB-C001, Amount 500 (5 × 100) before VAT"],
+            ["LAB-I001's Item card, Inventory field, dropped by 5 from before lab 06"],
+            ["From the Posted Sales Invoice, Navigate (Ctrl+Alt+F9) shows both a G/L Entry and an Item Ledger Entry"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["\"G/L account ... does not exist\" or \"has not been set up\" on posting", "Go back to lab 04 — a posting group used by LAB-C001 or LAB-I001 has a gap. Fix the underlying setup, don't try to force the post."],
+            ["\"There is nothing to post\"", "The order may already be shipped or invoiced from a previous attempt — check Posted Sales Shipments / Invoices before re-running the step."],
+            ["Item's on-hand quantity didn't change after shipping", "You may have posted the invoice-only step by mistake — confirm both postings happened, in order."]
+          ] } }
+      ],
+      why: "This is the lab where every posting-group decision from labs 01–04 gets tested for real. If anything in that chain was wrong, this is where it surfaces — as a posting error, not a vague one.",
+      check: { q: "Why post Ship and Invoice as two separate steps in this lab instead of one combined 'Ship and Invoice' posting?", a: "So you can see and verify each posting's effect independently — the shipment is what moves inventory and creates the item ledger entry, the invoice is what creates the G/L receivable and revenue entries. Combining them in real use is fine; separating them here makes the O2C mechanics visible." }
+    },
+    {
+      id: "lab-07-customer-payment", group: "o2c", n: "07", title: "Customer payment",
+      dur: "20 min", difficulty: "Starter",
+      summary: "Record and post a customer payment against lab 06's invoice using a payment journal, and confirm the invoice's ledger entry closes.",
+      concepts: [
+        { h: "Goal", p: "Post a payment from LAB-C001 that fully applies to and closes lab 06's sales invoice." },
+        { h: "Prerequisites", p: "Lab 06 completed (a posted, open sales invoice exists for LAB-C001)." },
+        { h: "Sample data", p: "",
+          table: { headers: ["Field", "Value"], rows: [
+            ["Journal", "Payment Journals (a GENERAL or CASH batch — whichever your sandbox has)"],
+            ["Account Type", "Customer"],
+            ["Account No.", "LAB-C001"],
+            ["Amount", "Match the invoice total exactly"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Payment Journals**."],
+            ["2", "Select an existing batch (or create one) and open it."],
+            ["3", "Add a new line: Posting Date today, Document Type `Payment`, Account Type `Customer`, Account No. `LAB-C001`."],
+            ["4", "Enter the Amount matching lab 06's invoice total exactly (check the sign convention your journal uses)."],
+            ["5", "Use **Apply Entries** on the line to open the customer's open ledger entries."],
+            ["6", "Select lab 06's invoice, confirm the applied amount matches, and close the Apply Entries screen."],
+            ["7", "Select **Post** (Valider). Confirm the journal line posts successfully."]
+          ] } },
+        { h: "Expected result", p: "LAB-C001 no longer shows lab 06's invoice as an open entry — it's fully applied and closed by the payment." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Customer Ledger Entries for LAB-C001 shows the invoice with Remaining Amount = 0"],
+            ["The same view shows a new Payment entry, also fully applied"],
+            ["LAB-C001's Customer card Balance field reflects the payment (back to 0, if this was the only open transaction)"],
+            ["Payment Journal is empty again after posting (line consumed)"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["Invoice still shows a Remaining Amount after posting", "The applied amount didn't match the full invoice total — reopen Customer Ledger Entries, use Apply Entries again, and post a second small payment line to close it out."],
+            ["\"Bal. Account No. must have a value\" on posting", "Your journal batch needs a balancing account (a bank account, typically) — check the batch's Bal. Account Type / No. setup."],
+            ["Can't find the invoice under Apply Entries", "Confirm you selected Account No. LAB-C001 exactly — a typo shows a different (or empty) set of open entries."]
+          ] } }
+      ],
+      why: "This is the step that closes the O2C loop — without it, LAB-C001 shows a permanently open, overdue invoice, which is exactly the kind of loose end that makes a sandbox confusing to reuse later.",
+      check: { q: "What does 'Apply Entries' actually do, mechanically, when you post the payment?", a: "It links the payment's ledger entry to the invoice's ledger entry so both are marked closed once the applied amounts net to zero — it's what turns 'a payment exists' and 'an invoice exists' into 'this invoice is paid.'" }
+    },
+    {
+      id: "lab-08-purchase-order", group: "p2p", n: "08", title: "Purchase order — LAB-V001 / LAB-I001",
+      dur: "20 min", difficulty: "Starter",
+      summary: "Create a purchase order to LAB-V001 for a quantity of LAB-I001 large enough to meaningfully increase stock.",
+      concepts: [
+        { h: "Goal", p: "Produce a purchase order to LAB-V001 for 20 units of LAB-I001, ready to receive in lab 09." },
+        { h: "Prerequisites", p: "Labs 02, 03, and 04 completed." },
+        { h: "Sample data", p: "",
+          table: { headers: ["Field", "Value"], rows: [
+            ["Buy-from Vendor No.", "LAB-V001"],
+            ["Item No.", "LAB-I001"],
+            ["Quantity", "20"],
+            ["Direct Unit Cost", "50 (should auto-fill from LAB-I001's card)"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Purchase Orders**, then select **New**."],
+            ["2", "Set Buy-from Vendor No. to `LAB-V001`. Confirm Name auto-fills."],
+            ["3", "On the Lines FastTab, add a line: Type `Item`, No. `LAB-I001`, Quantity `20`."],
+            ["4", "Confirm Direct Unit Cost shows 50 from LAB-I001's card."],
+            ["5", "From the ribbon, select **Release**."],
+            ["6", "Save / leave the order open — receiving happens in lab 09."]
+          ] } },
+        { h: "Expected result", p: "A released Purchase Order exists for LAB-V001, one line for LAB-I001, Quantity 20, not yet received or invoiced." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Purchase Orders list shows the new order for LAB-V001"],
+            ["Status shows Released"],
+            ["Line shows LAB-I001, Quantity 20, Direct Unit Cost 50"],
+            ["LAB-I001's on-hand quantity is unchanged so far (nothing posted yet)"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["Direct Unit Cost shows 0", "LAB-I001's Unit Cost wasn't saved in lab 03 — verify the item card, then re-enter the line."],
+            ["Release fails with a posting-group error", "Return to lab 04 — a gap exists in Vendor Posting Groups or General Posting Setup for LAB-V001's group."]
+          ] } }
+      ],
+      why: "P2P is the mirror of O2C — same posting-group discipline, same release-before-processing pattern, opposite direction. This lab exists to make that symmetry obvious, not to teach a new mechanic.",
+      check: { q: "Why release the purchase order in this lab even though nothing posts yet?", a: "Release is what exposes the order to receiving — the same mechanical reason a sales order gets released before warehouse processing in lab 06. An unreleased purchase order is still just a draft as far as receiving is concerned." }
+    },
+    {
+      id: "lab-09-receive-invoice", group: "p2p", n: "09", title: "Receive and invoice",
+      dur: "25 min", difficulty: "Intermediate",
+      summary: "Post the receipt and the purchase invoice for lab 08's order, and watch LAB-I001's on-hand quantity increase for the first time in this series.",
+      concepts: [
+        { h: "Goal", p: "Post the receipt and invoice for lab 08's purchase order, increasing LAB-I001's on-hand quantity by 20." },
+        { h: "Prerequisites", p: "Lab 08 completed (a released, open purchase order exists)." },
+        { h: "Sample data", p: "None new — continues lab 08's purchase order.",
+          table: { headers: ["Field", "Value"], rows: [["Document", "The Purchase Order from lab 08"]] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "Open the Purchase Order from lab 08."],
+            ["2", "Select **Post** (Valider). Choose **Receive** in the posting dialog."],
+            ["3", "Confirm the posting succeeds — a Posted Purchase Receipt is created, the order remains open (invoice pending)."],
+            ["4", "Note LAB-I001's on-hand quantity — open the Item card and confirm it increased by 20."],
+            ["5", "Back on the still-open Purchase Order, select **Post** again, choosing **Invoice**."],
+            ["6", "Confirm the posting succeeds. The Purchase Order should disappear from the open list."]
+          ] } },
+        { h: "Expected result", p: "A Posted Purchase Receipt and a Posted Purchase Invoice both exist for LAB-V001, and LAB-I001's on-hand quantity is 20 higher than before lab 09." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Posted Purchase Receipts shows a new entry for LAB-V001"],
+            ["Posted Purchase Invoices shows a new entry for LAB-V001, Amount 1000 (20 × 50) before VAT"],
+            ["LAB-I001's Item card Inventory field increased by 20 versus its value before this lab"],
+            ["From the Posted Purchase Invoice, Navigate (Ctrl+Alt+F9) shows both a G/L Entry and an Item Ledger Entry"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["Inventory didn't increase after receiving", "Confirm the receipt actually posted (check Posted Purchase Receipts) rather than the invoice-only step being run by mistake."],
+            ["\"G/L account ... has not been set up\" on invoice posting", "Same posting-group gap pattern as earlier labs — recheck lab 04's findings for LAB-V001's group specifically."]
+          ] } }
+      ],
+      why: "Every lab up to this point has been setup or draft documents. This is the first posting that actually creates stock — it's worth watching the quantity move, not just trusting that it did.",
+      check: { q: "At what point in this lab did LAB-I001's on-hand quantity actually increase — receiving or invoicing?", a: "Receiving. The purchase invoice affects cost and the payable to the vendor; it's the receipt that moves physical (and system) inventory. This mirrors lab 06, where the shipment — not the invoice — is what moved inventory out." }
+    },
+    {
+      id: "lab-10-vendor-payment", group: "p2p", n: "10", title: "Vendor payment",
+      dur: "20 min", difficulty: "Starter",
+      summary: "Record and post a payment to LAB-V001 against lab 09's invoice, closing the P2P loop the same way lab 07 closed O2C.",
+      concepts: [
+        { h: "Goal", p: "Post a payment to LAB-V001 that fully applies to and closes lab 09's purchase invoice." },
+        { h: "Prerequisites", p: "Lab 09 completed. Lab 07 recommended first — this lab assumes the payment-journal mechanic is already familiar." },
+        { h: "Sample data", p: "",
+          table: { headers: ["Field", "Value"], rows: [
+            ["Journal", "Payment Journals"],
+            ["Account Type", "Vendor"],
+            ["Account No.", "LAB-V001"],
+            ["Amount", "Match lab 09's invoice total exactly"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Payment Journals**."],
+            ["2", "Open the same batch used in lab 07 (or another available one)."],
+            ["3", "Add a new line: Posting Date today, Document Type `Payment`, Account Type `Vendor`, Account No. `LAB-V001`."],
+            ["4", "Enter the Amount matching lab 09's invoice total, respecting the vendor-line sign convention (often opposite the customer case in lab 07)."],
+            ["5", "Use **Apply Entries** to select lab 09's purchase invoice, confirm the amount matches."],
+            ["6", "Select **Post** (Valider)."]
+          ] } },
+        { h: "Expected result", p: "LAB-V001 no longer shows lab 09's invoice as an open entry." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Vendor Ledger Entries for LAB-V001 shows the invoice with Remaining Amount = 0"],
+            ["A new Payment entry appears, also fully applied"],
+            ["LAB-V001's Vendor card Balance field returns to 0 (if this was the only open transaction)"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["Invoice still shows a Remaining Amount", "Same fix as lab 07 — reapply the leftover balance and post a second line if needed."],
+            ["Sign of the Amount looks backwards versus lab 07", "Expected — customer and vendor lines in the same journal often use opposite signs by convention. Trust Apply Entries' preview over guessing the sign yourself."]
+          ] } }
+      ],
+      why: "Same mechanic as lab 07, opposite direction — the repetition is intentional. If the customer-payment pattern from lab 07 didn't fully land, this is the second, structurally identical chance to see it.",
+      check: { q: "Structurally, how does this lab differ from lab 07?", a: "It doesn't — same payment-journal mechanic, same Apply Entries step, same posting action, just Account Type Vendor instead of Customer. P2P and O2C settle the same way in Business Central; only the direction of money changes." }
+    },
+    {
+      id: "lab-11-stock-overview", group: "inventory", n: "11", title: "Stock overview",
+      dur: "20 min", difficulty: "Starter",
+      summary: "A read-only lab: trace LAB-I001's current on-hand quantity back through its item ledger entries and value entries from labs 06 and 09.",
+      concepts: [
+        { h: "Goal", p: "Read LAB-I001's current on-hand quantity and reconcile it against its item ledger entries: -5 from lab 06, +20 from lab 09." },
+        { h: "Prerequisites", p: "Labs 06 and 09 completed." },
+        { h: "Sample data", p: "None created — read-only lab.",
+          table: { headers: ["Item", "Expected net movement"], rows: [["LAB-I001", "-5 (lab 06 shipment) + 20 (lab 09 receipt) = +15 net"]] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Items**, open LAB-I001."],
+            ["2", "Note the Inventory field value on the card."],
+            ["3", "From the item card's related actions, open **Item Ledger Entries** (or **Tell Me → Item Ledger Entries** filtered on Item No. LAB-I001)."],
+            ["4", "Confirm two entries exist: a negative-quantity Sale entry (from lab 06) and a positive-quantity Purchase entry (from lab 09)."],
+            ["5", "Sum the Quantity column — it should equal the on-hand figure from step 2."],
+            ["6", "From either ledger entry, open **Value Entries** (related action) to see the cost side: Cost Amount (Actual) for each entry."]
+          ] } },
+        { h: "Expected result", p: "LAB-I001 shows on-hand quantity of 15 (assuming no other labs touched it), and the item ledger entries sum to exactly that." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Item Ledger Entries for LAB-I001 shows exactly two entries (one Sale, one Purchase) at this point"],
+            ["Quantities are -5 and +20 respectively"],
+            ["The sum matches the Item card's Inventory field"],
+            ["Value Entries show a Cost Amount (Actual) on both — nothing is uncosted"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["On-hand quantity doesn't match the ledger sum", "A posting from lab 06 or 09 may not have completed — recheck Posted Sales Shipments and Posted Purchase Receipts for LAB-I001."],
+            ["More than two ledger entries exist", "You may have re-run lab 06 or 09 rather than proceeding — not harmful, just recalculate the expected total from however many entries actually exist."]
+          ] } }
+      ],
+      why: "By this point LAB-I001 has both a shipment (out, lab 06) and a receipt (in, lab 09) behind it. This lab is where those two postings stop being abstract and become two rows you can actually point at.",
+      check: { q: "Which BC concept explains why the on-hand quantity always equals the sum of item ledger entries, with no separate 'current stock' number stored anywhere?", a: "Item Ledger Entry is the permanent, append-only transaction record — on-hand quantity is always derived by summing it, not stored independently. That's why FlowFields and SumIndexFields exist: to make that summing fast without ever risking it drifting out of sync." }
+    },
+    {
+      id: "lab-12-adjustment", group: "inventory", n: "12", title: "Positive/negative adjustment",
+      dur: "20 min", difficulty: "Intermediate",
+      summary: "Post a positive and a negative item journal adjustment against LAB-I001, each with a reason code, and verify both in the ledger.",
+      concepts: [
+        { h: "Goal", p: "Post one positive and one negative adjustment against LAB-I001 through an item journal, each with a reason, and confirm both in Item Ledger Entries." },
+        { h: "Prerequisites", p: "Lab 11 completed (so you know LAB-I001's current on-hand quantity before adjusting it)." },
+        { h: "Sample data", p: "",
+          table: { headers: ["Field", "Value"], rows: [
+            ["Journal", "Item Journals (a default or PHYS. INVT. batch)"],
+            ["Item No.", "LAB-I001"],
+            ["Entry Type", "Positive Adjmt. (line 1), Negative Adjmt. (line 2)"],
+            ["Quantity", "10 (positive line), 3 (negative line)"],
+            ["Reason Code", "Any existing code, e.g. a count-adjustment or damage reason if your sandbox has one"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Item Journals**."],
+            ["2", "Open an existing batch."],
+            ["3", "Add line 1: Item No. `LAB-I001`, Entry Type `Positive Adjmt.`, Quantity `10`. Set a Reason Code if available."],
+            ["4", "Add line 2: Item No. `LAB-I001`, Entry Type `Negative Adjmt.`, Quantity `3`, same or different Reason Code."],
+            ["5", "Select **Post** (Valider). Confirm both lines post without error."],
+            ["6", "Open LAB-I001's Item card and confirm the on-hand quantity moved by net +7 versus lab 11's figure."]
+          ] } },
+        { h: "Expected result", p: "LAB-I001's on-hand quantity is 7 units higher than it was after lab 11, and two new item ledger entries exist with Entry Type Positive Adjmt. and Negative Adjmt." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Item Ledger Entries for LAB-I001 shows a new +10 entry and a new -3 entry"],
+            ["Both entries show the reason code you set, if any"],
+            ["On-hand quantity increased by exactly 7 net versus before this lab"],
+            ["Value Entries show a Cost Amount on both new entries"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["Negative Adjmt. line fails with an insufficient-quantity-style error", "Shouldn't occur here since LAB-I001 has 15+ units on hand from earlier labs — confirm you're adjusting LAB-I001 and not a different item."],
+            ["Reason Code field rejects your entry", "Reason codes are optional on most setups — leave it blank if none exists in your sandbox."]
+          ] } }
+      ],
+      why: "Every real BC implementation eventually needs to correct stock outside a normal sale or purchase — a damaged unit, a physical count discrepancy. This is the one lab in the series that isn't O2C or P2P at all.",
+      check: { q: "Why does a Positive Adjmt. entry still get a Cost Amount, even though nothing was purchased?", a: "Because inventory value has to reflect reality even when the source is a correction, not a purchase — a positive adjustment is costed at the item's costing-method-determined cost so the G/L stays accurate, not just the quantity." }
+    },
+    {
+      id: "lab-13-gl-dimensions", group: "finance", n: "13", title: "G/L and dimensions glance",
+      dur: "20 min", difficulty: "Starter",
+      summary: "Use Navigate to trace this series' postings back to their G/L entries, and, if dimensions are configured, see them carried onto those entries.",
+      concepts: [
+        { h: "Goal", p: "Find the G/L entries created by this series' postings using Navigate, and note any dimensions attached to them." },
+        { h: "Prerequisites", p: "Labs 06 and 09 completed (at minimum one sales and one purchase posting exist to trace)." },
+        { h: "Sample data", p: "None created — read-only lab.",
+          table: { headers: ["Source document", "What to trace"], rows: [["Lab 06's Posted Sales Invoice", "Its G/L Entries"], ["Lab 09's Posted Purchase Invoice", "Its G/L Entries"]] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "Open lab 06's Posted Sales Invoice (**Tell Me → Posted Sales Invoices**, filter LAB-C001)."],
+            ["2", "From the ribbon, select **Navigate** (or press Ctrl+Alt+F9)."],
+            ["3", "In the Navigate window, note the count next to G/L Entry, then select it to view the actual entries."],
+            ["4", "If any line shows a Dimension value (Department, Project, etc.), note which — not every CRONUS sandbox has dimensions configured on these accounts by default."],
+            ["5", "Repeat steps 1–4 for lab 09's Posted Purchase Invoice."],
+            ["6", "Optionally, **Tell Me → General Ledger Entries** and filter Document No. to browse the same entries directly, without Navigate."]
+          ] } },
+        { h: "Expected result", p: "Navigate from both posted invoices surfaces their G/L Entries, and each shows balanced debits and credits." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Navigate from the sales invoice shows a G/L Entry count of 2 or more, balanced to zero"],
+            ["Navigate from the purchase invoice shows the same"],
+            ["General Ledger Entries filtered on either Document No. shows the same rows Navigate found"],
+            ["If dimensions exist on the accounts touched, they appear on the G/L Entry lines"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["Navigate shows 0 for G/L Entry", "The document may not actually be posted — confirm you opened it from Posted Sales/Purchase Invoices, not the original (now-consumed) order."],
+            ["No dimensions appear anywhere", "Expected if your sandbox doesn't have default dimensions configured — a sandbox-setup fact, not a lab failure. Note it and move on."]
+          ] } }
+      ],
+      why: "Every lab so far has posted from the operational side (sales, purchasing, inventory). This is the one lab that looks at the same activity from Finance's side of the fence — the view a controller actually works from.",
+      check: { q: "What does Navigate actually do, mechanically, when you run it from a posted invoice?", a: "It searches every ledger table (G/L, Customer/Vendor, Item, Value Entry, and more) for entries sharing that document's posting date and document number, and lists the counts — a cross-ledger trace, not a single lookup." }
+    },
+    {
+      id: "lab-14-bank-recon", group: "finance", n: "14", title: "Bank reconciliation intro",
+      dur: "25 min", difficulty: "Intermediate",
+      summary: "Reconcile a bank account using lab 07's or lab 10's payment as the one line to match — a first, simple pass at Bank Acc. Reconciliation.",
+      concepts: [
+        { h: "Goal", p: "Reconcile one bank account statement line against lab 07's (or lab 10's) posted payment, and close the reconciliation." },
+        { h: "Prerequisites", p: "Lab 07 or lab 10 completed, AND a bank account already configured in the sandbox with G/L integration. If neither exists, skip this lab." },
+        { h: "Sample data", p: "",
+          table: { headers: ["Field", "Value"], rows: [
+            ["Bank Account", "Whichever existing bank account your payment journal posted against in lab 07/10"],
+            ["Statement Line", "One manually entered line matching that payment's amount and date"]
+          ] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Bank Account Reconciliations**."],
+            ["2", "Create a new reconciliation for the bank account used by lab 07 or lab 10's payment."],
+            ["3", "On the Statement Lines FastTab, add one manual line: Statement Date today, Statement Amount matching the payment exactly."],
+            ["4", "Use **Match Automatically** if available, or manually apply the line against the corresponding Bank Account Ledger Entry."],
+            ["5", "Confirm the Difference field shows 0 once matched."],
+            ["6", "Select **Post** to close the reconciliation, or leave it open for review — note whichever you did."]
+          ] } },
+        { h: "Expected result", p: "The reconciliation's one statement line matches lab 07/10's payment exactly, with a Difference of 0." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Statement line and bank ledger entry show the same amount and date"],
+            ["Difference field reads 0 before posting"],
+            ["After posting, the reconciliation no longer appears in the open/unposted list"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["No bank account exists, or the payment journal wasn't linked to one", "Skip this lab — note it rather than forcing a bank account setup that's outside this series' scope. It's explicitly optional for exactly this reason."],
+            ["Match Automatically doesn't find the entry", "Match manually instead — select the statement line and the bank ledger entry and apply them directly."]
+          ] } }
+      ],
+      why: "This lab only works if a bank account is already set up as the balancing account behind labs 07/10's payments. If your sandbox doesn't have one, the lab tells you to skip it rather than forcing a fake setup step.",
+      check: { q: "Why is this lab explicitly optional, unlike labs 01–13?", a: "Because it depends on a bank account already being configured with G/L integration — something this series deliberately doesn't set up itself, since bank setup varies enormously by sandbox. Skipping cleanly is the correct outcome if that setup isn't there." }
+    },
+    {
+      id: "lab-15-month-end", group: "finance", n: "15", title: "Month-end mini checklist",
+      dur: "30 min", difficulty: "Intermediate",
+      summary: "Walk this series' own activity through a lightweight month-end sequence: open documents, journals posted, inventory cost adjusted, trial balance glanced at, and — sandbox only — a posting period locked.",
+      concepts: [
+        { h: "Goal", p: "Confirm no LAB-* documents remain open, run the inventory cost adjustment, glance at a trial balance, and — sandbox only — lock a posting period as practice." },
+        { h: "Prerequisites", p: "Labs 05 through 12 completed (so there's real activity to check)." },
+        { h: "Sample data", p: "None new — this lab audits and closes out prior labs' activity.",
+          table: { headers: ["Check", "Expected state"], rows: [["Sales/Purchase Orders filtered LAB-*", "None open — all posted in labs 06 and 09"], ["Payment Journals", "Empty (lines consumed by posting in labs 07/10)"]] } },
+        { h: "Steps", p: "",
+          table: { headers: ["#", "Action"], rows: [
+            ["1", "**Tell Me → Sales Orders** and **Purchase Orders**, filter both on LAB-*. Confirm neither list shows an open document."],
+            ["2", "**Tell Me → Payment Journals**. Confirm no unposted lines remain from labs 07 or 10."],
+            ["3", "**Tell Me → Adjust Cost - Item Entries**. Run it (filtered to LAB-I001 if the option exists) to bring inventory valuation current after labs 09 and 12's postings."],
+            ["4", "**Tell Me → Trial Balance**. Glance at the accounts touched by this series (Receivables, Payables, Inventory, Sales, COGS) — confirm none look obviously wrong."],
+            ["5", "Sandbox only — do not do this in a shared or production-adjacent environment: **Tell Me → Accounting Periods**. Note the current open period, and as practice only, consider setting Allow Posting From on a past period to demonstrate a lock — then immediately revert it."]
+          ] } },
+        { h: "Expected result", p: "No open LAB-* sales/purchase documents or journal lines remain, the cost adjustment runs without error, and the trial balance shows activity consistent with this series' postings." },
+        { h: "Verify", p: "",
+          table: { headers: ["Verify"], rows: [
+            ["Sales Orders and Purchase Orders filtered LAB-* both show zero open documents"],
+            ["Payment Journals show zero unposted lines"],
+            ["Adjust Cost - Item Entries completes without an error message"],
+            ["Trial Balance shows non-zero, plausible activity on Receivables, Payables, Inventory, Sales, and COGS accounts"],
+            ["If you practiced the Accounting Periods step, it was reverted before finishing this lab"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["An open Sales/Purchase Order for LAB-* still exists", "Go back and finish posting it (lab 06 or lab 09) before continuing."],
+            ["Adjust Cost - Item Entries errors out", "Usually a sign an item's cost data is inconsistent — re-check LAB-I001's ledger and value entries from lab 11 before re-running."],
+            ["You accidentally left a posting period locked", "Reopen Accounting Periods and set Allow Posting From back to an early date immediately — a locked sandbox period blocks every later lab in this series."]
+          ] } }
+      ],
+      why: "Every step in this checklist exists because skipping it in the wrong order, in a real close, produces a specific and traceable problem later. Running it here, on a small and fully understood dataset, is what makes the sequence memorable instead of abstract.",
+      check: { q: "Why does this checklist run 'Adjust Cost - Item Entries' before 'glance at the trial balance,' not after?", a: "Because the trial balance reads whatever inventory valuation is currently posted to the G/L — running the cost adjustment first is what makes the numbers on the trial balance actually current." }
+    },
+    {
+      id: "lab-16-capstone", group: "capstone", n: "16", title: "Capstone: full O2C + P2P flow",
+      dur: "40 min", difficulty: "Intermediate",
+      summary: "One script, start to finish: a new mini customer and item, a full sales cycle, a full purchase cycle, and a verification pass against a written definition of done.",
+      concepts: [
+        { h: "Goal", p: "Independently run a complete O2C cycle and a complete P2P cycle end to end, using either lab 16's own fresh records or the existing LAB-* set, and verify the result against a written checklist rather than step-by-step guidance." },
+        { h: "Prerequisites", p: "All of labs 01–15 completed. This lab intentionally gives less hand-holding than earlier ones." },
+        { h: "Sample data", p: "Reuse LAB-C001 / LAB-I001, or create fresh capstone-only records if you want a clean ledger history to inspect.",
+          table: { headers: ["Field", "Value"], rows: [
+            ["Customer", "LAB-C001 (reuse) or new LAB-C002, same pattern as lab 01"],
+            ["Vendor", "LAB-V001 (reuse)"],
+            ["Item", "LAB-I001 (reuse) or new LAB-I002, same pattern as lab 03"],
+            ["Sales quantity", "8 units"],
+            ["Purchase quantity", "15 units"]
+          ] } },
+        { h: "Steps", p: "This lab is scored against Expected result and the checklist below, not a numbered walkthrough — apply what labs 01–15 already taught.",
+          table: { headers: ["Stage", "What to do"], rows: [
+            ["1. Master data", "Confirm or create the customer, vendor, and item — verify posting groups the way lab 04 taught, don't just assume."],
+            ["2. Sales cycle", "Quote → order → release → ship → invoice → payment, fully closed (labs 05–07's pattern)."],
+            ["3. Purchase cycle", "Order → release → receive → invoice → payment, fully closed (labs 08–10's pattern)."],
+            ["4. Verify", "Check stock movement (lab 11's pattern) and trace at least one document with Navigate (lab 13's pattern)."]
+          ] } },
+        { h: "Expected result", p: "Both cycles are fully posted and settled — no open sales or purchase documents, no open payment journal lines, and the item's on-hand quantity reflects both the sale (down) and the purchase (up) correctly." },
+        { h: "Verify", p: "This is the capstone's definition of done — every item should be true before you consider the lab finished.",
+          table: { headers: ["Definition of done"], rows: [
+            ["Customer, vendor, and item all exist with populated posting groups (no blanks)"],
+            ["A sales invoice is posted and fully paid — Customer Ledger Entries show 0 remaining"],
+            ["A purchase invoice is posted and fully paid — Vendor Ledger Entries show 0 remaining"],
+            ["The item's on-hand quantity reflects -8 (sale) and +15 (purchase) correctly, net +7"],
+            ["Navigate from at least one posted invoice shows balanced G/L entries"],
+            ["No open Sales Orders, Purchase Orders, or Payment Journal lines remain for this lab's records"]
+          ] } },
+        { h: "If something fails", p: "",
+          table: { headers: ["Error / symptom", "Fix"], rows: [
+            ["Unsure which lab's instructions to go back to for a specific error", "Match the symptom, not the lab number — a posting-group error always traces back to lab 04's pattern regardless of which stage you're in here."],
+            ["Lost track of what's open vs. closed", "Filter every relevant list (Sales Orders, Purchase Orders, Payment Journals, Customer/Vendor Ledger Entries) on LAB-* and read the Status/Remaining Amount columns directly."]
+          ] } }
+      ],
+      why: "Labs 01–15 taught each piece in isolation, on a schedule that let you stop and check after every single step. This lab is the one that asks you to run the whole thing with only the definition of done to check yourself against — which is a much closer simulation of how the work actually happens.",
+      check: { q: "This lab gives you a checklist instead of numbered steps. What's the actual skill being tested?", a: "Whether the O2C and P2P sequences from labs 05–10 have become a mental model rather than a script to follow line by line — the checklist tests the outcome, deliberately leaving the exact order and clicks up to you, the same way a real client engagement would." }
+    }
+  ]
 }
 
 ];
@@ -4723,6 +5401,35 @@ const QUIZZES = {
       { q: "A feature compiles and works in the developer's own sandbox. Is that enough to call it done?", options: ["Yes — compiling and working is the definition of done", "No — it still needs review, permissions, captions, and zero warnings before it's done", "Yes, as long as no errors appear in the output window", "No — it also needs a new object ID range"], correct: 1 },
       { q: "Why does a definition of done treat compiler warnings as blocking, even though they don't stop the build?", options: ["Warnings are actually errors in disguise", "Unaddressed warnings accumulate silently and tend to become real bugs or failed validations later", "The AL compiler will eventually convert warnings to errors automatically", "Warnings slow down the build pipeline"], correct: 1 },
       { q: "A PR ships with a `// TODO: handle this properly` comment and no linked follow-up task. What does this lesson say about that?", options: ["It's fine as long as the TODO is clearly worded", "Without a tracked task, \"later\" almost never actually arrives — it shouldn't merge as-is", "TODOs are required documentation and should stay", "It only matters if the TODO is in a public procedure"], correct: 1 },
+    ]
+  },
+
+  "lab-04-posting-groups": {
+    pass: 2,
+    questions: [
+      { q: "A purchase invoice fails to post with \"G/L account ... has not been set up.\" What's the actual root cause almost every time?", options: ["The vendor is blocked", "A posting group used by the vendor or item has an incomplete G/L account mapping", "The item doesn't exist", "The purchase order wasn't released"], correct: 1 },
+      { q: "What does Customer Posting Group actually determine when a sales invoice posts?", options: ["The item's unit price", "The Receivables G/L account the invoice posts to", "The customer's credit limit", "The payment terms"], correct: 1 },
+    ]
+  },
+  "lab-06-ship-invoice": {
+    pass: 2,
+    questions: [
+      { q: "In the O2C flow, what does releasing a Sales Order actually change?", options: ["It posts the order to the G/L", "It exposes the order to shipping/warehouse processing", "It locks the customer's credit limit", "It applies VAT"], correct: 1 },
+      { q: "Posting a sales shipment and posting a sales invoice each do something different. Which one moves inventory?", options: ["The invoice", "The shipment", "Both equally", "Neither — inventory only moves on Adjust Cost - Item Entries"], correct: 1 },
+    ]
+  },
+  "lab-09-receive-invoice": {
+    pass: 2,
+    questions: [
+      { q: "A purchase order's line shows Direct Unit Cost 0 even though the item card has a Unit Cost set. What's the most likely cause?", options: ["The item's Unit Cost wasn't saved before the order was created", "The vendor has a blocked status", "The order wasn't released yet", "VAT hasn't been calculated"], correct: 0 },
+      { q: "What does \"Apply Entries\" do when posting a payment?", options: ["It calculates VAT on the payment", "It links the payment's ledger entry to the invoice's, so both close once they net to zero", "It creates a new customer or vendor record", "It reverses the original invoice"], correct: 1 },
+    ]
+  },
+  "lab-16-capstone": {
+    pass: 2,
+    questions: [
+      { q: "Why does Costing Method lock on an item after its first transaction?", options: ["It's a licensing restriction", "Changing it retroactively would make the item's valuation history internally inconsistent", "It's a bug, not a feature", "Only SUPER users can ever change it"], correct: 1 },
+      { q: "In a month-end close, why run \"Adjust Cost - Item Entries\" before reviewing the trial balance?", options: ["It's alphabetically first in Tell Me", "The trial balance reads whatever inventory valuation is currently posted, so adjusting cost first is what makes those numbers current", "It locks the accounting period automatically", "It's required before any sales order can be created next month"], correct: 1 },
     ]
   },
 
