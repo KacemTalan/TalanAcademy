@@ -1473,6 +1473,285 @@ const CURRICULUM_A = [
       check: { q: "This lab gives you a checklist instead of numbered steps. What's the actual skill being tested?", a: "Whether the O2C and P2P sequences from labs 05–10 have become a mental model rather than a script to follow line by line — the checklist tests the outcome, deliberately leaving the exact order and clicks up to you, the same way a real client engagement would." }
     }
   ]
+},
+
+/* ---------------- SCN: INDUSTRY SCENARIOS ---------------- */
+{
+  code: "SCN", track: "business", accent: "magenta", noVideo: true,
+  title: "Industry Scenarios",
+  tagline: "End-to-end Business Central cases for retail/distribution, professional services, and light manufacturing — process, clicks, and financial impact.",
+  audience: "Functional consultants who already know basic BC navigation (or completed the Sandbox Labs LAB series)",
+  desc: "End-to-end Business Central cases for retail/distribution, professional services, and light manufacturing — process, clicks, and financial impact.",
+  groups: [
+    { key: "intro", label: "Intro" },
+    { key: "retail", label: "Retail" },
+    { key: "services", label: "Services" },
+    { key: "manufacturing", label: "Manufacturing" },
+    { key: "capstone", label: "Capstone" }
+  ],
+  lessons: [
+    {
+      id: "scn-00-intro", group: "intro", n: "00", title: "How to use Industry Scenarios",
+      dur: "15 min",
+      summary: "What a scenario is (versus a lab), how to read a posting impact table, and the recommended order through the series.",
+      concepts: [
+        { h: "Business context", p: "This lesson has no company behind it — it's the orientation for the five that do. Read it once before SCN-01." },
+        { h: "Scope", p: "In: how this series is structured and how to use it. Out: any BC mechanics — those live in Sandbox Labs (LAB series), which this series assumes you already know or can reference alongside." },
+        { h: "Scenarios vs. Sandbox Labs — the actual difference", p: "Sandbox Labs teaches clicks: exact fields, exact values, a script you follow to produce a known result. Industry Scenarios teaches judgment: a business story, a design choice at each fork (which document path, which module), and what that choice does to inventory and the ledgers. A lab tells you what to click. A scenario tells you why a consultant would choose one valid path over another, and what a client should be told to expect financially.",
+          table: { headers: ["", "Sandbox Labs (LAB)", "Industry Scenarios (SCN)"], rows: [
+            ["Unit of content", "One document type or posting mechanic", "One end-to-end business story, several document types"],
+            ["Goal", "Prove you can execute the steps correctly", "Prove you can explain the process and its financial impact to a client"],
+            ["Contains", "Numbered click-by-click steps", "Business context, scope, roles, a process map, posting impact tables"],
+            ["Best used", "Solo, in a sandbox, right before or after a client call", "In a workshop, while shadowing, or prepping a scoping conversation"]
+          ] } },
+        { h: "How to read a posting impact table", p: "Every scenario stage gets one row in a posting impact table, with a column per ledger type (ILE, VE, CLE, VLE, G/L Entry). A filled cell means that stage's posting creates an entry there; a dash means it doesn't. Reading a whole table left to right, top to bottom, tells the full financial story of a process without opening a single account — that's the point of the format, and it's worth treating as the centerpiece of each scenario, not a footnote.",
+          table: { headers: ["Code", "Full name", "One-line definition"], rows: [
+            ["ILE", "Item Ledger Entry", "The permanent record of a quantity movement — every unit in or out of inventory creates one."],
+            ["VE", "Value Entry", "The cost side of the same movement — what that quantity was worth, linked 1:1 to its ILE."],
+            ["CLE", "Customer Ledger Entry", "A posted transaction against a customer — invoice, credit memo, or payment; what they owe or are owed."],
+            ["VLE", "Vendor Ledger Entry", "The payables mirror of CLE — a posted transaction against a vendor."],
+            ["G/L Entry", "General Ledger Entry", "The financial posting itself — a debit and credit pair to real accounts, always in balance."]
+          ] } },
+        { h: "Recommended order", p: "SCN-01 (Retail) first — it's the most universally recognizable business story and introduces the posting-impact table format at its simplest. SCN-02 (Services) and SCN-03 (Manufacturing) can be read in either order after that; they don't depend on each other. SCN-04 (Recurring services) is explicitly optional and pairs naturally right after SCN-02. Finish with SCN-05, the capstone — it deliberately mixes stock, service, and a kit build into one story, and reads much faster once 01–03 are familiar." }
+      ],
+      why: "Scenarios and labs look similar on the page — both have numbered steps — but they're built for different moments. Using a scenario like a lab (or vice versa) wastes the format's actual value.",
+      check: { q: "A learner treats a scenario's Walkthrough section like a lab script and gets frustrated that field-by-field values aren't given. What's the actual mismatch?", a: "Scenarios are written for judgment and financial-impact literacy, not click-perfect execution — the Walkthrough shows where to click and what design choice was made, not exact sample values for every field. For that level of precision, the Sandbox Labs series is the right format." }
+    },
+    {
+      id: "scn-01-retail", group: "retail", n: "01", title: "Retail & distribution (multi-location lite)",
+      dur: "40 min",
+      summary: "A two-location distributor: sell, replenish, transfer stock between warehouses, and process a return — with the posting impact of every stage laid out.",
+      concepts: [
+        { h: "Business context", p: "A mid-size distributor sells stocked items to business customers from two warehouse locations. Their pain: stock visibility across locations is unclear, and nobody can say with confidence what a return actually does to inventory value versus the G/L. Success metric for this engagement: a manager can look at one screen and know what's available where, and finance trusts that a posted return reverses the original sale correctly — not just the invoice." },
+        { h: "Scope", p: "In: Sales (quote through invoice, and a return), Purchasing (replenishment), Inventory (two-location transfer), core posting groups. Out: warehouse pick/put-away workflows beyond a basic transfer order, serial/lot tracking, and multi-currency — all real distributor concerns, all out of scope for this scenario specifically." },
+        { h: "Roles", p: "Sales Order Processor handles the customer-facing documents. Purchasing Agent handles replenishment. Warehouse staff post the transfer between locations. Accountant reviews the posting impact at close — the same four roles this series will keep reusing with different titles per scenario." },
+        { h: "Master data", p: "Reuse LAB-C001 (customer) and LAB-I001 (item) from Sandbox Labs if completed, or define fresh SCN-* records.",
+          table: { headers: ["Record", "Role in this scenario"], rows: [
+            ["SCN-C001 (or LAB-C001)", "The distributor's customer"],
+            ["SCN-V001 (or LAB-V001)", "The replenishment vendor"],
+            ["SCN-I001 (or LAB-I001)", "The stocked item, tracked at both locations"],
+            ["Two existing locations", "Whichever two your sandbox already has configured, e.g. EAST / WEST — this scenario doesn't create new locations, it uses two that exist"]
+          ] } },
+        { h: "Process map", p: "Six stages, in the order a real cycle runs.",
+          table: { headers: ["#", "Stage"], rows: [
+            ["1", "Replenish: purchase order to the vendor, received into Location A"],
+            ["2", "Transfer: move a portion of stock from Location A to Location B"],
+            ["3", "Sell: sales order for the customer, shipped from whichever location has stock"],
+            ["4", "Invoice: post the sales invoice"],
+            ["5", "Settle: customer payment and vendor payment"],
+            ["6", "Return: the customer sends part of the order back"]
+          ] } },
+        { h: "Walkthrough — where to click", p: "Design choice for this scenario: shipments and invoices are posted separately (not combined), and the return uses a **Sales Return Order**, not a credit memo typed from scratch — that's the one consistent path this lesson uses throughout, since a Return Order links back to the original shipment and correctly reverses inventory, where a bare credit memo only reverses the money.",
+          table: { headers: ["Stage", "Where to click"], rows: [
+            ["Replenish", "**Tell Me → Purchase Orders** → New → Buy-from Vendor, item line with Location Code set to Location A → Release → Post (Receive, then Invoice)"],
+            ["Transfer", "**Tell Me → Transfer Orders** → New → Transfer-from Location A, Transfer-to Location B, item line and quantity → Post (Ship, then Receive — a transfer order posts both legs, sometimes in one step depending on Direct Transfer setup)"],
+            ["Sell", "**Tell Me → Sales Orders** → New → Sell-to Customer, item line with Location Code set to wherever stock actually sits after the transfer → Release"],
+            ["Invoice", "Post the order: **Post → Ship**, then separately **Post → Invoice**"],
+            ["Settle", "**Tell Me → Payment Journals** for both the customer receipt and the vendor payment, each with Apply Entries against the open invoice"],
+            ["Return", "From the posted sales invoice or the customer card, start a **Sales Return Order**, copy the original line's item and quantity, Post — this both receives the returned stock and posts a credit"]
+          ] } },
+        { h: "Posting impact by stage", p: "Every stage's effect across the five ledger types.",
+          table: { headers: ["Stage", "ILE", "VE", "CLE", "VLE", "G/L Entry"], rows: [
+            ["Purchase receipt", "Yes (+qty)", "Yes (+cost)", "—", "—", "Yes (Inventory ↑, GRNI/Payables accrual)"],
+            ["Purchase invoice", "—", "—", "—", "Yes (open)", "Yes (Payables, GRNI clears)"],
+            ["Transfer (ship + receive)", "Yes (−qty at A, +qty at B)", "Yes (cost moves, no P&L impact)", "—", "—", "Usually none — an in-transit account may post, but there's no revenue or expense event"],
+            ["Sales shipment", "Yes (−qty)", "Yes (COGS recognized)", "—", "—", "Yes (Inventory ↓, COGS ↑)"],
+            ["Sales invoice", "—", "—", "Yes (open)", "—", "Yes (Receivables, Sales revenue, VAT)"],
+            ["Customer payment", "—", "—", "Yes (closes)", "—", "Yes (Bank/Cash, Receivables clears)"],
+            ["Vendor payment", "—", "—", "—", "Yes (closes)", "Yes (Payables clears, Bank/Cash)"],
+            ["Sales return", "Yes (+qty, reversing the shipment)", "Yes (reversing COGS)", "Yes (credit, reduces balance)", "—", "Yes (Inventory ↑, COGS ↓, Receivables ↓, Sales ↓)"]
+          ] } },
+        { h: "Consultant checkpoints", p: "Validate with the client: does the item's Location Code default match where sales actually ship from, or does every order require a manual override (a sign the item card's default is wrong for how the business runs)? Confirm the transfer's in-transit handling matches their expectation — some clients assume a transfer posts instantly, others expect a ship/receive gap that mirrors real truck transit time. And walk the return path with them explicitly: a Sales Return Order that both restocks and credits is very different from a credit-memo-only process that a bookkeeper might reach for instead, and the two produce different inventory truth." },
+        { h: "Pitfalls", p: "Wrong Location Code on a sales line is the single most common distributor issue — it either fails to find stock that's actually sitting at the other location, or silently ships from the wrong warehouse if both have some quantity. Negative inventory is allowed by default in BC and will happily let a shipment post against stock that isn't really there — treat a negative on-hand quantity as a data problem to investigate, not a feature to rely on. And Costing Method locks after SCN-I001's first transaction (same rule as the Sandbox Labs item lab) — decide FIFO vs. Average for a distributor's fast-moving stock before the first purchase receipt in this scenario, not after." },
+        { h: "Sandbox practice", p: "Every stage in this scenario maps directly to Sandbox Labs: replenish → lab 08–09, transfer → not covered in LAB (a gap worth flagging to a learner), sell/invoice → labs 05–07, return → a new mechanic this scenario introduces that LAB doesn't cover. Practicing the sales and purchase cycles in LAB first makes this scenario's Walkthrough much faster to follow." }
+      ],
+      why: "This is the scenario every other one in the series gets compared to — stocked items, a customer, a vendor, two locations. Once the posting-impact pattern is clear here, Services and Manufacturing are variations on it, not new concepts.",
+      check: { q: "Why does this scenario standardize on a Sales Return Order instead of a manually typed credit memo?", a: "A Sales Return Order links back to the original shipment and correctly reverses both the inventory (ILE/VE) and the financial (CLE/G-L) sides of the sale together. A credit memo typed from scratch only reverses the money — inventory has to be corrected separately, which is exactly the kind of gap that leaves stock records wrong even after the customer's account looks right." }
+    },
+    {
+      id: "scn-02-services", group: "services", n: "02", title: "Professional services (Jobs-light)",
+      dur: "40 min",
+      summary: "A consulting firm bills for time against a project budget, using BC's Jobs module — planning, usage, and invoicing straight from the job, not a plain sales order.",
+      concepts: [
+        { h: "Business context", p: "A small consulting firm sells billable time against fixed-scope engagements. Their pain: nobody can say, mid-project, whether a job is running over budget until the final invoice is a surprise. Success metric: budget versus actual usage is visible on the job itself, at any point, before billing happens." },
+        { h: "Scope", p: "In: Jobs (job, job task, planning lines), Resources, job usage posting, job-based sales invoicing. Out: multi-currency projects, job WIP method comparison in depth (one short paragraph only), and Time Sheet approval workflows (noted as an alternative, not walked through)." },
+        { h: "Roles", p: "Project Manager owns the job and its budget. Consultant logs time against it. Finance turns posted usage into a client invoice — the same three-role split as the FLOW series' Jobs lesson, applied here as a full worked example instead of an overview." },
+        { h: "Master data", p: "",
+          table: { headers: ["Record", "Role in this scenario"], rows: [
+            ["SCN-C002", "The consulting client"],
+            ["SCN-R001", "A billable consultant, set up as a Resource (Type: Person), with an hourly Unit Cost and Unit Price"],
+            ["A Job Posting Group", "An existing group already on the sandbox — this scenario reuses one, it doesn't create it (same discipline as Sandbox Labs' posting-groups lab)"]
+          ] } },
+        { h: "Process map", p: "Five stages.",
+          table: { headers: ["#", "Stage"], rows: [
+            ["1", "Create the job and its budget (job task, planning lines)"],
+            ["2", "Log time against the job (design choice: Job Journal, not Time Sheets)"],
+            ["3", "Post usage"],
+            ["4", "Compare budget to actual before billing"],
+            ["5", "Create and post the job sales invoice"]
+          ] } },
+        { h: "Walkthrough — where to click", p: "Design choice for this scenario: time is captured through the **Job Journal** directly, not Time Sheets. Time Sheets add an approval workflow and a separate weekly-entry page that's genuinely useful for larger teams, but it's an extra layer of setup this scenario deliberately skips to keep the usage-to-invoice line clear. Note the alternative exists; don't be surprised to see it in a real client's tenant.",
+          table: { headers: ["Stage", "Where to click"], rows: [
+            ["Create job + budget", "**Tell Me → Jobs** → New → set Bill-to Customer → add a Job Task → **Tell Me → Job Planning Lines** on that task, add a Budget line for the resource with planned quantity (hours)"],
+            ["Log time", "**Tell Me → Job Journals** → new line: Job No., Job Task No., Type `Resource`, No. = SCN-R001, Quantity = hours worked"],
+            ["Post usage", "**Post** the job journal line — this is the moment usage becomes real, not billable yet on its own"],
+            ["Compare budget vs. actual", "Open the Job card, **Job Task Lines** — Usage (Total Cost/Price) columns sit next to the Budget columns for direct comparison, before anything is invoiced"],
+            ["Create job invoice", "From the Job card, **Create Sales Invoice** action (pulls unbilled, posted usage onto a real sales invoice) → review lines → Post"]
+          ] } },
+        { h: "WIP, in one paragraph", p: "Work in Progress accounting decides when a job's revenue is recognized relative to when costs are incurred — it doesn't change what gets invoiced, only how the financials read before that invoice posts. This scenario doesn't require picking a WIP method to complete the walkthrough; it's flagged here so a consultant knows the concept exists and that a real engagement will need a deliberate choice (Cost Value, Cost of Sales, Percentage of Completion, or Sales Value) rather than whatever the environment defaults to." },
+        { h: "Posting impact by stage", p: "",
+          table: { headers: ["Stage", "Job Ledger", "Resource/Item", "CLE", "G/L Entry"], rows: [
+            ["Job planning lines (budget)", "No posting — budget only", "—", "—", "—"],
+            ["Job journal posting (usage)", "Yes — Job Ledger Entry created", "Resource usage recorded (no ILE/VE — resources aren't inventory)", "—", "Yes (WIP or cost recognition, per WIP method)"],
+            ["Job sales invoice", "Job Ledger Entry marked billed", "—", "Yes (open)", "Yes (Receivables, Job/Sales revenue, VAT)"],
+            ["Customer payment", "—", "—", "Yes (closes)", "Yes (Bank/Cash, Receivables clears)"]
+          ] } },
+        { h: "Consultant checkpoints", p: "Confirm with the client whether every resource that logs time actually has a Job Posting Group and a sensible Unit Cost/Unit Price on its resource card — a missing one blocks usage posting the same way a missing Customer Posting Group blocks a sales invoice. Ask explicitly whether billing should happen automatically once usage posts, or wait for a project-manager review — Create Sales Invoice is a manual, deliberate action in this walkthrough for exactly that reason, not a background job." },
+        { h: "Pitfalls", p: "Billing before usage is posted is the most common mistake — Create Sales Invoice only pulls what's already posted through the Job Journal, so an unposted timesheet or journal line is simply invisible to it, not billed as zero. A missing Job Posting Group produces a posting error that looks identical in shape to the customer/vendor posting-group gaps from Sandbox Labs — same diagnosis, different setup page. And mixing plain Sales Order billing with Job billing on the same engagement, without a deliberate design decision, produces a client relationship where some work is tracked against budget and some silently isn't — pick one path per engagement and say so out loud to the client." },
+        { h: "Sandbox practice", p: "Sandbox Labs doesn't currently cover Jobs — this scenario's Walkthrough is the first hands-on exposure to the module in this Academy. Treat the Walkthrough itself as the practice script, since there's no dedicated LAB lesson to pair it with yet." }
+      ],
+      why: "Services businesses don't move inventory, so the posting-impact story changes shape entirely — this scenario is where a consultant learns to read Jobs the way SCN-01 taught reading Sales and Purchasing.",
+      check: { q: "A project manager asks why a consultant's Monday hours aren't showing on the client's invoice draft yet, even though the consultant says they logged them. What's the most likely explanation?", a: "The Job Journal line was entered but not posted — Create Sales Invoice only pulls usage that's already been posted as a Job Ledger Entry. Entered-but-unposted time is invisible to invoicing, not billed at zero; the fix is posting the journal, not investigating the invoice." }
+    },
+    {
+      id: "scn-03-manufacturing", group: "manufacturing", n: "03", title: "Light manufacturing / assembly",
+      dur: "40 min",
+      summary: "Assemble a finished good from components using standard Assembly Management, then sell it — with the Premium-only Production Order path called out as an alternative, not the default.",
+      concepts: [
+        { h: "Business context", p: "A distributor also sells a bundled kit — a finished item built from several components they already stock separately. Their pain: they've been manually adjusting inventory to fake a 'kit' sale, which leaves component stock wrong and gives finance no real cost rollup for the kit. Success metric: selling the kit is one clean transaction that correctly consumes components and costs the finished good accurately." },
+        { h: "Scope", p: "In: Assembly BOM, Assembly Order, component consumption, finished-good output, and a short sales tail. Out: routing/work centers, capacity planning, and multi-level production — all genuinely Manufacturing-module territory, marked Premium below, not walked through here." },
+        { h: "Roles", p: "Inventory/Production Planner builds and maintains the Assembly BOM. Warehouse staff post the assembly order. Sales Order Processor sells the finished kit exactly like any other stocked item once it exists — this is the scenario's real point: to a salesperson, a kit looks identical to any other item after assembly." },
+        { h: "Master data", p: "",
+          table: { headers: ["Record", "Role in this scenario"], rows: [
+            ["SCN-I002", "The finished kit item — Type: Inventory, Replenishment System: Assembly"],
+            ["SCN-I003, SCN-I004", "Component items — ordinary stocked items, already on hand"],
+            ["SCN-C001 (or LAB-C001)", "The customer buying the finished kit"]
+          ] } },
+        { h: "Process map", p: "Four stages.",
+          table: { headers: ["#", "Stage"], rows: [
+            ["1", "Define the Assembly BOM on SCN-I002"],
+            ["2", "Create and post an Assembly Order (consume components, produce the kit)"],
+            ["3", "Confirm the finished good's on-hand quantity and rolled-up cost"],
+            ["4", "Sell SCN-I002 — a short, ordinary O2C tail"]
+          ] } },
+        { h: "Walkthrough — where to click", p: "Design choice for this scenario: **Assembly**, not Production Orders — Assembly is available on Essentials, has no routing/work-center overhead, and fits a kit-style build exactly. If a client's actual need involves multi-step production with labor routing and capacity planning, that's a genuine Manufacturing-module (Premium) conversation — flagged, not walked through, below.",
+          table: { headers: ["Stage", "Where to click"], rows: [
+            ["Define BOM", "Open SCN-I002's Item card → **Tell Me → Assembly BOM** (or the BOM action on the item card) → add component lines: SCN-I003 and SCN-I004, each with the quantity needed per one finished kit"],
+            ["Create assembly order", "**Tell Me → Assembly Orders** → New → Item No. SCN-I002, Quantity to build → the BOM's components populate automatically as order lines"],
+            ["Post the order", "**Post** — this consumes the component quantities and outputs the finished quantity of SCN-I002 in a single posting"],
+            ["Confirm cost rollup", "Open SCN-I002's Item card, check Unit Cost — it should reflect the rolled-up cost of the components consumed, not a manually typed number"],
+            ["Sell the kit", "Ordinary Sales Order → Release → Post (Ship, then Invoice) — SCN-I002 behaves like any other stocked item from here"]
+          ] } },
+        { h: "Premium alternative — Production Orders", p: "This path requires a Premium license. If the actual business need is multi-step production — a routing across work centers, labor and machine time, capacity constraints — that's the Manufacturing module: a Production BOM (richer than an Assembly BOM), a Routing, and a Production Order (Planned → Firm Planned → Released → posted consumption and output). The mechanics rhyme with Assembly (components consumed, a finished good output, cost rolled up) but the setup is substantially heavier. Confirm licensing before proposing this path to a client — it's a common scoping mistake to assume Production Orders are available because 'the client is a manufacturer.'" },
+        { h: "Posting impact by stage", p: "",
+          table: { headers: ["Stage", "ILE", "VE", "CLE", "G/L Entry"], rows: [
+            ["Assembly order posting", "Yes — negative ILEs for each component, positive ILE for the finished good", "Yes — component cost consumed, finished-good cost capitalized", "—", "Usually none — inventory value moves from components to finished good, no P&L event"],
+            ["Sales shipment (kit)", "Yes (−qty)", "Yes (COGS recognized, using the rolled-up cost)", "—", "Yes (Inventory ↓, COGS ↑)"],
+            ["Sales invoice (kit)", "—", "—", "Yes (open)", "Yes (Receivables, Sales revenue, VAT)"]
+          ] } },
+        { h: "Consultant checkpoints", p: "Confirm the Assembly BOM is genuinely active/certified before relying on it in a demo or a go-live — an inactive BOM won't populate an assembly order's component lines, and the failure mode looks like 'the feature doesn't work' rather than 'a status flag is wrong.' Check that every component's Unit of Measure on the BOM line matches how that component is actually stocked — a UoM mismatch silently changes how much is consumed per kit. And validate component stock is genuinely on hand before posting the assembly order in front of a client; Assembly, like Sales, allows negative inventory by default." },
+        { h: "Pitfalls", p: "Posting an assembly order without components actually in stock is the single most common demo failure — it succeeds (negative inventory is allowed) but produces numbers nobody can explain afterward. A BOM that isn't marked active/certified is the second most common — double-check its status before troubleshooting anything else. And confusing Assembly BOM with Production BOM in a client conversation is an easy, embarrassing slip — they're genuinely different objects with different capabilities; naming the one actually in scope, out loud, avoids a licensing surprise later." },
+        { h: "Sandbox practice", p: "Sandbox Labs doesn't currently include an Assembly lab — this scenario's Walkthrough is the first hands-on Assembly exposure in this Academy, same gap as SCN-02's Jobs section. The sales tail at the end reuses exactly the O2C mechanics from LAB labs 05–07." }
+      ],
+      why: "Most 'manufacturing' conversations with a mid-market client are actually assembly conversations — kitting, light configuration, build-to-order. Reaching for full Production Orders by default over-scopes the license and the implementation; this scenario is the discipline of trying Assembly first.",
+      check: { q: "A client says they need Production Orders because they're a manufacturer. Before agreeing, what should a consultant check first?", a: "Whether the actual need is multi-step production with routing, work centers, and capacity planning (genuinely Production Orders, Premium-licensed) or a simpler kit/bundle build (Assembly, available on Essentials, no routing overhead). \"We're a manufacturer\" doesn't by itself determine which module fits — the process complexity does, and assuming Production Orders by default risks proposing a Premium license the client may not actually need." }
+    },
+    {
+      id: "scn-04-recurring", group: "services", n: "04", title: "Recurring services (optional, advanced)",
+      dur: "30 min",
+      summary: "A maintenance-contract-style business bills the same amount periodically, using standard sales documents and Copy Document — with an honest caveat about what BC's standard toolset doesn't do.",
+      concepts: [
+        { h: "Business context", p: "A business sells an ongoing maintenance contract billed the same amount every month. Their pain: they've been manually retyping the same invoice every period and worry about errors. Success metric: a repeatable, low-effort way to reproduce last period's invoice without retyping it — with realistic expectations set about what's automated and what isn't." },
+        { h: "Scope", p: "In: a template Sales Invoice reused via Copy Document, and Recurring General Journals as the finance-side alternative for pure G/L recognition entries. Out: Service Contracts (a real, heavier Service Management feature that could fit this story better but is intentionally out of scope here to stay light), and any true subscription billing automation — standard BC doesn't have one." },
+        { h: "Roles", p: "Accounts Receivable Clerk reproduces and sends the periodic invoice. Accountant reviews recognition if a Recurring Journal is also in use." },
+        { h: "Master data", p: "",
+          table: { headers: ["Record", "Role in this scenario"], rows: [
+            ["SCN-C003", "The maintenance-contract customer"],
+            ["A service-type Item or a G/L account sales line", "What actually appears on the recurring invoice — either works; this scenario uses a service-type Item for a cleaner posting story"]
+          ] } },
+        { h: "Process map", p: "Three stages, repeated every billing period.",
+          table: { headers: ["#", "Stage"], rows: [
+            ["1", "Post the first period's invoice normally, as a template"],
+            ["2", "Each following period: **Copy Document** the prior invoice onto a new one, adjust the date, post"],
+            ["3", "(Alternative / supplement) Post a Recurring General Journal for pure G/L-level recognition entries, if revenue needs spreading across periods separate from the billed invoice"]
+          ] } },
+        { h: "Walkthrough — where to click", p: "Design choice for this scenario: **Copy Document**, run manually each period, is the standard-BC path — there is no native 'repeat this invoice automatically' feature. Say that plainly to a client asking for subscription billing; the honest answer is a lighter manual step, not a hidden automation switch.",
+          table: { headers: ["Stage", "Where to click"], rows: [
+            ["First invoice", "**Tell Me → Sales Invoices** → New → build it once, normally → Post"],
+            ["Next period", "New Sales Invoice → **Copy Document** action → select the prior posted invoice as the source → adjust Posting Date/Due Date → Post"],
+            ["Recurring Journal (if used)", "**Tell Me → General Journals**, using a batch with Recurring Method set (Fixed or Variable), each line auto-reversing or repeating per its recurring frequency"]
+          ] } },
+        { h: "The honest caveat", p: "Business Central's standard recurring tools are not a revenue-recognition suite. Copy Document reproduces a document; it doesn't spread revenue across periods, track a contract's remaining term, or auto-adjust for a mid-contract price change. Recurring General Journals repeat or reverse a G/L entry on schedule, but that's a finance-side journal mechanic, not a customer-facing billing one. For genuine subscription billing with term tracking and proration, the honest scope conversation is Service Contracts (Service Management module) or a third-party subscription-billing add-on — not a creative use of what's covered here." },
+        { h: "Posting impact by stage", p: "",
+          table: { headers: ["Stage", "CLE", "G/L Entry"], rows: [
+            ["Each period's posted invoice (via Copy Document)", "Yes (open, same as any invoice)", "Yes (Receivables, Sales revenue, VAT)"],
+            ["Recurring Journal line posting (if used)", "—", "Yes — whatever accounts the journal line targets, repeating or reversing per its schedule"]
+          ] } },
+        { h: "Consultant checkpoints", p: "Confirm with the client whether 'recurring' actually means 'the same amount, reproduced manually each period' (this scenario's scope) or 'automated subscription billing with proration and term tracking' (a different, larger conversation) — the two get described with the same word by clients constantly, and scoping the wrong one is expensive to discover late." },
+        { h: "Pitfalls", p: "Assuming Copy Document is a scheduled automation — it isn't; someone has to run it each period. Forgetting to update the Posting Date/Due Date on the copied invoice, which silently backdates or misdates a real financial document. And setting client expectations around 'recurring billing' without first clarifying which of the two meanings above they actually need." }
+      ],
+      why: "This is flagged optional deliberately: it's a real, common ask, but the honest answer involves telling a client what Business Central doesn't do out of the box, which is a harder and more valuable conversation than another walkthrough.",
+      check: { q: "A client asks for 'automatic subscription billing.' What does standard Business Central actually offer toward that, and what doesn't it do?", a: "It offers Copy Document (manually reproduce a prior invoice each period) and Recurring General Journals (repeat/reverse a G/L entry on schedule) — both require a person to act each period and neither tracks contract terms, prorates, or spreads revenue automatically. True automated subscription billing is outside standard BC's scope; Service Contracts or a third-party add-on are the honest next conversation." }
+    },
+    {
+      id: "scn-05-capstone", group: "capstone", n: "05", title: "Capstone: devices, installation, and a special kit",
+      dur: "45 min",
+      summary: "One mixed story for a trainer room: a company sells devices and an installation service, purchases devices, builds one special kit, and closes on four questions about where everything actually went.",
+      concepts: [
+        { h: "Business context", p: "A company sells physical devices (stocked items) and charges separately for installation (a billable service). They also occasionally need to build a special bundled kit for a specific customer request. Their pain, in one sentence: 'we can tell you what we sold, but not confidently what it cost us, what the customer still owes, or what we owe our supplier — all at the same time.' This scenario exists to make a room answer that sentence correctly." },
+        { h: "Scope", p: "In: one sales order mixing an item line and a service/resource line, one purchase order for devices, one assembly order for the special kit, and a closing reconciliation across customer, vendor, and inventory. Out: nothing new mechanically — every piece was already covered in SCN-01 through SCN-03; this scenario's entire value is combining them, not teaching a new mechanic." },
+        { h: "Roles", p: "Sales Order Processor builds the mixed order. Purchasing Agent handles the device purchase. Warehouse/Planner builds the special kit. A workshop facilitator runs the closing questions with the whole room." },
+        { h: "Master data", p: "Reuses records from SCN-01 through SCN-03 deliberately — this scenario is a combination exercise, not a fresh data-entry one.",
+          table: { headers: ["Record", "Reused from"], rows: [
+            ["SCN-C001", "SCN-01"],
+            ["SCN-V001", "SCN-01"],
+            ["SCN-I001 (device, stocked)", "SCN-01"],
+            ["SCN-R001 or a new installation resource", "SCN-02's pattern, retitled for installation rather than consulting"],
+            ["SCN-I002 (special kit) + SCN-I003/I004 (components)", "SCN-03"]
+          ] } },
+        { h: "Process map", p: "Four stages plus a close.",
+          table: { headers: ["#", "Stage"], rows: [
+            ["1", "Purchase devices (replenish SCN-I001)"],
+            ["2", "Build the special kit (assembly order for SCN-I002)"],
+            ["3", "Sell: one sales order with two lines — the device (Type Item) and installation (Type Resource) — released, shipped, invoiced"],
+            ["4", "Settle: customer payment, vendor payment"],
+            ["5", "Close: the four closing questions, answered from the system, not memory"]
+          ] } },
+        { h: "Walkthrough — where to click", p: "This walkthrough is intentionally terse — every individual action was already detailed in SCN-01–03. The teaching moment here is the sequencing and the mixed sales order, not re-explaining any single click.",
+          table: { headers: ["Stage", "Where to click"], rows: [
+            ["Purchase devices", "Purchase Order → SCN-V001, item line SCN-I001 → Release → Post (Receive, then Invoice) — same as SCN-01"],
+            ["Build the kit", "Assembly Order → SCN-I002, using the BOM from SCN-03 → Post"],
+            ["Mixed sale", "Sales Order → SCN-C001 → line 1: Type `Item`, No. SCN-I001; line 2: Type `Resource`, No. the installation resource, Quantity = hours → Release → Post (Ship, then Invoice)"],
+            ["Settle", "Payment Journals for both customer and vendor, Apply Entries, Post"]
+          ] } },
+        { h: "Posting impact — the mixed sale, specifically", p: "The one genuinely new thing this scenario shows: a single sales invoice with two lines that post completely differently underneath.",
+          table: { headers: ["Line", "ILE / VE", "CLE", "G/L Entry"], rows: [
+            ["Device line (Type Item)", "Yes — inventory decreases, COGS recognized", "Rolled into the one invoice's CLE", "Inventory ↓, COGS ↑, Sales (goods) ↑"],
+            ["Installation line (Type Resource)", "No — resources don't touch inventory", "Rolled into the same invoice's CLE", "Sales (service) ↑ only — no COGS, no inventory movement"]
+          ] } },
+        { h: "Closing questions — the facilitator's actual test", p: "Run these out loud at the end, and expect the room to answer from the live system, not from memory of the steps.",
+          table: { headers: ["Question", "Where to find the answer"], rows: [
+            ["Where did stock actually move?", "SCN-I001's Item Ledger Entries (purchase in, sale out) and SCN-I002/I003/I004's (assembly consumption and output)"],
+            ["What does the customer still owe?", "Customer Ledger Entries for SCN-C001 — Remaining Amount after the payment applied"],
+            ["What do we still owe the vendor?", "Vendor Ledger Entries for SCN-V001 — same check, payables side"],
+            ["Which G/L account families moved, and by how much?", "Navigate from the posted sales invoice — Inventory, COGS, Sales (goods), Sales (service), Receivables, VAT, all in one trace"]
+          ] } },
+        { h: "Consultant checkpoints", p: "This scenario's real checkpoint is whether the room can answer the four closing questions unaided — if they can't, that's a signal to revisit SCN-01 (inventory/AR) or SCN-03 (assembly) before moving on, not to re-run this capstone immediately." },
+        { h: "Pitfalls", p: "Treating the installation line like it needs a Location Code or triggers a shipment the way the device line does — it doesn't; Type Resource lines skip inventory entirely, and a learner who expects symmetry between the two lines will get confused looking for an ILE that was never going to exist. Building the kit after trying to sell it, instead of before, is an easy sequencing slip in a live workshop — SCN-I002 has to exist in stock (via the assembly order) before a sales order can ship it." },
+        { h: "Facilitator timeline (60–90 min workshop)", p: "A suggested pacing for running this as a live session, not a solo read.",
+          table: { headers: ["Time", "Activity"], rows: [
+            ["0–10 min", "Read the business context aloud; confirm everyone has the master data (reused from SCN-01–03) ready in their sandbox"],
+            ["10–20 min", "Purchase devices + build the kit (stages 1–2), each participant working independently"],
+            ["20–40 min", "The mixed sales order (stage 3) — pause after the line entry, before posting, to ask the room to predict the posting impact before revealing the table"],
+            ["40–50 min", "Settle both sides (stage 4)"],
+            ["50–75 min", "The four closing questions, worked live, with participants finding the answers themselves rather than being told"],
+            ["75–90 min", "Debrief: what surprised people, which pitfall someone actually hit, and — if time allows — connect back to SCN-02 or SCN-04 for whichever module the room's real clients need most"]
+          ] } }
+      ],
+      why: "Every scenario before this one kept one story clean — pure retail, pure services, pure assembly. Real engagements mix all three in a single client. This is the one built to be run out loud, in a room, with the four closing questions as the actual test.",
+      check: { q: "In the mixed sales order, why doesn't the installation (Resource) line create an Item Ledger Entry the way the device (Item) line does?", a: "Because resources aren't inventory — a Resource-type line represents billable time or usage, not a stocked quantity, so it has nothing for an Item Ledger Entry to track. It still posts to the G/L (service revenue) and rolls into the same invoice's Customer Ledger Entry, but the inventory side of the posting story simply doesn't apply to it." }
+    }
+  ]
 }
 
 ];
@@ -5430,6 +5709,49 @@ const QUIZZES = {
     questions: [
       { q: "Why does Costing Method lock on an item after its first transaction?", options: ["It's a licensing restriction", "Changing it retroactively would make the item's valuation history internally inconsistent", "It's a bug, not a feature", "Only SUPER users can ever change it"], correct: 1 },
       { q: "In a month-end close, why run \"Adjust Cost - Item Entries\" before reviewing the trial balance?", options: ["It's alphabetically first in Tell Me", "The trial balance reads whatever inventory valuation is currently posted, so adjusting cost first is what makes those numbers current", "It locks the accounting period automatically", "It's required before any sales order can be created next month"], correct: 1 },
+    ]
+  },
+
+  "scn-00-intro": {
+    pass: 2,
+    questions: [
+      { q: "Which single ledger type is created by every posted document that involves money owed by or to a business partner, regardless of whether inventory is involved?", options: ["Item Ledger Entry", "Value Entry", "Customer Ledger Entry or Vendor Ledger Entry", "Resource Ledger Entry"], correct: 2 },
+      { q: "A transfer order between two locations shows movement in the Item Ledger Entries but nothing meaningful in the G/L. Why not?", options: ["The transfer failed silently", "A transfer moves inventory value between locations without a revenue or expense event — no P&L reason for a G/L posting beyond an in-transit account", "Transfers never post to any ledger", "G/L posting for transfers requires a Premium license"], correct: 1 },
+    ]
+  },
+  "scn-01-retail": {
+    pass: 2,
+    questions: [
+      { q: "A sales return in this scenario uses a Sales Return Order instead of a manually typed credit memo. What does that choice guarantee that a bare credit memo doesn't?", options: ["Faster processing", "Both the inventory (ILE/VE) and financial (CLE/G-L) sides of the reversal happen together", "It avoids VAT entirely", "It requires SUPER permissions"], correct: 1 },
+      { q: "A sales order line keeps failing to find stock that the customer confirms exists. What's the most likely cause?", options: ["The customer is blocked", "The sales line's Location Code doesn't match where the stock actually sits", "VAT hasn't been calculated", "The item isn't released yet"], correct: 1 },
+    ]
+  },
+  "scn-02-services": {
+    pass: 2,
+    questions: [
+      { q: "Why does time logged in the Job Journal not appear on a client's invoice draft until it's posted?", options: ["Invoicing has a 24-hour delay by design", "Create Sales Invoice only pulls usage already posted as a Job Ledger Entry, not entered-but-unposted lines", "The resource needs SUPER permissions", "Job invoices require manual G/L entry first"], correct: 1 },
+      { q: "What does a job's WIP method actually control?", options: ["Which resources can log time", "When revenue is recognized relative to when costs are incurred — not what gets invoiced", "The job's billing currency", "Whether Time Sheets are required"], correct: 1 },
+    ]
+  },
+  "scn-03-manufacturing": {
+    pass: 2,
+    questions: [
+      { q: "A client says they need Production Orders \"because they're a manufacturer.\" What should a consultant check before agreeing?", options: ["Whether the client has a logo", "Whether the actual need is multi-step routed production (Production Orders, Premium) or a simpler kit build (Assembly, Essentials)", "Whether the client uses multi-currency", "Nothing — always propose Production Orders for manufacturers"], correct: 1 },
+      { q: "Posting an Assembly Order without the components actually in stock — what happens in standard Business Central?", options: ["The posting is blocked automatically", "It succeeds, because negative inventory is allowed by default — which is exactly why it's a common demo pitfall", "Only a SUPER user can do this", "The BOM is automatically deactivated"], correct: 1 },
+    ]
+  },
+  "scn-04-recurring": {
+    pass: 2,
+    questions: [
+      { q: "What does Copy Document actually automate in this recurring-billing scenario?", options: ["Nothing — it still requires a person to run it and adjust dates each period", "It schedules future invoices to post automatically", "It prorates revenue across the contract term", "It replaces the need for a customer record"], correct: 0 },
+      { q: "A client wants proration and contract-term tracking, beyond what Copy Document offers. What's the honest next conversation?", options: ["Copy Document already does this if configured correctly", "Service Contracts (Service Management) or a third-party subscription-billing add-on — a genuinely different scope", "Recurring General Journals fully solve this on their own", "It isn't possible in Business Central at all, ever"], correct: 1 },
+    ]
+  },
+  "scn-05-capstone": {
+    pass: 2,
+    questions: [
+      { q: "In the mixed sales order, why doesn't the installation (Resource-type) line create an Item Ledger Entry?", options: ["Resources are a special kind of low-value inventory", "Resources aren't inventory at all — there's no stocked quantity for an ILE to track", "The line wasn't released", "VAT blocks it"], correct: 1 },
+      { q: "Why must the special kit (SCN-I002) be built via an Assembly Order before the sales order can ship it?", options: ["It's just a best practice, not a requirement", "The kit has to actually exist in stock — assembly is what creates that stock before anything can ship it", "Sales Orders can only ship items purchased directly", "Assembly Orders and Sales Orders must be dated the same day"], correct: 1 },
     ]
   },
 
