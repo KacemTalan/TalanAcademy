@@ -602,6 +602,94 @@ h1,h2,h3,h4{font-weight:700;letter-spacing:-0.015em;line-height:1.18}
 .quiz-result b{color:var(--ink)}
 .quiz-result.pass span b{color:var(--lime-deep)}
 .quiz-result.fail span b{color:var(--magenta-deep)}
+
+/* ---------------- sim engine ---------------- */
+.sim-panel{background:var(--paper);border:1px solid var(--rule);border-radius:13px;overflow:hidden;margin-top:14px}
+.sim-caption{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 16px;background:var(--paper-2);border-bottom:2px solid var(--accent);
+}
+.sim-caption-title{font-weight:700;font-size:14.5px;letter-spacing:-0.01em}
+.sim-caption-tag{
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent-deep);background:color-mix(in srgb,var(--accent) 14%,transparent);
+  padding:3px 9px;border-radius:20px;flex-shrink:0;
+}
+.sim-intro{padding:14px 16px 0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.sim-body{padding:16px}
+
+.sim-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.sim-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.sim-label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.sim-req{color:var(--magenta-deep)}
+.sim-input{
+  height:38px;border:1px solid var(--rule);border-radius:8px;padding:0 11px;width:100%;
+  font-size:13.5px;color:var(--ink);background:var(--paper-2);outline:none;
+  font-family:inherit;transition:border-color .15s,background .15s;
+}
+.sim-input:focus{border-color:var(--accent);background:var(--paper)}
+.sim-input-sm{height:34px;font-size:13px}
+.sim-help{font-size:11px;color:var(--ink-4)}
+.sim-error{font-size:11.5px;color:var(--magenta-deep);font-weight:500}
+.sim-field-err .sim-input{border-color:var(--magenta)}
+.sim-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);height:38px;cursor:pointer}
+.sim-check input{width:16px;height:16px;flex-shrink:0}
+
+.sim-lines-wrap{overflow-x:auto;margin-top:16px;border:1px solid var(--rule);border-radius:10px}
+.sim-lines{width:100%;border-collapse:collapse;font-size:13px;min-width:480px}
+.sim-lines th{
+  text-align:left;padding:8px 10px;background:var(--paper-2);color:var(--ink-3);
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;
+  border-bottom:1px solid var(--rule);white-space:nowrap;
+}
+.sim-lines td{padding:7px 8px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.sim-lines tr:last-child td{border-bottom:none}
+.sim-line-del{width:26px;height:26px;border-radius:6px;color:var(--ink-4);font-size:16px;line-height:1;transition:all .14s}
+.sim-line-del:hover{background:color-mix(in srgb,var(--magenta) 10%,transparent);color:var(--magenta-deep)}
+.sim-add-line{
+  margin-top:9px;font-size:12.5px;font-weight:600;color:var(--accent-deep);
+  padding:6px 12px;border:1px dashed var(--rule);border-radius:8px;transition:all .14s;
+}
+.sim-add-line:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.sim-total{margin-top:12px;font-size:13.5px;color:var(--ink-2);font-family:'IBM Plex Mono',monospace}
+.sim-total b{color:var(--ink)}
+
+.sim-match{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.sim-match-h{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px}
+.sim-match-col{display:flex;flex-direction:column;gap:7px}
+.sim-match-item{
+  text-align:left;padding:11px 13px;border:1px solid var(--rule);border-radius:9px;
+  font-size:13px;color:var(--ink-2);background:var(--paper);transition:all .14s;
+}
+.sim-match-item:hover{border-color:var(--ink-4)}
+.sim-match-item.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--paper));color:var(--ink)}
+.sim-match-item.paired{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 10%,var(--paper))}
+.sim-match-item.sim-match-err{border-color:var(--magenta);background:color-mix(in srgb,var(--magenta) 7%,var(--paper))}
+
+.sim-hint{
+  margin:0 16px 14px;padding:10px 13px;border-radius:9px;font-size:13px;line-height:1.5;
+  background:color-mix(in srgb,var(--lime) 10%,var(--paper));border:1px solid color-mix(in srgb,var(--lime) 35%,var(--rule));
+  color:var(--ink-2);
+}
+.sim-hint b{color:var(--lime-deep)}
+
+.sim-result{margin:0 16px 14px;padding:12px 14px;border-radius:10px;font-size:13.5px}
+.sim-result b{display:block;margin-bottom:3px;font-size:14px}
+.sim-result p{color:var(--ink-2);line-height:1.5}
+.sim-pass{background:color-mix(in srgb,var(--lime) 12%,var(--paper));border:1px solid color-mix(in srgb,var(--lime) 40%,var(--rule))}
+.sim-pass b{color:var(--lime-deep)}
+.sim-fail{background:color-mix(in srgb,var(--magenta) 7%,var(--paper));border:1px solid color-mix(in srgb,var(--magenta) 30%,var(--rule))}
+.sim-fail b{color:var(--magenta-deep)}
+
+.sim-actions{display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--rule-soft);flex-wrap:wrap}
+.sim-btn{
+  padding:9px 16px;border-radius:8px;border:1px solid var(--rule);font-size:13px;font-weight:600;
+  color:var(--ink-2);background:var(--paper);transition:all .14s;
+}
+.sim-btn:hover:not(:disabled){border-color:var(--ink-4);color:var(--ink)}
+.sim-btn:disabled{opacity:.45;cursor:default}
+.sim-btn-primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.sim-btn-primary:hover:not(:disabled){filter:brightness(1.1)}
 .quiz-retry{
   padding:8px 15px;border-radius:8px;font-size:12.5px;font-weight:600;
   border:1px solid var(--rule);color:var(--ink-2);transition:border-color .14s;
@@ -796,6 +884,9 @@ mark{background:color-mix(in srgb,var(--lime) 45%,transparent);color:inherit;bor
   .dict-term-en{grid-area:en}
   .dict-term-fr{grid-area:fr;font-size:13px;color:var(--ink-3)}
   .dict-term-h .cc{grid-area:cc}
+  .sim-match{grid-template-columns:1fr}
+  .sim-fields{grid-template-columns:1fr}
+  .sim-caption{flex-wrap:wrap}
 }
 @media(max-width:480px){
   .topbar-inner{padding:0 14px;gap:6px}

@@ -863,6 +863,20 @@ const CURRICULUM_A = [
       id: "lab-00-intro", group: "intro", n: "00", title: "How to use Sandbox Labs",
       dur: "10 min", difficulty: "Starter",
       summary: "Sandbox safety, the recommended role, the LAB- naming convention, and how to reset if a lab goes sideways.",
+      sim: {
+        type: "card",
+        title: "Sample Customer",
+        intro: "A tiny practice card to get comfortable with the simulator below before lab 01 — nothing here is graded against real Sandbox Labs data, it's just to show you how Check answers, Reset, and hints work.",
+        fields: [
+          { key: "no", label: "No.", type: "text", required: true, expect: "DEMO-001", placeholder: "e.g. DEMO-001", help: "Type exactly DEMO-001 to see how the checker responds." },
+          { key: "name", label: "Name", type: "text", required: true, placeholder: "Customer name" }
+        ],
+        success: "In real Business Central, saving this card would create a new Customer record — nothing posts yet. A customer card alone never touches the G/L; that only happens once a document is posted against it.",
+        hints: [
+          "The No. field expects the exact text DEMO-001 — case doesn't matter, extra spaces do.",
+          "Name just needs any non-empty text — there's no expected value for it in this demo."
+        ]
+      },
       concepts: [
         { h: "Goal", p: "Know exactly where these labs are safe to run, which role to sign in as, how the LAB- naming convention works, and how to undo a lab that went wrong — before touching lab 01." },
         { h: "Sandbox safety — read this before lab 01", p: "Every lab in this series posts real documents: sales orders, purchase invoices, payments, journal lines. Run them only in a sandbox or demo company — CRONUS International Ltd. is the obvious choice, since it ships with realistic master data and posting groups already configured. Never run these labs against a production company, even 'just to check something quickly.' If your tenant only has one company and you're not certain whether it's a sandbox, stop and ask before lab 01 — this is the one rule in the whole series that isn't recoverable by re-reading a later lab.",
@@ -883,6 +897,25 @@ const CURRICULUM_A = [
       id: "lab-01-customer", group: "master-data", n: "01", title: "Customer master — LAB-C001",
       dur: "25 min", difficulty: "Starter",
       summary: "Create a customer from scratch: posting groups, payment terms, credit limit, and an optional ship-to address.",
+      sim: {
+        type: "card",
+        title: "Customer Card — LAB-C001",
+        intro: "Fill in the customer card exactly as this lab's Sample data table describes, then Check answers. This is a simplified, offline simulation — not a live Business Central connection.",
+        gateComplete: true,
+        fields: [
+          { key: "no", label: "No.", type: "text", required: true, expect: "LAB-C001", placeholder: "e.g. LAB-C001" },
+          { key: "name", label: "Name", type: "text", required: true, expect: "Lab Consulting Customer 001", placeholder: "Customer name" },
+          { key: "custPostingGroup", label: "Customer Posting Group", type: "select", required: true, options: ["DOMESTIC", "EU", "FOREIGN"], expect: "DOMESTIC", help: "Pick the existing domestic group, same as the lab's instructions." },
+          { key: "paymentTerms", label: "Payment Terms Code", type: "select", required: true, options: ["30 DAYS", "14 DAYS", "CASH"], expect: "30 DAYS" },
+          { key: "creditLimit", label: "Credit Limit (LCY)", type: "number", required: true, expect: 5000, min: 0 }
+        ],
+        success: "In real Business Central, saving this card creates the Customer record — no G/L or ledger entries post from a card alone. The posting group and payment terms just wait, ready for the first sales document in lab 05.",
+        hints: [
+          "No. and Name should match this lab's Sample data table exactly — check it above if you're not sure.",
+          "Customer Posting Group and Payment Terms are the two fields lab 04 checks behind the scenes — get them right here and lab 04 makes more sense.",
+          "Credit Limit is a plain number, no currency symbol or commas."
+        ]
+      },
       concepts: [
         { h: "Goal", p: "Create customer LAB-C001 with valid posting groups, payment terms, and a credit limit, so it's ready to receive a sales order in lab 05." },
         { h: "Prerequisites", p: "Lab 00 read (sandbox confirmed, role set). No previous lab required. Any functional or admin role in a CRONUS-type sandbox." },
@@ -930,6 +963,23 @@ const CURRICULUM_A = [
       id: "lab-02-vendor", group: "master-data", n: "02", title: "Vendor master — LAB-V001",
       dur: "20 min", difficulty: "Starter",
       summary: "Create a vendor from scratch, mirroring lab 01 on the payables side: posting groups and payment terms.",
+      sim: {
+        type: "card",
+        title: "Vendor Card — LAB-V001",
+        intro: "Same discipline as the customer card, mirrored to the payables side.",
+        gateComplete: true,
+        fields: [
+          { key: "no", label: "No.", type: "text", required: true, expect: "LAB-V001", placeholder: "e.g. LAB-V001" },
+          { key: "name", label: "Name", type: "text", required: true, expect: "Lab Sandbox Vendor 001", placeholder: "Vendor name" },
+          { key: "vendPostingGroup", label: "Vendor Posting Group", type: "select", required: true, options: ["DOMESTIC", "EU", "FOREIGN"], expect: "DOMESTIC" },
+          { key: "paymentTerms", label: "Payment Terms Code", type: "select", required: true, options: ["30 DAYS", "14 DAYS", "CASH"], expect: "30 DAYS" }
+        ],
+        success: "Saving this card creates the Vendor record. Vendor Posting Group is what determines the Payables G/L account the first purchase invoice will use — nothing posts from the card itself.",
+        hints: [
+          "No. and Name should match this lab's Sample data table exactly.",
+          "Vendor Posting Group is the payables-side mirror of Customer Posting Group from lab 01."
+        ]
+      },
       concepts: [
         { h: "Goal", p: "Create vendor LAB-V001 with valid posting groups and payment terms, ready for a purchase order in lab 08." },
         { h: "Prerequisites", p: "Lab 00 read. Lab 01 not required (independent record) but recommended first since it establishes the pattern." },
@@ -971,6 +1021,25 @@ const CURRICULUM_A = [
       id: "lab-03-item", group: "master-data", n: "03", title: "Item master — LAB-I001",
       dur: "25 min", difficulty: "Starter",
       summary: "Create an inventory item with a base unit of measure, costing method, posting groups, and both a unit cost and unit price.",
+      sim: {
+        type: "card",
+        title: "Item Card — LAB-I001",
+        intro: "Set up the item exactly as this lab describes — type, unit of measure, costing method, and pricing all matter here.",
+        gateComplete: true,
+        fields: [
+          { key: "no", label: "No.", type: "text", required: true, expect: "LAB-I001", placeholder: "e.g. LAB-I001" },
+          { key: "description", label: "Description", type: "text", required: true, expect: "Lab Sandbox Widget" },
+          { key: "type", label: "Type", type: "select", required: true, options: ["Inventory", "Service", "Non-Inventory"], expect: "Inventory" },
+          { key: "baseUom", label: "Base Unit of Measure", type: "text", required: true, expect: "PCS", placeholder: "e.g. PCS" },
+          { key: "costingMethod", label: "Costing Method", type: "select", required: true, options: ["FIFO", "Average", "Standard", "Specific"], expect: "FIFO" },
+          { key: "unitPrice", label: "Unit Price", type: "number", required: true, expect: 100, min: 0 }
+        ],
+        success: "Saving this card creates the Item record. Costing Method locks the moment this item has its first posted transaction — this is the one field on the card worth double-checking before lab 08's purchase order.",
+        hints: [
+          "Type should be Inventory — this item is stocked, not a service.",
+          "Costing Method and Unit Price come straight from this lab's Sample data table."
+        ]
+      },
       concepts: [
         { h: "Goal", p: "Create item LAB-I001 as a fully sellable, purchasable, stock-tracked item ready for both the O2C and P2P labs." },
         { h: "Prerequisites", p: "Lab 00 read. No other lab required." },
@@ -1062,6 +1131,27 @@ const CURRICULUM_A = [
       id: "lab-05-quote-order", group: "o2c", n: "05", title: "Sales quote → order",
       dur: "25 min", difficulty: "Starter",
       summary: "Create a sales quote for LAB-C001 and LAB-I001, then convert it into a sales order — the first two documents in the Order to Cash chain.",
+      sim: {
+        type: "document",
+        title: "Sales Order — LAB-C001",
+        intro: "Build the sales order line this lab describes: one line, one item, the right quantity — watch the order total calculate as you go.",
+        gateComplete: true,
+        fields: [
+          { key: "sellToCustomer", label: "Sell-to Customer No.", type: "select", required: true, options: ["LAB-C001", "LAB-C002", "LAB-C003"], expect: "LAB-C001" }
+        ],
+        lines: [
+          { key: "item", label: "Item No.", type: "select", required: true, options: ["LAB-I001", "LAB-I002"], expect: "LAB-I001" },
+          { key: "qty", label: "Quantity", type: "number", required: true, expect: 5, min: 1 },
+          { key: "price", label: "Unit Price", type: "number", required: true, expect: 100, min: 0 }
+        ],
+        expectTotal: 500,
+        success: "Releasing and posting this order in real Business Central ships 5 units of LAB-I001 out of inventory (an Item Ledger Entry and Value Entry). The separate Invoice posting then creates a Customer Ledger Entry and a G/L Entry for Receivables and Sales revenue.",
+        hints: [
+          "Sell-to Customer should be LAB-C001, from this lab's Sample data.",
+          "The line needs Item No. LAB-I001, Quantity 5, and Unit Price 100 — the order total should come out to 500.",
+          "If your total doesn't say 500, check quantity and unit price on the line, not the header."
+        ]
+      },
       concepts: [
         { h: "Goal", p: "Produce a sales order for LAB-C001, 5 units of LAB-I001, converted from a quote rather than created directly." },
         { h: "Prerequisites", p: "Labs 01, 03, and 04 completed. Sales Order Processor or equivalent role." },
@@ -1140,6 +1230,26 @@ const CURRICULUM_A = [
       id: "lab-07-customer-payment", group: "o2c", n: "07", title: "Customer payment",
       dur: "20 min", difficulty: "Starter",
       summary: "Record and post a customer payment against lab 06's invoice using a payment journal, and confirm the invoice's ledger entry closes.",
+      sim: {
+        type: "match",
+        title: "Apply Payment to Open Invoice",
+        intro: "Match each posted payment to the open invoice it actually settles — this is what Apply Entries does before a payment journal line posts. Click a payment on the left, then the invoice it belongs with on the right.",
+        gateComplete: true,
+        match: {
+          leftLabel: "Posted payment",
+          rightLabel: "Open invoice",
+          pairs: [
+            { left: "Payment — 500.00 — LAB-C001", right: "Invoice INV-1001 — 500.00 — LAB-C001" },
+            { left: "Payment — 320.00 — LAB-C002", right: "Invoice INV-1014 — 320.00 — LAB-C002" },
+            { left: "Payment — 875.00 — LAB-C003", right: "Invoice INV-1027 — 875.00 — LAB-C003" }
+          ]
+        },
+        success: "Applying and posting these payments in real Business Central closes each open Customer Ledger Entry — the invoice's Remaining Amount drops to 0, and the payment shows fully applied.",
+        hints: [
+          "Match by amount first — every pair in this exercise has a unique amount.",
+          "Then confirm the customer No. on both sides agrees too."
+        ]
+      },
       concepts: [
         { h: "Goal", p: "Post a payment from LAB-C001 that fully applies to and closes lab 06's sales invoice." },
         { h: "Prerequisites", p: "Lab 06 completed (a posted, open sales invoice exists for LAB-C001)." },
@@ -1182,6 +1292,26 @@ const CURRICULUM_A = [
       id: "lab-08-purchase-order", group: "p2p", n: "08", title: "Purchase order — LAB-V001 / LAB-I001",
       dur: "20 min", difficulty: "Starter",
       summary: "Create a purchase order to LAB-V001 for a quantity of LAB-I001 large enough to meaningfully increase stock.",
+      sim: {
+        type: "document",
+        title: "Purchase Order — LAB-V001",
+        intro: "Build the purchase order line this lab describes, replenishing LAB-I001 from the vendor.",
+        gateComplete: true,
+        fields: [
+          { key: "buyFromVendor", label: "Buy-from Vendor No.", type: "select", required: true, options: ["LAB-V001", "LAB-V002"], expect: "LAB-V001" }
+        ],
+        lines: [
+          { key: "item", label: "Item No.", type: "select", required: true, options: ["LAB-I001", "LAB-I002"], expect: "LAB-I001" },
+          { key: "qty", label: "Quantity", type: "number", required: true, expect: 20, min: 1 },
+          { key: "directUnitCost", label: "Direct Unit Cost", type: "number", required: true, expect: 50, min: 0 }
+        ],
+        expectTotal: 1000,
+        success: "Posting this order's Receive step in real Business Central increases LAB-I001's on-hand quantity by 20 (an Item Ledger Entry and Value Entry). The separate Invoice posting then creates a Vendor Ledger Entry and a G/L Entry for Payables.",
+        hints: [
+          "Buy-from Vendor should be LAB-V001, from this lab's Sample data.",
+          "The line needs Item No. LAB-I001, Quantity 20, and Direct Unit Cost 50 — the order total should come out to 1000."
+        ]
+      },
       concepts: [
         { h: "Goal", p: "Produce a purchase order to LAB-V001 for 20 units of LAB-I001, ready to receive in lab 09." },
         { h: "Prerequisites", p: "Labs 02, 03, and 04 completed." },

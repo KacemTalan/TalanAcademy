@@ -41,6 +41,8 @@ let filterTrack = 'all';
 let view = 'academy';   // 'academy' | 'admin' | 'dict'
 let dictModuleId = null;   // null = dictionary hub, else a BC_DICTIONARY module id
 let dictSearchTimer;
+let simState = {};    // lessonId -> in-progress sim state (field values, lines, match pairs, attempts, result)
+let simResults = {};  // lessonId -> { passed, at } — persisted client-side, see loadSimResults()
 let sidebarCollapsed = localStorage.getItem('talan_sidebar_collapsed') === '1';
 let theme = localStorage.getItem('talan_theme')
   || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -601,6 +603,8 @@ function renderLesson(id) {
           <svg class="cc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="concept-b">${conceptBodyHtml(c)}</div></div>`).join('')}</div>
 
+    ${l.sim ? `<div class="sec-label">Practice in Academy</div><div id="simPanel">${simPanelHtml(l)}</div>` : ''}
+
     <div id="codeBox">${codeSectionHtml(l, s)}</div>
 
     ${s.noVideo ? '' : `<div class="sec-label">Video</div>
@@ -726,9 +730,12 @@ function codeSectionHtml(l, s) {
 /* ---------------- quiz ---------------- */
 function markBtnHtml(l) {
   const done = progress.has(l.id);
-  const locked = !!l.quiz && !done && !quizResults[l.id]?.passed;
+  const quizLocked = !!l.quiz && !done && !quizResults[l.id]?.passed;
+  const simLocked = !!l.sim?.gateComplete && !done && !simResults[l.id]?.passed;
+  const locked = quizLocked || simLocked;
+  const label = done ? 'Completed' : quizLocked ? 'Pass the quiz to continue' : simLocked ? 'Pass the simulation to continue' : 'Mark as read';
   return `<button class="markbtn ${done ? 'done' : ''}" id="markBtn" ${locked ? 'disabled' : ''}>
-    <span class="box">${done ? '✓' : ''}</span>${done ? 'Completed' : (locked ? 'Pass the quiz to continue' : 'Mark as read')}</button>`;
+    <span class="box">${done ? '✓' : ''}</span>${label}</button>`;
 }
 
 function quizHtml(l) {
@@ -754,6 +761,245 @@ function quizHtml(l) {
       </div>`).join('')}
     <button class="quiz-submit" data-quiz-submit="${l.id}" ${sel.includes(-1) ? 'disabled' : ''}>Submit answers</button>
   </div>`;
+}
+
+/* ============================================================
+   SIM ENGINE — lightweight BC-style form simulations (l.sim)
+   ============================================================
+   l.sim shape: { type: "card"|"document"|"journal"|"match", title, intro,
+     fields: [{key,label,type,required?,options?,expect?,placeholder?,help?,min?}],
+     lines?: [ ...same shape as a field, one entry per COLUMN of the line table ],
+     expectTotal?: number,   // document/journal only — checked against qty*price summed across lines
+     match?: { leftLabel, rightLabel, pairs: [{left,right}] },
+     success: string, hints: string[], gateComplete?: boolean }
+   ============================================================ */
+const simStorageKey = (lessonId) => `talan_sim_${me?.email || 'anon'}_${lessonId}`;
+
+function loadSimResults() {
+  simResults = {};
+  const prefix = `talan_sim_${me?.email || 'anon'}_`;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(prefix)) {
+      try { simResults[k.slice(prefix.length)] = JSON.parse(localStorage.getItem(k)); } catch { /* ignore malformed entry */ }
+    }
+  }
+}
+
+function saveSimResult(lessonId, result) {
+  simResults[lessonId] = result;
+  try { localStorage.setItem(simStorageKey(lessonId), JSON.stringify(result)); } catch { /* storage unavailable — sim still works this session */ }
+}
+
+const simShuffle = arr => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+};
+
+function initSimState(l) {
+  const sim = l.sim;
+  return {
+    values: {},
+    lineValues: (sim.type === 'document' || sim.type === 'journal') ? [{}] : [],
+    matchSel: null,
+    matchPairs: {},
+    rightOrder: sim.type === 'match' ? simShuffle(sim.match.pairs.map((_, i) => i)) : [],
+    attempts: 0,
+    hintIndex: -1,
+    result: null
+  };
+}
+function getSimState(l) {
+  if (!simState[l.id]) simState[l.id] = initSimState(l);
+  return simState[l.id];
+}
+function rerenderSimPanel(l) {
+  const panel = el('simPanel');
+  if (panel) panel.innerHTML = simPanelHtml(l);
+}
+
+function simFieldHtml(f, value, error) {
+  const val = value ?? '';
+  const id = `simf_${f.key}`;
+  let input;
+  if (f.type === 'select') {
+    input = `<select class="sim-input" id="${id}" data-sim-field="${esc(f.key)}">
+      <option value="">${f.placeholder ? esc(f.placeholder) : 'Select…'}</option>
+      ${(f.options || []).map(o => `<option value="${esc(o)}" ${val === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}
+    </select>`;
+  } else if (f.type === 'checkbox') {
+    return `<div class="sim-field ${error ? 'sim-field-err' : ''}">
+      <label class="sim-check" for="${id}"><input type="checkbox" id="${id}" data-sim-field="${esc(f.key)}" ${val ? 'checked' : ''}><span>${esc(f.label)}</span></label>
+      ${error ? `<p class="sim-error">${esc(error)}</p>` : ''}
+    </div>`;
+  } else {
+    const type = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
+    input = `<input class="sim-input" type="${type}" id="${id}" data-sim-field="${esc(f.key)}" value="${esc(val)}" placeholder="${esc(f.placeholder || '')}" ${f.type === 'number' ? 'step="any"' : ''}>`;
+  }
+  return `<div class="sim-field ${error ? 'sim-field-err' : ''}">
+    <label class="sim-label" for="${id}">${esc(f.label)}${f.required ? ' <span class="sim-req">*</span>' : ''}</label>
+    ${input}
+    ${f.help ? `<p class="sim-help">${esc(f.help)}</p>` : ''}
+    ${error ? `<p class="sim-error">${esc(error)}</p>` : ''}
+  </div>`;
+}
+
+function simLineFieldHtml(l, f, rowIdx, value, error) {
+  const val = value ?? '';
+  const attr = `data-sim-line-field="${esc(l.id)}:${rowIdx}:${esc(f.key)}"`;
+  let input;
+  if (f.type === 'select') {
+    input = `<select class="sim-input sim-input-sm" ${attr}>
+      <option value="">${f.placeholder ? esc(f.placeholder) : '—'}</option>
+      ${(f.options || []).map(o => `<option value="${esc(o)}" ${val === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}
+    </select>`;
+  } else {
+    const type = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
+    input = `<input class="sim-input sim-input-sm" type="${type}" ${attr} value="${esc(val)}" placeholder="${esc(f.placeholder || '')}" ${f.type === 'number' ? 'step="any"' : ''}>`;
+  }
+  return `${input}${error ? `<p class="sim-error">${esc(error)}</p>` : ''}`;
+}
+
+function simComputeTotal(l) {
+  const st = getSimState(l);
+  const cols = l.sim.lines || [];
+  const qtyKey = cols.find(c => /qty|quantity/i.test(c.key))?.key;
+  const priceKey = cols.find(c => /price|cost/i.test(c.key))?.key;
+  if (!qtyKey || !priceKey) return 0;
+  return st.lineValues.reduce((sum, row) => sum + (Number(row[qtyKey]) || 0) * (Number(row[priceKey]) || 0), 0);
+}
+
+function simLinesHtml(l) {
+  const sim = l.sim, st = getSimState(l), cols = sim.lines || [];
+  const lineErrors = st.result?.lineErrors || [];
+  return `<div class="sim-lines-wrap"><table class="sim-lines">
+    <thead><tr>${cols.map(c => `<th>${esc(c.label)}${c.required ? ' <span class="sim-req">*</span>' : ''}</th>`).join('')}<th></th></tr></thead>
+    <tbody>${st.lineValues.map((row, ri) => `<tr>
+      ${cols.map(c => `<td>${simLineFieldHtml(l, c, ri, row[c.key], lineErrors[ri]?.[c.key])}</td>`).join('')}
+      <td>${st.lineValues.length > 1 ? `<button type="button" class="sim-line-del" data-sim-line-del="${esc(l.id)}:${ri}" aria-label="Remove line">×</button>` : ''}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>
+  <button type="button" class="sim-add-line" data-sim-add-line="${esc(l.id)}">+ Add line</button>
+  ${sim.expectTotal != null ? `<div class="sim-total">Order total: <b>${simComputeTotal(l).toLocaleString()}</b></div>` : ''}`;
+}
+
+function simMatchHtml(l) {
+  const m = l.sim.match, st = getSimState(l);
+  const errs = st.result?.matchErrors || {};
+  const pairedRight = new Set(Object.values(st.matchPairs));
+  return `<div class="sim-match">
+    <div class="sim-match-col">
+      <div class="sim-match-h">${esc(m.leftLabel)}</div>
+      ${m.pairs.map((p, i) => `<button type="button" class="sim-match-item ${st.matchSel === i ? 'sel' : ''} ${st.matchPairs[i] != null ? 'paired' : ''} ${errs[i] ? 'sim-match-err' : ''}" data-sim-match-left="${esc(l.id)}:${i}">${esc(p.left)}</button>`).join('')}
+    </div>
+    <div class="sim-match-col">
+      <div class="sim-match-h">${esc(m.rightLabel)}</div>
+      ${st.rightOrder.map(pairIdx => `<button type="button" class="sim-match-item ${pairedRight.has(pairIdx) ? 'paired' : ''}" data-sim-match-right="${esc(l.id)}:${pairIdx}">${esc(m.pairs[pairIdx].right)}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function simResultHtml(l) {
+  const r = getSimState(l).result;
+  if (!r) return '';
+  return r.passed
+    ? `<div class="sim-result sim-pass"><b>✓ Looks right.</b><p>${esc(l.sim.success)}</p></div>`
+    : `<div class="sim-result sim-fail"><b>Not quite yet.</b><p>${esc(r.summary)}</p></div>`;
+}
+
+function simPanelHtml(l) {
+  const sim = l.sim, st = getSimState(l);
+  let body;
+  if (sim.type === 'card') {
+    body = `<div class="sim-fields sim-fields-card">${sim.fields.map(f => simFieldHtml(f, st.values[f.key], st.result?.errors?.[f.key])).join('')}</div>`;
+  } else if (sim.type === 'document' || sim.type === 'journal') {
+    body = `${sim.fields?.length ? `<div class="sim-fields">${sim.fields.map(f => simFieldHtml(f, st.values[f.key], st.result?.errors?.[f.key])).join('')}</div>` : ''}
+      ${simLinesHtml(l)}`;
+  } else if (sim.type === 'match') {
+    body = simMatchHtml(l);
+  } else body = '';
+
+  const hasHints = sim.hints?.length > 0;
+  const hintBtnDisabled = !hasHints || st.attempts === 0 || st.result?.passed || st.hintIndex >= sim.hints.length - 1;
+
+  return `<div class="sim-panel">
+    <div class="sim-caption">
+      <span class="sim-caption-title">${esc(sim.title)}</span>
+      <span class="sim-caption-tag">Practice in Academy</span>
+    </div>
+    <p class="sim-intro">${esc(sim.intro)}</p>
+    <div class="sim-body">${body}</div>
+    ${simResultHtml(l)}
+    ${hasHints && st.hintIndex >= 0 ? `<div class="sim-hint"><b>Hint ${st.hintIndex + 1} of ${sim.hints.length}:</b> ${esc(sim.hints[st.hintIndex])}</div>` : ''}
+    <div class="sim-actions">
+      <button type="button" class="sim-btn sim-btn-primary" data-sim-check="${esc(l.id)}">Check answers</button>
+      <button type="button" class="sim-btn" data-sim-reset="${esc(l.id)}">Reset</button>
+      ${hasHints ? `<button type="button" class="sim-btn" data-sim-hint="${esc(l.id)}" ${hintBtnDisabled ? 'disabled' : ''}>Show hint</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function simCheckField(f, val) {
+  const strVal = typeof val === 'string' ? val.trim() : val;
+  if (f.required && (strVal === '' || strVal == null || (f.type === 'checkbox' && !val))) return `${f.label} is required.`;
+  if (f.type === 'number' && strVal !== '' && strVal != null) {
+    const n = Number(strVal);
+    if (Number.isNaN(n)) return 'Enter a valid number.';
+    if (f.min !== undefined && n < f.min) return `Must be ${f.min} or more.`;
+  }
+  if (f.expect !== undefined && strVal !== '' && strVal != null) {
+    const match = f.type === 'number'
+      ? Number(strVal) === Number(f.expect)
+      : String(strVal).trim().toLowerCase() === String(f.expect).trim().toLowerCase();
+    if (!match) return `Expected "${f.expect}" for this exercise (training data).`;
+  }
+  return null;
+}
+
+function validateSim(l) {
+  const sim = l.sim, st = getSimState(l);
+  st.attempts++;
+  let ok = true;
+  const errors = {}, lineErrors = [], matchErrors = {};
+
+  if (sim.type === 'card' || sim.type === 'document' || sim.type === 'journal') {
+    for (const f of (sim.fields || [])) {
+      const msg = simCheckField(f, st.values[f.key]);
+      if (msg) { ok = false; errors[f.key] = msg; }
+    }
+  }
+  if (sim.type === 'document' || sim.type === 'journal') {
+    st.lineValues.forEach((row, ri) => {
+      lineErrors[ri] = {};
+      for (const c of sim.lines) {
+        const val = row[c.key];
+        if (c.required && (val == null || String(val).trim() === '')) { ok = false; lineErrors[ri][c.key] = `${c.label} is required.`; continue; }
+        if (c.type === 'number' && val !== undefined && val !== '' && val != null) {
+          const n = Number(val);
+          if (Number.isNaN(n)) { ok = false; lineErrors[ri][c.key] = 'Enter a valid number.'; continue; }
+          if (n < (c.min ?? 0)) { ok = false; lineErrors[ri][c.key] = 'Must not be negative.'; continue; }
+        }
+        // graded against `expect` on the first line only — additional lines are free practice, not scored
+        if (ri === 0 && c.expect !== undefined && val) {
+          const match = c.type === 'number' ? Number(val) === Number(c.expect) : String(val).trim().toLowerCase() === String(c.expect).trim().toLowerCase();
+          if (!match) { ok = false; lineErrors[ri][c.key] = `Expected "${c.expect}" here (training data).`; }
+        }
+      }
+    });
+    if (sim.expectTotal != null && Math.abs(simComputeTotal(l) - sim.expectTotal) > 0.01) ok = false;
+  }
+  if (sim.type === 'match') {
+    sim.match.pairs.forEach((p, i) => { if (st.matchPairs[i] !== i) { ok = false; matchErrors[i] = true; } });
+  }
+
+  const summary = ok ? 'All correct.' : sim.type === 'match'
+    ? 'Some pairs are wrong — check the highlighted ones and try again.'
+    : 'A few fields need a second look — check the highlighted ones and try again.';
+
+  st.result = { passed: ok, errors, lineErrors, matchErrors, summary };
+  if (ok) saveSimResult(l.id, { passed: true, at: Date.now() });
+  return st.result;
 }
 
 /* ---------------- search ---------------- */
@@ -1268,6 +1514,67 @@ async function onAppClick(e) {
     return;
   }
 
+  /* ---- sim ---- */
+  const simCheck = t.closest('[data-sim-check]');
+  if (simCheck) {
+    const l = LESSON_BY_ID[simCheck.dataset.simCheck];
+    validateSim(l);
+    rerenderSimPanel(l);
+    if (l.id === currentId) el('markBtn').outerHTML = markBtnHtml(l);
+    return;
+  }
+  const simReset = t.closest('[data-sim-reset]');
+  if (simReset) {
+    const lessonId = simReset.dataset.simReset;
+    delete simState[lessonId];
+    rerenderSimPanel(LESSON_BY_ID[lessonId]);
+    if (lessonId === currentId) el('markBtn').outerHTML = markBtnHtml(LESSON_BY_ID[lessonId]);
+    return;
+  }
+  const simHint = t.closest('[data-sim-hint]');
+  if (simHint) {
+    const l = LESSON_BY_ID[simHint.dataset.simHint];
+    const st = getSimState(l);
+    if (st.hintIndex < l.sim.hints.length - 1) st.hintIndex++;
+    rerenderSimPanel(l);
+    return;
+  }
+  const simAddLine = t.closest('[data-sim-add-line]');
+  if (simAddLine) {
+    const l = LESSON_BY_ID[simAddLine.dataset.simAddLine];
+    getSimState(l).lineValues.push({});
+    rerenderSimPanel(l);
+    return;
+  }
+  const simDelLine = t.closest('[data-sim-line-del]');
+  if (simDelLine) {
+    const [lessonId, idxStr] = simDelLine.dataset.simLineDel.split(':');
+    getSimState(LESSON_BY_ID[lessonId]).lineValues.splice(Number(idxStr), 1);
+    rerenderSimPanel(LESSON_BY_ID[lessonId]);
+    return;
+  }
+  const simMatchLeft = t.closest('[data-sim-match-left]');
+  if (simMatchLeft) {
+    const [lessonId, idxStr] = simMatchLeft.dataset.simMatchLeft.split(':');
+    const st = getSimState(LESSON_BY_ID[lessonId]);
+    const i = Number(idxStr);
+    st.matchSel = st.matchSel === i ? null : i;
+    rerenderSimPanel(LESSON_BY_ID[lessonId]);
+    return;
+  }
+  const simMatchRight = t.closest('[data-sim-match-right]');
+  if (simMatchRight) {
+    const [lessonId, idxStr] = simMatchRight.dataset.simMatchRight.split(':');
+    const st = getSimState(LESSON_BY_ID[lessonId]);
+    if (st.matchSel == null) return;
+    const pairIdx = Number(idxStr);
+    for (const k of Object.keys(st.matchPairs)) if (st.matchPairs[k] === pairIdx) delete st.matchPairs[k];
+    st.matchPairs[st.matchSel] = pairIdx;
+    st.matchSel = null;
+    rerenderSimPanel(LESSON_BY_ID[lessonId]);
+    return;
+  }
+
   if (t.closest('#markBtn')) {
     const nowDone = !progress.has(currentId);
     if (nowDone && videos[currentId]?.url && watchedPct < 0.8) {
@@ -1383,6 +1690,25 @@ function onAppInput(e) {
     dictSearchTimer = setTimeout(() => dictLiveUpdate(v), 150);
     return;
   }
+  if (e.target.matches('[data-sim-field]')) {
+    const l = LESSON_BY_ID[currentId];
+    if (!l?.sim) return;
+    const st = getSimState(l);
+    st.values[e.target.dataset.simField] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    return;
+  }
+  if (e.target.matches('[data-sim-line-field]')) {
+    const [lessonId, ri, key] = e.target.dataset.simLineField.split(':');
+    const l = LESSON_BY_ID[lessonId];
+    const st = getSimState(l);
+    if (!st.lineValues[ri]) st.lineValues[ri] = {};
+    st.lineValues[ri][key] = e.target.value;
+    if (l.sim.expectTotal != null) {
+      const totalEl = document.querySelector('.sim-total b');
+      if (totalEl) totalEl.textContent = simComputeTotal(l).toLocaleString();
+    }
+    return;
+  }
   if (e.target.id !== 'noteArea') return;
   const state = el('noteState');
   state.textContent = 'Saving…';
@@ -1421,6 +1747,7 @@ async function boot() {
     notes = state.notes;
     videos = state.videos;
     quizResults = state.quizResults || {};
+    loadSimResults();
   } catch (err) {
     return; // signOut already handled inside api()
   }
