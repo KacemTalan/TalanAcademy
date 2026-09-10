@@ -54,14 +54,25 @@ applyTheme();
 
 /* ---------------- api ---------------- */
 async function api(path, options = {}) {
-  const res = await fetch(API + path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {}),
-      ...(options.headers || {})
-    }
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  let res;
+  try {
+    res = await fetch(API + path, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        ...(options.headers || {})
+      }
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('The server took too long to respond.');
+    throw new Error('Could not reach the server.');
+  } finally {
+    clearTimeout(timer);
+  }
 
   let data = null;
   try { data = await res.json(); } catch { /* empty body */ }
@@ -1749,7 +1760,9 @@ async function boot() {
     quizResults = state.quizResults || {};
     loadSimResults();
   } catch (err) {
-    return; // signOut already handled inside api()
+    if (!token) return; // signOut already handled inside api()
+    renderAuth('login', 'Could not reach the Talan Academy server. Check your connection and try again.', 'bad');
+    return;
   }
   renderShell();
   renderHome();
