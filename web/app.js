@@ -352,6 +352,10 @@ function renderShell() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         <span>BC Dictionary<i>EN ↔ FR reference</i></span>
       </button>
+      <button class="dict-nav-btn" id="docsNavBtn" data-docs-open>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 18h6"/></svg>
+        <span>Documents &amp; Cheatsheets<i>Downloadable PDF references</i></span>
+      </button>
       <div class="track-filter" id="trackFilter">
         <button class="tf on" data-t="all">All</button>
         <button class="tf" data-t="business">Business</button>
@@ -543,6 +547,7 @@ function renderConsultantDashboard() {
 /* ---------------- home ---------------- */
 function renderHome() {
   leaveDictIfNeeded();
+  leaveDocsIfNeeded();
   currentId = null; setAccent('blue');
   el('viewRoot').innerHTML = `
   <div class="pane home">
@@ -578,6 +583,7 @@ function renderHome() {
 /* ---------------- lesson ---------------- */
 function renderLesson(id) {
   leaveDictIfNeeded();
+  leaveDocsIfNeeded();
   const idx = FLAT.findIndex(l => l.id === id);
   if (idx < 0) return renderHome();
   const l = FLAT[idx], s = l.series;
@@ -1059,6 +1065,70 @@ function openDictionary() {
   renderSidebar();
 }
 
+/* ============================================================
+   DOCUMENTS & CHEATSHEETS — downloadable PDF references
+   ============================================================ */
+const DOCS = [
+  {
+    file: 'al-objects-cheatsheet.pdf',
+    title: 'AL Objects Cheat Sheet',
+    tag: 'Developer',
+    accent: 'teal',
+    pages: 7,
+    desc: 'All 13 AL object types — what each is, when to use it, a minimal code sample, and a pitfall to '
+      + 'watch for — plus a properties &amp; triggers quick reference and a naming/ID-range/extension-model checklist.'
+  },
+  {
+    file: 'functional-cheatsheet.pdf',
+    title: 'Functional Processes Cheat Sheet',
+    tag: 'Functional',
+    accent: 'blue',
+    pages: 11,
+    desc: 'Eight core Business Central processes — Order to Cash through Fixed Assets — each with its stages, '
+      + 'the Tell Me pages to open, a posting-impact table, and its most common mistake. Closes with a '
+      + 'consultant go-live checklist.'
+  }
+];
+
+function leaveDocsIfNeeded() {
+  if (view !== 'docs') return;
+  view = 'academy';
+  el('searchWrap').style.display = '';
+  el('overallWrap').style.display = '';
+}
+
+function openDocs() {
+  view = 'docs';
+  currentId = null;
+  dictModuleId = null;
+  el('search').value = '';
+  el('searchWrap').style.display = 'none';
+  el('overallWrap').style.display = 'none';
+  document.querySelector('.shell').classList.remove('no-side');
+  renderDocsHub();
+  renderSidebar();
+}
+
+function renderDocsHub() {
+  currentId = null; setAccent('blue');
+  el('viewRoot').innerHTML = `<div class="pane pane-wide">
+    <div class="home-eyebrow">Reference · Talan Academy</div>
+    <h1>Documents &amp; Cheatsheets<em>.</em></h1>
+    <p class="home-lede">Printable, Talan-branded PDF references worth keeping open on a second monitor.</p>
+    <div class="home-tracks">
+      ${DOCS.map(d => {
+        const a = ACCENTS[d.accent];
+        return `<a class="tcard" href="docs/${d.file}" target="_blank" rel="noopener">
+          <span class="tcard-bar" style="background:${a.c}"></span>
+          <span class="tcard-body"><h3>${esc(d.title)}</h3><p>${d.desc}</p>
+            <span class="aud">${esc(d.tag)} · ${d.pages} pages · PDF</span></span>
+          <span class="tcard-meta"><b>↓</b><span>download</span></span></a>`;
+      }).join('')}
+    </div>
+  </div>`;
+  renderSidebar();
+}
+
 const dictMark = (text, term) => {
   const t = String(text ?? '');
   if (!term) return esc(t);
@@ -1437,6 +1507,14 @@ async function onAppClick(e) {
   const dictOpen = t.closest('[data-dict-open]');
   if (dictOpen) {
     openDictionary();
+    el('sidebar').classList.remove('open');
+    el('scrim').classList.remove('on');
+    return;
+  }
+
+  const docsOpen = t.closest('[data-docs-open]');
+  if (docsOpen) {
+    openDocs();
     el('sidebar').classList.remove('open');
     el('scrim').classList.remove('on');
     return;
