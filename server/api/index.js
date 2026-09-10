@@ -7,6 +7,13 @@ let migrated = null;
 
 export default async function handler(req, res) {
   if (!migrated) migrated = migrate();
-  await migrated;
+  try {
+    await migrated;
+  } catch (err) {
+    migrated = null; // don't cache a failed attempt — the next request may succeed
+    console.error('Startup/migration failed:', err.message);
+    res.status(500).json({ error: 'Server is not ready. Check the deployment configuration.' });
+    return;
+  }
   return app(req, res);
 }

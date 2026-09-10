@@ -4,8 +4,10 @@ import { q } from './db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET || JWT_SECRET.length < 24) {
-  console.error('FATAL: JWT_SECRET must be set to a random string of at least 24 characters.');
-  process.exit(1);
+  // Never process.exit() here: on a serverless platform (Vercel) this kills the
+  // whole function invocation with an opaque FUNCTION_INVOCATION_FAILED, instead
+  // of a diagnosable error. Throwing lets the caller surface a real message.
+  throw new Error('JWT_SECRET must be set to a random string of at least 24 characters.');
 }
 
 // Which email domain may register. Defaults to talan.com.

@@ -3,8 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const BUCKET = 'videos';
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('FATAL: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for video uploads.');
-  process.exit(1);
+  // Never process.exit() here: on a serverless platform (Vercel) this kills the
+  // whole function invocation with an opaque FUNCTION_INVOCATION_FAILED, instead
+  // of a diagnosable error. Throwing lets the caller surface a real message.
+  throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for video uploads.');
 }
 
 // Service-role client: bypasses RLS, server-side only, never expose to the browser.

@@ -3,8 +3,10 @@ import pg from 'pg';
 const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
-  console.error('FATAL: DATABASE_URL is not set. Add a PostgreSQL service in Railway and reference it.');
-  process.exit(1);
+  // Never process.exit() here: on a serverless platform (Vercel) this kills the
+  // whole function invocation with an opaque FUNCTION_INVOCATION_FAILED, instead
+  // of a diagnosable error. Throwing lets the caller surface a real message.
+  throw new Error('DATABASE_URL is not set. Add a PostgreSQL service and reference it in the environment.');
 }
 
 // Railway's internal network does not need TLS; external connections do.
