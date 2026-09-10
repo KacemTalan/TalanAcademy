@@ -38,9 +38,11 @@ Academy at `<site>/docs/<filename>.pdf`.
 
 ## Wiring
 
-Not yet linked from the app UI — there is no "Documents & Cheatsheets"
-section in the Academy today. When one is added, point it at the two files
-above.
+Linked from the app UI: a "Documents & Cheatsheets" button in the sidebar
+(next to BC Dictionary, see `web/app.js` — `openDocs`/`renderDocsHub`/the
+`DOCS` array) opens a hub page listing both PDFs as download cards. Add a
+new file here and a matching entry to `DOCS` in `app.js` to publish another
+cheatsheet.
 
 ## Regenerating
 
