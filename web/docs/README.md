@@ -11,23 +11,31 @@ logo on the cover). Both are A4, print-friendly, English.
 
 ## AL Objects Cheat Sheet
 
-For AL developers and technical consultants. Covers the object map
+For AL developers and technical consultants. Opens with **AL basics** — what
+AL is, the toolchain (VS Code, app.json, launch.json, symbols), and a drawn
+edit → compile → publish → test flow diagram — then the object map
 (Data/UI/Logic layers), all 13 AL object types (Table, Table extension, Enum,
 Enum extension, Page, Page extension, Codeunit, Report, Report extension,
 Query, XMLport, Profile, Permission set) each with what it is, when to use it,
-a minimal code sample, and a pitfall callout — plus a properties & triggers
+a minimal code sample, and a pitfall callout, a properties & triggers
 quick-reference page (DataClassification, ApplicationArea, Access,
 ObsoleteState, SourceTable and friends, plus the common trigger names per
-object type) — closing with a naming, ID-range, and extension-model checklist.
+object type), and a naming, ID-range, and extension-model checklist.
 
 ## Functional Processes Cheat Sheet
 
-For functional consultants and business users. Covers eight core BC
+For functional consultants and business users. Opens with **Business Central
+basics** — Role Centers, the Card/List/Document shapes, Tell Me, and the
+universal draft → release → post → ledger entry flow — then eight core BC
 processes (Order to Cash, Procure to Pay, Inventory movements, Warehouse
 lite, Finance essentials, Projects/Jobs, Service lite, Fixed Assets), each with
-its stages, the Tell Me pages to open, a posting-impact table, and its most
-common mistake — closing with a consultant checkpoints-before-go-live
-checklist.
+a drawn stage-by-stage flow diagram, the Tell Me pages to open, a
+posting-impact table, and its most common mistake, closing with a
+consultant checkpoints-before-go-live checklist.
+
+Every process's stages render as real drawn boxes-and-arrows diagrams
+(`flow_diagram()` in `talan_style.py`, built with reportlab's vector shapes —
+not text with arrow glyphs), color-matched to that process's accent.
 
 ## Path note
 
