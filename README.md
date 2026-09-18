@@ -15,7 +15,7 @@ server/  Express + Postgres API → Railway
 
 **For consultants**
 - Sign up with a `@talan.com` address, wait for your approval
-- 7 curricula, 61 lessons, 89 code samples
+- 13 curricula, 140 lessons, 89 code samples
 - Mark lessons complete; progress saved to their account, visible on any device
 - Private notes per lesson (only they can read them — not even you)
 - Watch the videos you publish
