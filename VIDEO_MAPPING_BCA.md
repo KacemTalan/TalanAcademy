@@ -5,43 +5,40 @@ Management inserted as lesson 02). Lesson ids were **renumbered in place**
 (`bca-01`…`bca-07`, matching the new position), not given fresh topic-based
 ids — see **Progress impact** below before you publish anything.
 
-Videos are not stored in this codebase. There is no local file path anywhere
-in `web/curriculum.js` — attach each video from the Academy **Admin** panel
-(open the lesson → Video → Attach video link) after uploading it to
-SharePoint or Stream and copying its share link. Do not paste a
-`C:\Users\...` path; the app runs on Vercel and cannot read your machine.
+**Status: done.** Videos are not stored in this codebase — normally you'd
+attach each one from the Academy **Admin** panel (open the lesson → Video →
+Attach video link) after uploading to SharePoint/Stream and copying its
+share link. For this batch, all 7 files were instead uploaded directly to
+the app's Supabase Storage bucket and attached via a one-off maintenance
+script (2026-09-18), using `uploadVideoBuffer()` /
+`server/src/storage.js` — the same storage path the app's own upload
+endpoint (`POST /api/videos/:lessonId/upload-url` → `/confirm`) uses, just
+run server-side with the service-role key instead of through the browser.
+The script was not committed to the repo; this table is the permanent record
+of what was uploaded.
 
-## Mapping — lesson id → title → video file → link
+## Mapping — lesson id → title → video file → status
 
-| Lesson id | Title | Video file (from `BC Academy updated`) | Share link |
+| Lesson id | Title | Video file (from `BC Academy updated`) | Status |
 |---|---|---|---|
-| `bca-01` | Sales & Service Management | BC Sales Service Training | _(paste here)_ |
-| `bca-02` | Purchase Management | BC Purchase Management Training | _(paste here)_ |
-| `bca-03` | Financial Management | BC Financial Management Training | _(paste here)_ |
-| `bca-04` | Operations Management | BC Operations Management Training | _(paste here)_ |
-| `bca-05` | Supply Chain Management | BC Supply Chain Management Training | _(paste here)_ |
-| `bca-06` | Project Management | BC Project Management Training | _(paste here)_ |
-| `bca-07` | Reporting & Analytics | BC Reporting Analytics Training | _(paste here)_ |
+| `bca-01` | Sales & Service Management | BC Sales Service Training | ✅ uploaded |
+| `bca-02` | Purchase Management | BC Purchase Management Training | ✅ uploaded |
+| `bca-03` | Financial Management | BC Financial Management Training | ✅ uploaded |
+| `bca-04` | Operations Management | BC Operations Management Training | ✅ uploaded |
+| `bca-05` | Supply Chain Management | BC Supply Chain Management Training | ✅ uploaded |
+| `bca-06` | Project Management | BC Project Management Training | ✅ uploaded |
+| `bca-07` | Reporting & Analytics | BC Reporting Analytics Training | ✅ uploaded |
 
-Suggested label to save alongside each link in Admin (shown under the
-player): the video file's own title, e.g. "BC Sales Service Training".
+Each `videos` row has `storage_path` set (not `url`) and a label matching
+its file's own title, e.g. "BC Sales Service Training" — visible in Admin
+exactly as if it had been attached by hand. Verified live: each file's
+signed playback URL returns HTTP 200 with the correct `video/mp4` content
+type and byte size.
 
-## What to do with the old videos
-
-Because `bca-02` through `bca-06` now point at **different lesson content**
-than before (see below), any video previously attached to those ids is now
-attached to the wrong topic and needs to be reviewed:
-
-1. Open each of `bca-02`…`bca-06` in Admin and check what's currently attached.
-2. If it's the *old* video for that id's *old* topic, click **Remove**, then
-   attach the correct new file from the table above.
-3. `bca-07` is a brand-new id — nothing was attached there before.
-4. `bca-01` is unchanged (same id, same topic) — its existing video, if any,
-   is still correctly attached and doesn't need touching.
-
-There's no bulk/SQL step required — the app only ever reads whatever is
-currently attached per id, so reviewing and re-attaching through Admin is
-the whole fix.
+To replace one later (a re-edited version of a video, for instance), use
+Admin as normal — **Replace** clears the old storage object automatically
+before attaching the new one, whether the original came from Admin or from
+this script; there's nothing special about how these got here.
 
 ## Progress impact — read before publishing
 
