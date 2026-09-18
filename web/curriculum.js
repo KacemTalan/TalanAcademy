@@ -40,29 +40,7 @@ const CURRICULUM_A = [
       video: "From first quote to lasting customer relationship — all in one system."
     },
     {
-      id: "bca-02", n: "02", title: "Purchase Management", dur: "12 min read",
-      summary: "The module that turns a need for stock or materials into a committed vendor order — and keeps receiving, invoicing, and payment tied to that same document instead of three disconnected paper trails.",
-      concepts: [
-        { h: "Purchase requests & quotes", p: "A purchase requisition captures what a department needs before a vendor is even chosen, and a purchase quote records a vendor's price for it. Converting an approved quote into a purchase order carries the agreed price and terms across without retyping — the same conversion discipline the Sales module uses for sales quotes." },
-        { h: "Purchase orders", p: "A purchase order is the actual commitment to a vendor — quantity, price, expected receipt date — and every later step (receipt, invoice) ties back to it. Editing a released purchase order requires reopening it deliberately, the same safeguard sales orders use, so a committed order doesn't drift silently." },
-        { h: "Receipts", p: "Posting a purchase receipt is what actually increases on-hand inventory — the purchase order itself is a commitment, not yet stock. Partial receipts are tracked on the same order, so a vendor shipping half now and half next week doesn't need two separate purchase orders." },
-        { h: "Vendor invoicing & credit memos", p: "A purchase invoice posts against the receipt, closing the loop between what was ordered, what arrived, and what's owed. A purchase credit memo reverses an invoice cleanly — for a return, a pricing correction, an overcharge — without touching the original document, so the audit trail stays intact." },
-        { h: "Return orders to vendor", p: "A purchase return order links back to the original receipt the same way a sales return links to a shipment, so both the physical stock and the vendor's financial side correct together. It's the structured alternative to a negative adjustment plus a manual credit-memo request." },
-        { h: "Purchase approvals", p: "A purchase document above a configured threshold — amount, vendor, item category — routes through an approval workflow before it can be released or posted. This puts spending policy into the system itself rather than relying on someone remembering to ask before a large order goes out." },
-        { h: "Vendor contracts", p: "A vendor agreement — negotiated pricing, minimum quantities, a fixed term — can be recorded so purchasing decisions and price checks are measured against what was actually agreed, not against memory or a spreadsheet a buyer keeps on the side." },
-        { h: "Vendor discounts & prices", p: "Vendor-specific prices and line or invoice discounts are configured once and applied automatically at order entry, mirroring how customer pricing works on the sales side. A buyer doesn't need to remember that a particular vendor gives 8% off a particular item group — the system already knows." },
-        { h: "Vendor setup", p: "A vendor card's posting groups, payment terms, and currency decide how every future purchase transaction against it behaves — get these wrong and the symptom shows up at invoicing or payment, not at the point the card was created." },
-        { h: "Prepayments", p: "A purchase order can require a prepayment percentage before goods ship, invoiced and tracked as its own document exactly like a sales prepayment. This is the standard way to handle a vendor deposit without a manual side-ledger to track it." },
-        { h: "Item charges", p: "Freight, duty, and other landed costs that aren't on the vendor's item-price line get allocated onto the items they relate to through an item charge, so the unit cost that lands in inventory reflects the true delivered cost, not just the invoice line price." },
-        { h: "Subcontracting link", p: "When a production routing sends an operation to an outside vendor, that step generates its own purchase order behind the scenes, and the vendor's cost flows into the item's total cost the same way an internal operation would. Purchasing and manufacturing share the same document for this reason, not two disconnected processes." },
-        { h: "Supply planning & replenishment", p: "Reorder points, MRP-calculated demand, and vendor lead times feed a replenishment proposal that becomes a purchase order without a buyer retyping the item, quantity, or vendor pricing agreement. This is the same planning engine the Supply Chain module surfaces from the inventory side — purchasing is where its output actually turns into a commitment." }
-      ],
-      why: "Purchasing sits at the start of the supply chain, and mistakes here compound downstream: the wrong vendor price becomes the wrong item cost, an unapproved order becomes an unbudgeted spend, and a receipt nobody posted becomes inventory nobody can find. Getting the order-receipt-invoice chain right the first time is cheaper than reconciling it after the fact.",
-      check: { q: "A vendor invoice arrives for more than the purchase order agreed. What should actually happen before it posts?", a: "It should fail — or route to approval — the 3-way match against the purchase order and the receipt: quantity and price have to agree across all three before an invoice posts cleanly." },
-      video: "From purchase request to vendor payment — one connected purchasing process."
-    },
-    {
-      id: "bca-03", n: "03", title: "Financial Management", dur: "14 min read",
+      id: "bca-02", n: "02", title: "Financial Management", dur: "14 min read",
       summary: "Accounting, cash flow and reporting with numbers that are current rather than reconstructed at month end.",
       concepts: [
         { h: "General ledger & chart of accounts", p: "The chart of accounts, journals and postings live in one place, and every transaction elsewhere in the system eventually lands here as a debit/credit pair. That's what makes the ledger trustworthy — it isn't a summary of the business, it's the business's transactions themselves." },
@@ -87,7 +65,7 @@ const CURRICULUM_A = [
       video: "From daily transactions to strategic decisions — one connected financial view."
     },
     {
-      id: "bca-04", n: "04", title: "Operations Management", dur: "11 min read",
+      id: "bca-03", n: "03", title: "Operations Management", dur: "11 min read",
       summary: "Manufacturing, planning and day-to-day operations coordinated against real capacity rather than an optimistic whiteboard.",
       concepts: [
         { h: "Bill of materials (BOM)", p: "Components and assemblies are defined once, in a Production BOM, so planning always knows what a finished item actually consumes. Every downstream calculation — material requirements, cost — starts from this one definition." },
@@ -107,7 +85,7 @@ const CURRICULUM_A = [
       video: "From raw materials to finished goods — one connected operations view."
     },
     {
-      id: "bca-05", n: "05", title: "Supply Chain Management", dur: "13 min read",
+      id: "bca-04", n: "04", title: "Supply Chain Management", dur: "13 min read",
       summary: "Inventory, purchasing and logistics — keeping the right stock in the right place without over-committing cash to a warehouse.",
       concepts: [
         { h: "Item setup & master data", p: "An item card's posting groups, costing method, and base unit of measure decide how every future transaction on it behaves — get these right before the first purchase receipt, since costing method locks after that." },
@@ -131,7 +109,7 @@ const CURRICULUM_A = [
       video: "From vendor to customer — one connected supply chain."
     },
     {
-      id: "bca-06", n: "06", title: "Project Management", dur: "11 min read",
+      id: "bca-05", n: "05", title: "Project Management", dur: "11 min read",
       summary: "Planning, tracking and costing projects so that budgets and invoices reflect the work that actually happened.",
       concepts: [
         { h: "Project setup & templates", p: "A project template pre-fills the task structure, planning lines, and posting setup a recurring project type always needs, so starting the tenth similar engagement doesn't mean rebuilding it from a blank job." },
@@ -151,7 +129,7 @@ const CURRICULUM_A = [
       video: "From project kickoff to final invoice — one connected view."
     },
     {
-      id: "bca-07", n: "07", title: "Reporting & Analytics", dur: "7 min read",
+      id: "bca-06", n: "06", title: "Reporting & Analytics", dur: "7 min read",
       summary: "The module that turns everything the other five produce into something a person can actually decide on.",
       concepts: [
         { h: "Built-in dashboards", p: "Role-based dashboards surface the KPIs relevant to a person's job the moment they log in, rather than requiring them to go looking." },
@@ -164,6 +142,28 @@ const CURRICULUM_A = [
       why: "Reporting is where the value of an integrated system finally becomes visible. If sales, finance and operations all write to the same place, then one number can be trusted by everyone looking at it.",
       check: { q: "Why does 'one source of truth' matter more than report quality?", a: "A beautiful report built on a disputed number still ends the meeting in an argument about whose figure is right. Agreement on the source is what makes analysis productive." },
       video: "Every module feeds one connected view — that's the power of Business Central."
+    },
+    {
+      id: "bca-07", n: "07", title: "Purchase Management", dur: "12 min read",
+      summary: "The module that turns a need for stock or materials into a committed vendor order — and keeps receiving, invoicing, and payment tied to that same document instead of three disconnected paper trails.",
+      concepts: [
+        { h: "Purchase requests & quotes", p: "A purchase requisition captures what a department needs before a vendor is even chosen, and a purchase quote records a vendor's price for it. Converting an approved quote into a purchase order carries the agreed price and terms across without retyping — the same conversion discipline the Sales module uses for sales quotes." },
+        { h: "Purchase orders", p: "A purchase order is the actual commitment to a vendor — quantity, price, expected receipt date — and every later step (receipt, invoice) ties back to it. Editing a released purchase order requires reopening it deliberately, the same safeguard sales orders use, so a committed order doesn't drift silently." },
+        { h: "Receipts", p: "Posting a purchase receipt is what actually increases on-hand inventory — the purchase order itself is a commitment, not yet stock. Partial receipts are tracked on the same order, so a vendor shipping half now and half next week doesn't need two separate purchase orders." },
+        { h: "Vendor invoicing & credit memos", p: "A purchase invoice posts against the receipt, closing the loop between what was ordered, what arrived, and what's owed. A purchase credit memo reverses an invoice cleanly — for a return, a pricing correction, an overcharge — without touching the original document, so the audit trail stays intact." },
+        { h: "Return orders to vendor", p: "A purchase return order links back to the original receipt the same way a sales return links to a shipment, so both the physical stock and the vendor's financial side correct together. It's the structured alternative to a negative adjustment plus a manual credit-memo request." },
+        { h: "Purchase approvals", p: "A purchase document above a configured threshold — amount, vendor, item category — routes through an approval workflow before it can be released or posted. This puts spending policy into the system itself rather than relying on someone remembering to ask before a large order goes out." },
+        { h: "Vendor contracts", p: "A vendor agreement — negotiated pricing, minimum quantities, a fixed term — can be recorded so purchasing decisions and price checks are measured against what was actually agreed, not against memory or a spreadsheet a buyer keeps on the side." },
+        { h: "Vendor discounts & prices", p: "Vendor-specific prices and line or invoice discounts are configured once and applied automatically at order entry, mirroring how customer pricing works on the sales side. A buyer doesn't need to remember that a particular vendor gives 8% off a particular item group — the system already knows." },
+        { h: "Vendor setup", p: "A vendor card's posting groups, payment terms, and currency decide how every future purchase transaction against it behaves — get these wrong and the symptom shows up at invoicing or payment, not at the point the card was created." },
+        { h: "Prepayments", p: "A purchase order can require a prepayment percentage before goods ship, invoiced and tracked as its own document exactly like a sales prepayment. This is the standard way to handle a vendor deposit without a manual side-ledger to track it." },
+        { h: "Item charges", p: "Freight, duty, and other landed costs that aren't on the vendor's item-price line get allocated onto the items they relate to through an item charge, so the unit cost that lands in inventory reflects the true delivered cost, not just the invoice line price." },
+        { h: "Subcontracting link", p: "When a production routing sends an operation to an outside vendor, that step generates its own purchase order behind the scenes, and the vendor's cost flows into the item's total cost the same way an internal operation would. Purchasing and manufacturing share the same document for this reason, not two disconnected processes." },
+        { h: "Supply planning & replenishment", p: "Reorder points, MRP-calculated demand, and vendor lead times feed a replenishment proposal that becomes a purchase order without a buyer retyping the item, quantity, or vendor pricing agreement. This is the same planning engine the Supply Chain module surfaces from the inventory side — purchasing is where its output actually turns into a commitment." }
+      ],
+      why: "Purchasing sits at the start of the supply chain, and mistakes here compound downstream: the wrong vendor price becomes the wrong item cost, an unapproved order becomes an unbudgeted spend, and a receipt nobody posted becomes inventory nobody can find. Getting the order-receipt-invoice chain right the first time is cheaper than reconciling it after the fact.",
+      check: { q: "A vendor invoice arrives for more than the purchase order agreed. What should actually happen before it posts?", a: "It should fail — or route to approval — the 3-way match against the purchase order and the receipt: quantity and price have to agree across all three before an invoice posts cleanly." },
+      video: "From purchase request to vendor payment — one connected purchasing process."
     }
   ]
 },
@@ -5179,20 +5179,12 @@ const QUIZZES = {
   "bca-02": {
     pass: 2,
     questions: [
-      { q: "Why does a purchase invoice post against the receipt rather than directly against the purchase order?", options: ["Because the purchase order is only a commitment — the receipt is what confirms stock actually arrived", "Because purchase orders cannot be edited once created", "Because vendors are not allowed to invoice before shipping", "Because receipts are optional in Business Central"], correct: 0 },
-      { q: "What is the purpose of the 3-way match in purchasing?", options: ["To confirm quantity and price agree across the purchase order, the receipt, and the invoice before it posts", "To calculate vendor payment terms automatically", "To generate a purchase requisition from a sales order", "To apply vendor discounts retroactively"], correct: 0 },
-      { q: "Why do purchase documents above a threshold route through an approval workflow?", options: ["To slow down the purchasing department", "To put spending policy into the system instead of relying on someone remembering to ask", "Because Business Central requires it for all purchases", "To automatically apply the lowest vendor price"], correct: 1 },
-    ]
-  },
-  "bca-03": {
-    pass: 2,
-    questions: [
       { q: "Why is the general ledger considered trustworthy in Business Central?", options: ["Because it is updated manually once a month", "Because every transaction elsewhere in the system eventually posts to it", "Because only the finance director can edit it", "Because it uses a separate database from the rest of the system"], correct: 1 },
       { q: "In bank reconciliation, what does a human actually review?", options: ["Every single transaction on the statement", "Nothing — reconciliation is fully automatic", "Only the exceptions that did not match automatically", "Only transactions over a fixed currency threshold"], correct: 2 },
       { q: "Why does a shorter month-end close matter more than the hours it saves?", options: ["It reduces the finance team's headcount needs", "It automatically improves the accuracy of forecasts", "It is required by law in most countries", "It means leadership decisions are based on more current data rather than a stale picture"], correct: 3 },
     ]
   },
-  "bca-04": {
+  "bca-03": {
     pass: 2,
     questions: [
       { q: "What does a bill of materials (BOM) actually define?", options: ["The schedule for a specific production run", "The quality checks required before shipment", "What a finished item is made of — the recipe planning relies on", "The capacity available on the shop floor"], correct: 2 },
@@ -5200,7 +5192,7 @@ const QUIZZES = {
       { q: "What is the practical benefit of tracking job costing while work happens rather than after?", options: ["Cost overruns become a signal during the job instead of a discovery after it", "It removes the need for a bill of materials", "It eliminates the need for quality checks", "It automatically adjusts customer pricing"], correct: 0 },
     ]
   },
-  "bca-05": {
+  "bca-04": {
     pass: 2,
     questions: [
       { q: "Why does demand forecasting generally beat a fixed reorder point?", options: ["It is simpler to configure", "It guarantees zero stockouts at all times", "It removes the need for vendor management", "It adapts to seasonality and trend rather than assuming steady demand"], correct: 3 },
@@ -5208,7 +5200,7 @@ const QUIZZES = {
       { q: "Why is inventory described as 'capital sitting still'?", options: ["Because it cannot be insured", "Because holding too much ties up cash, while holding too little costs sales — both stem from not knowing what's moving", "Because inventory value never changes over time", "Because it is excluded from financial reporting"], correct: 1 },
     ]
   },
-  "bca-06": {
+  "bca-05": {
     pass: 2,
     questions: [
       { q: "Why is 'budget vs. actual' tracking more useful than a final profitability report?", options: ["It shows what is happening while there is still time to change the outcome", "It requires less data entry", "It replaces the need for project invoicing", "It is only available at project close"], correct: 0 },
@@ -5216,12 +5208,20 @@ const QUIZZES = {
       { q: "What problem does resource allocation based on real availability prevent?", options: ["Clients being billed incorrectly", "Milestones being defined incorrectly", "The same specialist being promised to three projects at once", "Budgets being set too low"], correct: 2 },
     ]
   },
-  "bca-07": {
+  "bca-06": {
     pass: 2,
     questions: [
       { q: "What does 'drill-down analysis' let a user do?", options: ["Move from a high-level figure to the individual transaction behind it", "Export reports to Excel automatically", "Schedule reports to run overnight", "Restrict which users can see financial data"], correct: 0 },
       { q: "What does drill-down analysis let a user do?", options: ["Export data to a spreadsheet automatically", "Change the fiscal year from the report screen", "Move from a high-level figure straight to the individual transaction behind it", "Bypass user permission sets"], correct: 2 },
       { q: "Why is 'real-time data' a meaningful claim for reporting?", options: ["Because reports only update once a week otherwise", "Because it guarantees 100% forecast accuracy", "Because it removes the need for role-based dashboards", "Because there's no overnight sync — what happened this morning is in this morning's number"], correct: 3 },
+    ]
+  },
+  "bca-07": {
+    pass: 2,
+    questions: [
+      { q: "Why does a purchase invoice post against the receipt rather than directly against the purchase order?", options: ["Because the purchase order is only a commitment — the receipt is what confirms stock actually arrived", "Because purchase orders cannot be edited once created", "Because vendors are not allowed to invoice before shipping", "Because receipts are optional in Business Central"], correct: 0 },
+      { q: "What is the purpose of the 3-way match in purchasing?", options: ["To confirm quantity and price agree across the purchase order, the receipt, and the invoice before it posts", "To calculate vendor payment terms automatically", "To generate a purchase requisition from a sales order", "To apply vendor discounts retroactively"], correct: 0 },
+      { q: "Why do purchase documents above a threshold route through an approval workflow?", options: ["To slow down the purchasing department", "To put spending policy into the system instead of relying on someone remembering to ask", "Because Business Central requires it for all purchases", "To automatically apply the lowest vendor price"], correct: 1 },
     ]
   },
   "pc-00": {
