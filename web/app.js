@@ -133,7 +133,7 @@ async function downloadCertificate(code) {
     const res = await fetch(API + '/api/certificate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ seriesTitle: s.title, lessonIds: s.lessons.map(l => l.id) })
+      body: JSON.stringify({ seriesTitle: s.title, lessonIds: s.lessons.map(l => l.id), identity })
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
