@@ -118,6 +118,7 @@
 
 .shell.no-side{grid-template-columns:1fr}
 .shell.no-side .sidebar{display:none}
+.shell.no-side .sidebar-collapse-btn{display:none}
 
 /* ---------------- Admin ---------------- */
 .admin{padding-top:38px;max-width:1080px}

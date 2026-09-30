@@ -442,6 +442,7 @@ function wireShell() {
     document.querySelector('.shell').classList.toggle('no-side', view === 'admin');
     el('searchWrap').style.display = view === 'admin' ? 'none' : '';
     el('overallWrap').style.display = view === 'admin' ? 'none' : '';
+    el('menuBtn').style.visibility = view === 'admin' ? 'hidden' : '';   // sidebar-only control
     view === 'admin' ? renderAdmin() : renderHome();
   });
 
@@ -1092,7 +1093,7 @@ function openDictionary() {
   el('search').value = '';
   el('searchWrap').style.display = 'none';
   el('overallWrap').style.display = 'none';
-  document.querySelector('.shell').classList.remove('no-side');
+  document.querySelector('.shell').classList.remove('no-side'); el('menuBtn').style.visibility = '';
   renderDictHub();
   renderSidebar();
 }
@@ -1136,7 +1137,7 @@ function openDocs() {
   el('search').value = '';
   el('searchWrap').style.display = 'none';
   el('overallWrap').style.display = 'none';
-  document.querySelector('.shell').classList.remove('no-side');
+  document.querySelector('.shell').classList.remove('no-side'); el('menuBtn').style.visibility = '';
   renderDocsHub();
   renderSidebar();
 }
@@ -1504,7 +1505,7 @@ async function onAppClick(e) {
       view = 'academy';
       const toggle = el('viewToggle');
       if (toggle) toggle.textContent = 'Admin';
-      document.querySelector('.shell').classList.remove('no-side');
+      document.querySelector('.shell').classList.remove('no-side'); el('menuBtn').style.visibility = '';
       el('searchWrap').style.display = '';
       el('overallWrap').style.display = '';
     }
