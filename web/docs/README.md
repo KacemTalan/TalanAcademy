@@ -1,8 +1,9 @@
 # Documents & Cheatsheets
 
-Downloadable PDF reference sheets for Talan Academy, branded with the Talan
-visual theme (deep blue header/footer chrome, four-color accent strip, Talan
-logo on the cover). Both are A4, print-friendly, English.
+Downloadable PDF reference sheets for Talan Academy, in the new Talan identity
+(navy header/footer chrome with the logo's orange accent line, navy cover with
+the white TALAN wordmark) — the same look as the completion certificate. Both
+are A4, print-friendly, English.
 
 | File | Title | Pages | Tags |
 |---|---|---|---|
@@ -59,3 +60,7 @@ repo — kept in a scratch/build location). Source: `talan_style.py` (shared
 theme/components) plus `doc1_al_objects.py` and `doc2_functional.py`
 (one builder script per document). Re-run the relevant script and it
 overwrites the PDF in this folder.
+
+All colors live in `talan_style.py` and mirror the web app's new-identity tokens
+(navy `#1A2F66`, orange `#FF7A00` as an accent line only). The cover uses
+`web/assets/talan-logo-new-white.png`.
