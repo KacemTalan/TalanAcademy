@@ -11,6 +11,8 @@
   var t = localStorage.getItem('talan_theme')
     || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   document.documentElement.setAttribute('data-theme', t);
+  // Identity defaults to 'new' (navy/orange logo rollout); 'old' restores the original blue brand chart.
+  document.documentElement.setAttribute('data-identity', localStorage.getItem('talan_identity') === 'old' ? 'old' : 'new');
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +23,7 @@
 </head>
 <body>
 <div class="auth-body"><div class="auth-wrap"><div class="auth-card">
-  <p style="font-size:14px;color:#6E7F8D">Loading Talan Academy…</p>
+  <p style="font-size:14px;color:var(--ink-3)">Loading Talan Academy…</p>
 </div></div></div>
 
 <script src="./config.js"></script>

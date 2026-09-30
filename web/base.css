@@ -23,6 +23,28 @@
   --accent:var(--blue);
   --accent-deep:var(--blue-deep);
 
+  /* New Talan identity brand chart (sampled from assets/talan-logo-new.png) */
+  --brand-navy:#1A2F66;
+  --brand-navy-deep:#0F1F47;
+  --brand-orange:#FF7A00;
+  --brand-orange-soft:#FF9A40;
+
+  /* Identity-level roles — old identity values below reproduce the original look exactly */
+  --brand:var(--blue);              /* primary buttons, avatar, headers */
+  --brand-fg:#fff;
+  --highlight:var(--accent);        /* active sidebar lesson bar */
+  --focus-ring:var(--accent);
+  --fill-from:var(--blue);          /* overall progress gradient */
+  --fill-to:var(--lime);
+  --pill-on-bg:var(--ink);          /* active track filter chip */
+  --pill-on-fg:var(--paper);
+  --pill-on-border:var(--ink);
+  --approve-bg:var(--lime);         /* admin approve button */
+  --approve-fg:#1B2100;
+  --glow-1:var(--blue);             /* auth page background glows */
+  --glow-2:var(--lime);
+  --topbar-accent:transparent;      /* thin line under the top bar */
+
   --sidebar-w:302px;
   --shell-max:1560px;
 }
@@ -41,6 +63,46 @@
   --accent-deep:#7FC4E8;
   color-scheme:dark;
 }
+
+/* ---------------- Talan identity (data-identity="old" | "new") ----------------
+   data-theme owns surfaces/text/borders; data-identity owns brand + series accents.
+   "old" = the :root values above. "new" = navy primary, orange used only as a highlight. */
+:root[data-identity="new"]{
+  --blue:var(--brand-navy);
+  --blue-deep:var(--brand-navy-deep);
+  --lime:#9AAE3C;         --lime-deep:#677717;     /* desaturated companions so series stay distinct */
+  --magenta:#C8246F;      --magenta-deep:#9B1A55;
+  --teal:#1F7A8A;         --teal-deep:#145866;
+
+  --brand:var(--brand-navy);
+  --highlight:var(--brand-orange);
+  --focus-ring:#D95F00;   /* darker orange: 3.8:1 against white */
+  --fill-from:var(--brand-navy);
+  --fill-to:var(--brand-orange);
+  --pill-on-bg:var(--brand-navy);
+  --pill-on-fg:#fff;
+  --pill-on-border:var(--brand-orange);
+  --approve-bg:var(--brand-navy);
+  --approve-fg:#fff;
+  --glow-1:var(--brand-navy);
+  --glow-2:var(--brand-orange);
+  --topbar-accent:var(--brand-orange);
+}
+:root[data-identity="new"][data-theme="dark"]{
+  /* navy on navy surfaces would vanish: lift it, keep white text at AA (6:1) */
+  --blue:#4566C2;         --blue-deep:#A9BDF2;
+  --lime-deep:#C5D77A;    --magenta-deep:#F08CB6;  --teal-deep:#7FC9D4;
+  --accent:#9DB4F0;       --accent-deep:#A9BDF2;
+  --brand:#4566C2;
+  --highlight:#FF8A1F;
+  --focus-ring:#FF8A1F;
+  --fill-to:#FF8A1F;
+  --pill-on-bg:#4566C2;
+  --pill-on-border:#FF8A1F;
+  --approve-bg:#4566C2;
+  --topbar-accent:#FF8A1F;
+}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
@@ -59,6 +121,7 @@ h1,h2,h3,h4{font-weight:700;letter-spacing:-0.015em;line-height:1.18}
   position:sticky;top:0;z-index:60;
   background:var(--paper);
   border-bottom:1px solid var(--rule);
+  box-shadow:inset 0 -2px 0 var(--topbar-accent);
   height:64px;display:flex;align-items:center;
 }
 .topbar-inner{
@@ -100,7 +163,7 @@ h1,h2,h3,h4{font-weight:700;letter-spacing:-0.015em;line-height:1.18}
   display:flex;align-items:center;gap:10px;flex-shrink:0;
 }
 .overall-bar{width:74px;height:5px;background:var(--paper-3);border-radius:3px;overflow:hidden}
-.overall-fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--lime));transition:width .4s ease}
+.overall-fill{height:100%;width:0;background:linear-gradient(90deg,var(--fill-from),var(--fill-to));transition:width .4s ease}
 .overall-txt{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);white-space:nowrap}
 .menu-btn{display:flex;padding:7px;border-radius:7px}
 .menu-btn:hover{background:var(--paper-3)}
@@ -127,7 +190,7 @@ h1,h2,h3,h4{font-weight:700;letter-spacing:-0.015em;line-height:1.18}
   border:1px solid var(--rule);color:var(--ink-3);transition:all .14s;
 }
 .tf:hover{border-color:var(--ink-4);color:var(--ink-2)}
-.tf.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.tf.on{background:var(--pill-on-bg);border-color:var(--pill-on-border);color:var(--pill-on-fg)}
 .side-sec{margin-bottom:4px}
 .side-head{
   display:flex;align-items:center;gap:9px;width:100%;
@@ -202,7 +265,7 @@ h1,h2,h3,h4{font-weight:700;letter-spacing:-0.015em;line-height:1.18}
 .side-lesson:hover{background:var(--paper-2);color:var(--ink)}
 .side-lesson.active{background:var(--paper-3);color:var(--ink);font-weight:600}
 .side-lesson.active::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--highlight);
 }
 .side-lesson .num{
   font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4);

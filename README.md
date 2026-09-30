@@ -208,6 +208,31 @@ otherwise safe.
 
 ---
 
+## Brand identity (old / new Talan)
+
+The UI ships two brand identities, independent of light/dark mode. Users switch in the
+avatar menu → **Talan identity** → *Old Talan Identity* / *New Talan Identity*; the choice
+applies immediately and is saved in `localStorage` as `talan_identity` (`old` | `new`).
+The default is `new` (navy + orange logo rollout).
+
+- `data-theme` (light | dark) owns surfaces, text and borders; `data-identity` (old | new)
+  owns brand and series colors. Both are set on `<html>` by the inline script in
+  `web/index.html` before the CSS loads, so there is no flash.
+- All identity colors live in `web/base.css`: `:root` holds the original blue brand chart
+  (old identity) plus role tokens (`--brand`, `--highlight`, `--focus-ring`, `--fill-from/to`,
+  …); `:root[data-identity="new"]` and `:root[data-identity="new"][data-theme="dark"]`
+  override them. Components use tokens only — change a color there, not in components.
+- Series accents in `web/app.js` (`ACCENTS`) are CSS variables (`var(--blue)` etc.), so a
+  series marked `blue` renders navy under the new identity.
+- Logos: old identity uses `LOGO_TALAN` (`web/logos.js`); new identity uses
+  `web/assets/talan-logo-new.png` (white variant `talan-logo-new-white.png` in dark mode),
+  cropped from the official files in `server/src/assets/png/`.
+- Default: to ship the old identity by default, flip the expression to
+  `localStorage.getItem('talan_identity') === 'new' ? 'new' : 'old'` in both
+  `web/index.html` and `web/app.js`.
+
+---
+
 ## Editing the BC Dictionary
 
 The bilingual (English ↔ French) Business Central term reference lives in

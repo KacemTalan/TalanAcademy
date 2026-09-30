@@ -18,11 +18,12 @@ const FLAT = [];
 SERIES.forEach(s => s.lessons.forEach(l => FLAT.push({ ...l, series: s })));
 const LESSON_BY_ID = Object.fromEntries(FLAT.map(l => [l.id, l]));
 
+// Series accents resolve through CSS variables so the active identity (base.css) decides the actual hex.
 const ACCENTS = {
-  blue:    { c: '#1B84C6', d: '#0F5C8C' },
-  lime:    { c: '#A4BE23', d: '#7C9214' },
-  magenta: { c: '#E5007D', d: '#B00062' },
-  teal:    { c: '#147C8E', d: '#0D5C6A' }
+  blue:    { c: 'var(--blue)',    d: 'var(--blue-deep)' },
+  lime:    { c: 'var(--lime)',    d: 'var(--lime-deep)' },
+  magenta: { c: 'var(--magenta)', d: 'var(--magenta-deep)' },
+  teal:    { c: 'var(--teal)',    d: 'var(--teal-deep)' }
 };
 const TRACK_LABEL = { business: 'Business', platform: 'Platform', developer: 'Developer', executive: 'Executive' };
 
@@ -47,10 +48,22 @@ let sidebarCollapsed = localStorage.getItem('talan_sidebar_collapsed') === '1';
 let theme = localStorage.getItem('talan_theme')
   || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
+// Default identity is 'new' (the TALAN navy/orange logo rollout); users can switch back to 'old' in the user menu.
+let identity = localStorage.getItem('talan_identity') === 'old' ? 'old' : 'new';
+
 function applyTheme() {
   document.documentElement.setAttribute('data-theme', theme);
 }
+function applyIdentity() {
+  document.documentElement.setAttribute('data-identity', identity);
+  document.querySelectorAll('img[data-brand-logo]').forEach(img => { img.src = brandLogo(); });
+}
+function brandLogo() {
+  if (identity === 'old') return LOGO_TALAN;
+  return theme === 'dark' ? './assets/talan-logo-new-white.png' : './assets/talan-logo-new.png';
+}
 applyTheme();
+applyIdentity();
 
 /* ---------------- api ---------------- */
 async function api(path, options = {}) {
@@ -213,7 +226,7 @@ function renderAuth(mode = 'login', message = '', tone = '') {
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-brand">
-        <img src="${LOGO_TALAN}" alt="Talan">
+        <img src="${brandLogo()}" alt="Talan" data-brand-logo>
         <div class="auth-brand-txt">Academy<span>Business Central</span></div>
       </div>
 
@@ -313,7 +326,7 @@ function renderShell() {
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
       <div class="brand" data-home role="button" aria-label="Go to home">
-        <img src="${LOGO_TALAN}" alt="Talan">
+        <img src="${brandLogo()}" alt="Talan" data-brand-logo>
         <div class="brand-div"></div>
         <div class="brand-name">Academy<span>Business Central</span></div>
       </div>
@@ -339,6 +352,13 @@ function renderShell() {
             <span>Dark mode</span>
             <span class="um-switch ${theme === 'dark' ? 'on' : ''}" id="themeSwitch"><span class="knob"></span></span>
           </button>
+          <div class="um-identity" role="group" aria-label="Talan identity">
+            <span class="um-identity-label">Talan identity</span>
+            <div class="um-seg">
+              <button type="button" class="um-seg-btn ${identity === 'old' ? 'on' : ''}" data-identity-set="old" aria-pressed="${identity === 'old'}">Old Talan Identity</button>
+              <button type="button" class="um-seg-btn ${identity === 'new' ? 'on' : ''}" data-identity-set="new" aria-pressed="${identity === 'new'}">New Talan Identity</button>
+            </div>
+          </div>
           <button class="um-item" id="changePw">Change password</button>
           <button class="um-item danger" id="signOutBtn">Sign out</button>
         </div>
@@ -387,8 +407,20 @@ function wireShell() {
     theme = theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('talan_theme', theme);
     applyTheme();
+    applyIdentity();   // the new-identity logo has a white variant for dark mode
     el('themeSwitch').classList.toggle('on', theme === 'dark');
   });
+  document.querySelectorAll('[data-identity-set]').forEach(btn => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    identity = btn.dataset.identitySet;
+    localStorage.setItem('talan_identity', identity);
+    applyIdentity();
+    document.querySelectorAll('[data-identity-set]').forEach(b => {
+      const on = b.dataset.identitySet === identity;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on);
+    });
+  }));
   el('menuBtn').addEventListener('click', () => {
     if (window.matchMedia('(max-width:1080px)').matches) {
       el('sidebar').classList.toggle('open');
@@ -481,7 +513,7 @@ function renderSidebar() {
         <span class="side-head-txt"><b>${esc(s.title)}</b><i>${s.code} · ${pr.total} lessons</i></span>
         <svg class="side-ring" viewBox="0 0 22 22">
           <circle class="bg" cx="11" cy="11" r="8.5"></circle>
-          <circle class="fg" cx="11" cy="11" r="8.5" stroke="${a.c}"
+          <circle class="fg" cx="11" cy="11" r="8.5" style="stroke:${a.c}"
             stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pr.pct)}"></circle>
         </svg>
       </button>
@@ -497,7 +529,7 @@ function ringChart(pct, color, size = 96, stroke = 10) {
   const r = (size - stroke) / 2, C = 2 * Math.PI * r, cx = size / 2, cy = size / 2;
   return `<svg class="dash-ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
     <circle class="bg" cx="${cx}" cy="${cy}" r="${r}" stroke-width="${stroke}"></circle>
-    <circle class="fg" cx="${cx}" cy="${cy}" r="${r}" stroke-width="${stroke}" stroke="${esc(color)}"
+    <circle class="fg" cx="${cx}" cy="${cy}" r="${r}" stroke-width="${stroke}" style="stroke:${esc(color)}"
       stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(2)}" stroke-linecap="round"></circle>
   </svg>`;
 }
