@@ -121,6 +121,16 @@
 .shell.no-side .sidebar-collapse-btn{display:none}
 
 /* ---------------- Admin ---------------- */
+.ttable{border:1px solid var(--rule);border-radius:11px;overflow:hidden;background:var(--paper);margin-bottom:30px}
+.tt-head,.tt-row{display:grid;grid-template-columns:1.2fr 1.6fr .8fr .8fr .8fr;gap:14px;align-items:center;padding:11px 16px}
+.tt-head{background:var(--paper-2);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.tt-row{border-top:1px solid var(--rule-soft);font-size:13px}
+.tt-name{font-weight:600}
+.tt-email{color:var(--ink-3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tt-num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.tt-seen,.ut-time{color:var(--ink-3);font-size:12.5px}
+.ut-time{font-family:'IBM Plex Mono',monospace}
+.time-empty{margin-bottom:30px}
 .admin{padding-top:38px;max-width:1080px}
 .admin-h1{font-size:clamp(25px,3vw,32px);letter-spacing:-0.025em;margin-bottom:26px}
 .loading{padding:60px 0;text-align:center;color:var(--ink-3);font-size:14px}
@@ -168,7 +178,7 @@
   background:var(--paper);border:1px solid var(--rule);border-radius:12px;overflow:visible;
 }
 .ut-head,.ut-row{
-  display:grid;grid-template-columns:1.7fr .9fr 1.2fr .8fr auto;
+  display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,.9fr) minmax(0,1.2fr) minmax(0,.6fr) minmax(0,.8fr) 112px;
   gap:14px;align-items:center;padding:12px 18px;
 }
 .ut-head{
@@ -275,5 +285,8 @@
   .admin-cols{grid-template-columns:1fr}
   .ut-head{display:none}
   .ut-row{grid-template-columns:1fr auto;gap:9px}
-  .ut-prog,.ut-seen{grid-column:1/-1}
+  .ut-prog,.ut-time,.ut-seen{grid-column:1/-1}
+  .tt-head{display:none}
+  .tt-row{grid-template-columns:1fr 1fr;row-gap:4px}
+  .tt-email{grid-column:1/-1;order:-1}
 }

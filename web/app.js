@@ -307,7 +307,70 @@ function renderAuth(mode = 'login', message = '', tone = '') {
   el(mode === 'signup' ? 'fName' : 'fEmail')?.focus();
 }
 
+/* ---------------- time on platform (consultants only, invisible) ----------------
+   Active-time based, not surveillance: seconds only accrue while THIS tab is visible and
+   focused, and stop after 5 minutes without mouse/keyboard/scroll/touch input (a playing
+   lesson video counts as active). Nothing about other apps or tabs is observed. Admins are
+   never tracked, and nothing here is ever shown to the consultant. */
+const timeTracker = (() => {
+  const BEAT_MS = 60 * 1000, IDLE_MS = 5 * 60 * 1000, MAX_DELTA = 120;
+  let running = false, beatTimer = null, tickTimer = null;
+  let activeMs = 0, lastTick = 0, lastInput = Date.now();
+  const onInput = () => { lastInput = Date.now(); };
+  const INPUT_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'wheel', 'touchstart'];
+
+  const videoPlaying = () => [...document.querySelectorAll('video')].some(v => !v.paused && !v.ended);
+  const isActive = () => document.visibilityState === 'visible' && document.hasFocus()
+    && (Date.now() - lastInput < IDLE_MS || videoPlaying());
+
+  function tick() {               // accrue the time since the last tick, only if active
+    const now = Date.now();
+    if (isActive()) activeMs += Math.min(now - lastTick, 5000);
+    lastTick = now;
+  }
+  function send(keepalive = false) {
+    tick();
+    const seconds = Math.min(MAX_DELTA, Math.floor(activeMs / 1000));
+    if (seconds < 1 || !token) return;
+    activeMs -= seconds * 1000;
+    // fire-and-forget; keepalive lets the final flush survive page unload
+    fetch(API + '/api/time/heartbeat', {
+      method: 'POST', keepalive,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ seconds })
+    }).catch(() => {});
+  }
+  // leaving: flush what's accrued; returning: restart the clock so the away-time is never counted
+  const onHide = () => { if (document.visibilityState === 'hidden') send(true); else lastTick = Date.now(); };
+  const onFocus = () => { lastTick = Date.now(); };
+  const onUnload = () => send(true);
+
+  return {
+    start(user) {
+      if (running || !user || user.role !== 'consultant' || user.status !== 'approved') return;
+      running = true; activeMs = 0; lastTick = Date.now(); lastInput = Date.now();
+      INPUT_EVENTS.forEach(e => window.addEventListener(e, onInput, { passive: true }));
+      document.addEventListener('visibilitychange', onHide);
+      window.addEventListener('focus', onFocus);
+      window.addEventListener('pagehide', onUnload);
+      tickTimer = setInterval(tick, 1000);
+      beatTimer = setInterval(() => send(), BEAT_MS);
+    },
+    stop(flush = true) {
+      if (!running) return;
+      if (flush) send(true);
+      running = false;
+      clearInterval(tickTimer); clearInterval(beatTimer);
+      INPUT_EVENTS.forEach(e => window.removeEventListener(e, onInput));
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pagehide', onUnload);
+    }
+  };
+})();
+
 function signOut(message) {
+  timeTracker.stop(!message);   // flush on a normal sign-out; skip when the session is already invalid
   token = null; me = null;
   progress = new Set(); notes = {}; videos = {}; quizResults = {}; quizSelections = {};
   localStorage.removeItem('talan_token');
@@ -1288,13 +1351,13 @@ function dictLiveUpdate(query) {
 /* ============================================================
    ADMIN PORTAL
    ============================================================ */
-let adminUsers = [], adminStats = null;
+let adminUsers = [], adminStats = null, adminTime = null;
 
 async function renderAdmin() {
   el('viewRoot').innerHTML = `<div class="pane admin"><div class="loading">Loading admin data…</div></div>`;
   try {
-    const [u, s] = await Promise.all([api('/api/admin/users'), api('/api/admin/stats')]);
-    adminUsers = u.users; adminStats = s;
+    const [u, s, tm] = await Promise.all([api('/api/admin/users'), api('/api/admin/stats'), api('/api/admin/time')]);
+    adminUsers = u.users; adminStats = s; adminTime = tm;
   } catch (err) {
     el('viewRoot').innerHTML = `<div class="pane admin"><div class="auth-msg bad">${esc(err.message)}</div></div>`;
     return;
@@ -1339,6 +1402,33 @@ function renderAdminDashboard(others, approvedCount) {
   </div>`;
 }
 
+// "Xh Ym" — never raw seconds
+function fmtDuration(sec) {
+  const m = Math.floor((sec || 0) / 60), h = Math.floor(m / 60);
+  return h ? `${h}h ${m % 60}m` : `${m}m`;
+}
+
+function renderTimeOnPlatform() {
+  const rows = adminTime?.users || [];
+  const withTime = rows.filter(r => r.total_seconds > 0);
+  const sum = adminTime?.summary || { total_seconds: 0, active_consultants_7d: 0 };
+  return `<div class="sec-label">Time on platform <em class="lbl-count">active time · consultants only</em></div>
+    <div class="admin-stats time-stats">
+      <div class="astat"><b>${fmtDuration(sum.total_seconds)}</b><span>Total consultant time</span></div>
+      <div class="astat"><b>${sum.active_consultants_7d}</b><span>Active consultants this week</span></div>
+    </div>
+    ${withTime.length ? `<div class="ttable">
+      <div class="tt-head"><span>Name</span><span>Email</span><span>Total time</span><span>Last 7 days</span><span>Last seen</span></div>
+      ${withTime.map(r => `<div class="tt-row">
+        <span class="tt-name">${esc(r.name)}</span>
+        <span class="tt-email">${esc(r.email)}</span>
+        <span class="tt-num">${fmtDuration(r.total_seconds)}</span>
+        <span class="tt-num">${fmtDuration(r.last_7_days_seconds)}</span>
+        <span class="tt-seen">${r.last_seen_at ? timeAgo(r.last_seen_at) : '—'}</span>
+      </div>`).join('')}
+    </div>` : '<p class="muted time-empty">No time data yet</p>'}`;
+}
+
 function paintAdmin() {
   const pending = adminUsers.filter(u => u.status === 'pending');
   const others = adminUsers.filter(u => u.status !== 'pending');
@@ -1360,6 +1450,8 @@ function paintAdmin() {
 
     ${renderAdminDashboard(others, st.approved)}
 
+    ${renderTimeOnPlatform()}
+
     ${pending.length ? `
       <div class="sec-label">Awaiting approval <em class="lbl-count">${pending.length}</em></div>
       <div class="approve-list">
@@ -1375,7 +1467,7 @@ function paintAdmin() {
     <div class="sec-label">All consultants <em class="lbl-count">${others.length}</em></div>
     <div class="utable">
       <div class="ut-head">
-        <span>Name</span><span>Status</span><span>Progress</span><span>Last seen</span><span></span>
+        <span>Name</span><span>Status</span><span>Progress</span><span>Time</span><span>Last seen</span><span></span>
       </div>
       ${others.map(u => {
         const pct = total ? Math.round(u.completed / total * 100) : 0;
@@ -1386,6 +1478,7 @@ function paintAdmin() {
             <span class="ut-bar"><span class="ut-fill" style="width:${pct}%"></span></span>
             <i>${u.completed}/${total}</i>
           </span>
+          <span class="ut-time">${u.role === 'admin' ? '—' : fmtDuration(u.time_seconds)}</span>
           <span class="ut-seen">${u.last_seen_at ? timeAgo(u.last_seen_at) : '—'}</span>
           <span class="ut-menu">
             <button class="ut-btn" data-detail="${u.id}">Detail</button>
@@ -1878,6 +1971,7 @@ async function boot() {
   renderShell();
   renderHome();
   renderOverall();
+  timeTracker.start(me);   // no-op for admins
   if (me.mustReset && !localStorage.getItem('talan_pwdialog_seen_' + me.email)) {
     openPasswordDialog(true);
   }

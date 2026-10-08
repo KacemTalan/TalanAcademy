@@ -86,6 +86,17 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Active time on the platform, consultants only, one row per user per UTC day (server clock).
+-- Internal enablement analytics: visible to admins only, never exposed to the consultant.
+CREATE TABLE IF NOT EXISTS time_tracking (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day        DATE NOT NULL,
+  seconds    INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, day)
+);
+CREATE INDEX IF NOT EXISTS idx_time_day ON time_tracking(day);
+
 CREATE INDEX IF NOT EXISTS idx_progress_user ON progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_user ON quiz_results(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_status  ON users(status);

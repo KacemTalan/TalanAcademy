@@ -136,6 +136,21 @@ token expires.
 **Resetting a password** generates a temporary one shown to you exactly once.
 Send it to them over a secure channel; they are prompted to change it on sign-in.
 
+**Time on platform** (Admin dashboard) shows how long approved consultants spend
+*active* in the Academy — internal enablement analytics, not a punch clock:
+
+- Counted only while the Academy tab is visible and focused, and paused after
+  5 minutes without mouse/keyboard/scroll/touch input (a playing lesson video
+  counts as active). Nothing about other apps or tabs is observed.
+- The browser sends the active seconds every 60 s (`POST /api/time/heartbeat`,
+  1–120 s per beat), plus a final flush when the tab is hidden or the user signs
+  out. The server buckets them per UTC day in `time_tracking` and caps each beat
+  at the wall-clock time since the previous one, so several open tabs can't
+  double-count.
+- Admins are never tracked. Consultants never see their own figures: there is no
+  UI for it, the heartbeat returns an empty response, and `/api/admin/time` is
+  admin-only.
+
 ---
 
 ## Security notes

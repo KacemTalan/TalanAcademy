@@ -447,17 +447,67 @@ app.delete('/api/videos/:lessonId', requireAuth, requireAdmin, writeLimiter, asy
   res.json({ ok: true });
 });
 
+/* ---------------- Time on platform (consultants only) ---------------- */
+// The web app sends the ACTIVE seconds accumulated since its last heartbeat: time while the
+// Academy tab is visible and focused, paused after 5 minutes without input (unless a lesson
+// video is playing). It measures time spent in the Academy only — nothing about other apps or
+// tabs is observed. Admins are never tracked; consultants never receive their own figures.
+const HEARTBEAT_MAX_SECONDS = 120;
+const heartbeatLimiter = rateLimit({
+  windowMs: 60 * 1000, max: 12, standardHeaders: true, legacyHeaders: false,
+  keyGenerator: (req) => `time:${req.user.id}`   // runs after requireAuth, so req.user is set
+});
+
+app.post('/api/time/heartbeat', requireAuth, heartbeatLimiter, async (req, res) => {
+  if (req.user.role !== 'consultant') return res.status(403).json({ error: 'Not tracked.' });
+  const seconds = Number(req.body?.seconds);
+  if (!Number.isInteger(seconds) || seconds < 1 || seconds > HEARTBEAT_MAX_SECONDS) {
+    return res.status(400).json({ error: 'Invalid heartbeat.' });
+  }
+  // Day bucket uses the server's UTC clock. On repeat heartbeats the credit is capped at the
+  // wall-clock time since the previous one (+5 s grace), so two open tabs can't double-count.
+  await q(
+    `INSERT INTO time_tracking (user_id, day, seconds, updated_at)
+       VALUES ($1, (now() AT TIME ZONE 'UTC')::date, $2, now())
+     ON CONFLICT (user_id, day) DO UPDATE SET
+       seconds = time_tracking.seconds + LEAST($2::int,
+         GREATEST(0, CEIL(EXTRACT(EPOCH FROM now() - time_tracking.updated_at))::int + 5)),
+       updated_at = now()`,
+    [req.user.id, seconds]
+  );
+  res.status(204).end();   // nothing in the response: consultants never see their totals
+});
+
 /* ---------------- Admin ---------------- */
+
+app.get('/api/admin/time', requireAuth, requireAdmin, async (_req, res) => {
+  const { rows } = await q(`
+    SELECT u.id, u.name, u.email, u.status, u.last_seen_at,
+           COALESCE(SUM(t.seconds), 0)::int AS total_seconds,
+           COALESCE(SUM(t.seconds) FILTER (WHERE t.day > (now() AT TIME ZONE 'UTC')::date - 7), 0)::int AS last_7_days_seconds,
+           MAX(t.updated_at) AS last_active_at
+    FROM users u
+    LEFT JOIN time_tracking t ON t.user_id = u.id
+    WHERE u.role = 'consultant' AND u.status = 'approved'
+    GROUP BY u.id
+    ORDER BY total_seconds DESC, u.name
+  `);
+  const totalSeconds = rows.reduce((s, r) => s + r.total_seconds, 0);
+  const activeThisWeek = rows.filter(r => r.last_7_days_seconds > 0).length;
+  res.json({ summary: { total_seconds: totalSeconds, active_consultants_7d: activeThisWeek }, users: rows });
+});
 
 app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res) => {
   const { rows } = await q(`
     SELECT u.id, u.email, u.name, u.role, u.status,
            u.created_at, u.approved_at, u.last_seen_at,
            COALESCE(p.done, 0)  AS completed,
-           COALESCE(n.notes, 0) AS notes_count
+           COALESCE(n.notes, 0) AS notes_count,
+           COALESCE(t.secs, 0)  AS time_seconds
     FROM users u
     LEFT JOIN (SELECT user_id, COUNT(*)::int AS done  FROM progress GROUP BY user_id) p ON p.user_id = u.id
     LEFT JOIN (SELECT user_id, COUNT(*)::int AS notes FROM notes    GROUP BY user_id) n ON n.user_id = u.id
+    LEFT JOIN (SELECT user_id, SUM(seconds)::int AS secs FROM time_tracking GROUP BY user_id) t ON t.user_id = u.id
     ORDER BY
       CASE u.status WHEN 'pending' THEN 0 ELSE 1 END,
       u.created_at DESC
