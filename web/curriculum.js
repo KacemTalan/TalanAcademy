@@ -5300,7 +5300,7 @@ const QUIZZES = {
     pass: 2,
     questions: [
       { q: "What does 'drill-down analysis' let a user do?", options: ["Move from a high-level figure to the individual transaction behind it", "Export reports to Excel automatically", "Schedule reports to run overnight", "Restrict which users can see financial data"], correct: 0 },
-      { q: "What does drill-down analysis let a user do?", options: ["Export data to a spreadsheet automatically", "Change the fiscal year from the report screen", "Move from a high-level figure straight to the individual transaction behind it", "Bypass user permission sets"], correct: 2 },
+      { q: "A sales director sees a different margin in a Power BI report than on the Business Central page this morning. What is the most likely reason?", options: ["Power BI recalculates prices using its own rules", "The Power BI dataset shows its last scheduled refresh, not live data", "Business Central only updates totals at month end", "Power BI excludes posted invoices by default"], correct: 1 },
       { q: "Why is 'real-time data' a meaningful claim for reporting?", options: ["Because reports only update once a week otherwise", "Because it guarantees 100% forecast accuracy", "Because it removes the need for role-based dashboards", "Because there's no overnight sync — what happened this morning is in this morning's number"], correct: 3 },
     ]
   },
