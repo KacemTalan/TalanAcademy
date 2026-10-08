@@ -27,8 +27,10 @@
 </div></div></div>
 
 <script src="./config.js"></script>
-<script src="./logos.js"></script>
-<script src="./curriculum.js"></script>
+<!-- ?v=2 busts copies cached under the old year-long "immutable" rule; vercel.json now makes
+     browsers revalidate these files on every visit, so content edits show up without bumping this. -->
+<script src="./logos.js?v=2"></script>
+<script src="./curriculum.js?v=2"></script>
 <script src="./dictionary.js"></script>
 <script src="./app.js"></script>
 </body>
